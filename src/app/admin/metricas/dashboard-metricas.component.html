@@ -33,9 +33,9 @@
               <div class="col-md-6">
                 <div class="card h-100 border-warning shadow-sm">
                   <div class="card-body">
-                    <h6 class="card-title text-danger mb-2">Actividad: {{ cb.actividadId }}</h6>
+                    <h6 class="card-title text-danger mb-2">Actividad: {{ getNombreActividad(cb.actividadId) }}</h6>
                     <p class="small mb-1">
-                      <strong>Departamento:</strong> {{ cb.departamentoId }}
+                      <strong>Departamento:</strong> {{ getNombreDepartamento(cb.departamentoId) }}
                     </p>
                     <p class="small mb-1">
                       <strong>Trámites afectados:</strong> {{ cb.tramitesAcumulados }}
@@ -92,8 +92,7 @@
             <table class="table table-hover table-sm align-middle mb-0">
               <thead class="table-dark">
                 <tr>
-                  <th>Trámite ID</th>
-                  <th>ID Actividad</th>
+                  <th>Actividad</th>
                   <th>Departamento</th>
                   <th>Tiempo Real (h)</th>
                   <th>Estatus SLA</th>
@@ -102,9 +101,8 @@
               <tbody>
                 @for (m of metricas(); track m.actividadId) {
                   <tr>
-                    <td class="small text-muted">{{ m.tramiteId }}</td>
-                    <td><strong>{{ m.actividadId }}</strong></td>
-                    <td>{{ m.departamentoId }}</td>
+                    <td><strong>{{ getNombreActividad(m.actividadId) }}</strong></td>
+                    <td>{{ getNombreDepartamento(m.departamentoId) }}</td>
                     <td>{{ formatearHoras(m.tiempoSegundos) }} h</td>
                     <td>
                       @if (m.superoSla) {
