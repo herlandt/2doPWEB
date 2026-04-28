@@ -1,3 +1,322 @@
-/* You can add global styles to this file, and also import other style files */
+/* ==========================================================================
+   CRE — Sistema de diseño global
+   - Tailwind v4 (@theme) define las utilidades.
+   - CSS variables manejan light/dark mode (data-theme="dark" en <html>).
+   - Bootstrap se mantiene importado mientras migramos pantallas; las
+     pantallas nuevas usan exclusivamente clases utilitarias del @theme.
+   ========================================================================== */
 
+@import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'tailwindcss';
+@import '@fontsource-variable/inter/index.css';
+
+/* --------------------------------------------------------------------------
+   Design tokens (light)
+   -------------------------------------------------------------------------- */
+:root {
+  /* Brand — azul corporativo CRE + acento naranja energía */
+  --cre-brand-50: #eef6ff;
+  --cre-brand-100: #d8eaff;
+  --cre-brand-200: #b3d3ff;
+  --cre-brand-300: #82b6ff;
+  --cre-brand-400: #4d92ff;
+  --cre-brand-500: #1f6feb;
+  --cre-brand-600: #1554c4;
+  --cre-brand-700: #103f96;
+  --cre-brand-800: #0c2f70;
+  --cre-brand-900: #0a2356;
+
+  --cre-energy-50: #fff7ed;
+  --cre-energy-100: #ffedd5;
+  --cre-energy-300: #fdba74;
+  --cre-energy-500: #f97316;
+  --cre-energy-600: #ea580c;
+  --cre-energy-700: #c2410c;
+
+  /* Semánticos */
+  --cre-success-500: #10b981;
+  --cre-success-600: #059669;
+  --cre-warning-500: #f59e0b;
+  --cre-danger-500: #ef4444;
+  --cre-danger-600: #dc2626;
+  --cre-info-500: #06b6d4;
+
+  /* Superficie y texto */
+  --cre-bg: #f5f7fb;
+  --cre-bg-elev: #ffffff;
+  --cre-bg-muted: #eef1f6;
+  --cre-surface: #ffffff;
+  --cre-surface-2: #f8fafc;
+  --cre-border: #e2e8f0;
+  --cre-border-strong: #cbd5e1;
+  --cre-text: #0f172a;
+  --cre-text-muted: #64748b;
+  --cre-text-subtle: #94a3b8;
+  --cre-text-inverse: #ffffff;
+
+  /* Sombras (capa elevación) */
+  --cre-shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --cre-shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.07), 0 2px 4px -2px rgb(15 23 42 / 0.05);
+  --cre-shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.05);
+  --cre-shadow-glow: 0 0 0 4px rgb(31 111 235 / 0.12);
+
+  /* Radio y espaciado */
+  --cre-radius-sm: 6px;
+  --cre-radius-md: 10px;
+  --cre-radius-lg: 14px;
+  --cre-radius-xl: 20px;
+
+  /* Layout */
+  --cre-sidebar-w: 248px;
+  --cre-sidebar-w-collapsed: 72px;
+  --cre-topbar-h: 64px;
+}
+
+/* Dark mode */
+:root[data-theme='dark'] {
+  --cre-bg: #0b1220;
+  --cre-bg-elev: #111a2e;
+  --cre-bg-muted: #0f1828;
+  --cre-surface: #111a2e;
+  --cre-surface-2: #162238;
+  --cre-border: #1f2a44;
+  --cre-border-strong: #2c3a5a;
+  --cre-text: #e6edf7;
+  --cre-text-muted: #94a3b8;
+  --cre-text-subtle: #64748b;
+  --cre-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --cre-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --cre-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.55), 0 4px 6px -4px rgb(0 0 0 / 0.45);
+  --cre-shadow-glow: 0 0 0 4px rgb(77 146 255 / 0.18);
+}
+
+/* --------------------------------------------------------------------------
+   Tailwind v4 theme — expone tokens como utilidades (bg-cre-brand-500, etc.)
+   -------------------------------------------------------------------------- */
+@theme {
+  --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --color-cre-brand-50: var(--cre-brand-50);
+  --color-cre-brand-100: var(--cre-brand-100);
+  --color-cre-brand-200: var(--cre-brand-200);
+  --color-cre-brand-300: var(--cre-brand-300);
+  --color-cre-brand-400: var(--cre-brand-400);
+  --color-cre-brand-500: var(--cre-brand-500);
+  --color-cre-brand-600: var(--cre-brand-600);
+  --color-cre-brand-700: var(--cre-brand-700);
+  --color-cre-brand-800: var(--cre-brand-800);
+  --color-cre-brand-900: var(--cre-brand-900);
+
+  --color-cre-energy-50: var(--cre-energy-50);
+  --color-cre-energy-100: var(--cre-energy-100);
+  --color-cre-energy-300: var(--cre-energy-300);
+  --color-cre-energy-500: var(--cre-energy-500);
+  --color-cre-energy-600: var(--cre-energy-600);
+  --color-cre-energy-700: var(--cre-energy-700);
+
+  --color-cre-success: var(--cre-success-500);
+  --color-cre-warning: var(--cre-warning-500);
+  --color-cre-danger: var(--cre-danger-500);
+  --color-cre-info: var(--cre-info-500);
+
+  --color-cre-bg: var(--cre-bg);
+  --color-cre-bg-elev: var(--cre-bg-elev);
+  --color-cre-bg-muted: var(--cre-bg-muted);
+  --color-cre-surface: var(--cre-surface);
+  --color-cre-surface-2: var(--cre-surface-2);
+  --color-cre-border: var(--cre-border);
+  --color-cre-border-strong: var(--cre-border-strong);
+  --color-cre-text: var(--cre-text);
+  --color-cre-text-muted: var(--cre-text-muted);
+  --color-cre-text-subtle: var(--cre-text-subtle);
+
+  --radius-cre-sm: var(--cre-radius-sm);
+  --radius-cre-md: var(--cre-radius-md);
+  --radius-cre-lg: var(--cre-radius-lg);
+  --radius-cre-xl: var(--cre-radius-xl);
+
+  --shadow-cre-sm: var(--cre-shadow-sm);
+  --shadow-cre-md: var(--cre-shadow-md);
+  --shadow-cre-lg: var(--cre-shadow-lg);
+  --shadow-cre-glow: var(--cre-shadow-glow);
+}
+
+/* --------------------------------------------------------------------------
+   Reset / base
+   -------------------------------------------------------------------------- */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--cre-bg);
+  color: var(--cre-text);
+  font-family: var(--font-sans, 'Inter Variable', system-ui, sans-serif);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   Componentes utilitarios reutilizables
+   -------------------------------------------------------------------------- */
+
+/* Surface card */
+.cre-card {
+  background: var(--cre-surface);
+  border: 1px solid var(--cre-border);
+  border-radius: var(--cre-radius-lg);
+  box-shadow: var(--cre-shadow-sm);
+  transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease;
+}
+.cre-card-hover:hover {
+  box-shadow: var(--cre-shadow-md);
+  transform: translateY(-1px);
+  border-color: var(--cre-border-strong);
+}
+
+/* Botón */
+.cre-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  border-radius: var(--cre-radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease,
+    box-shadow 140ms ease, transform 80ms ease;
+  white-space: nowrap;
+  user-select: none;
+}
+.cre-btn:active { transform: translateY(1px); }
+.cre-btn:focus-visible { outline: none; box-shadow: var(--cre-shadow-glow); }
+.cre-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.cre-btn-primary {
+  background: var(--cre-brand-600);
+  color: var(--cre-text-inverse);
+}
+.cre-btn-primary:hover:not(:disabled) { background: var(--cre-brand-700); }
+
+.cre-btn-secondary {
+  background: var(--cre-surface);
+  color: var(--cre-text);
+  border-color: var(--cre-border-strong);
+}
+.cre-btn-secondary:hover:not(:disabled) {
+  background: var(--cre-bg-muted);
+  border-color: var(--cre-text-subtle);
+}
+
+.cre-btn-ghost {
+  background: transparent;
+  color: var(--cre-text-muted);
+}
+.cre-btn-ghost:hover:not(:disabled) {
+  background: var(--cre-bg-muted);
+  color: var(--cre-text);
+}
+
+.cre-btn-danger {
+  background: var(--cre-danger-500);
+  color: var(--cre-text-inverse);
+}
+.cre-btn-danger:hover:not(:disabled) { background: var(--cre-danger-600); }
+
+.cre-btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8125rem; }
+.cre-btn-icon { padding: 0.5rem; }
+
+/* Input */
+.cre-input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+  background: var(--cre-surface);
+  color: var(--cre-text);
+  border: 1px solid var(--cre-border-strong);
+  border-radius: var(--cre-radius-md);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.cre-input::placeholder { color: var(--cre-text-subtle); }
+.cre-input:focus {
+  outline: none;
+  border-color: var(--cre-brand-500);
+  box-shadow: var(--cre-shadow-glow);
+}
+.cre-input.is-invalid { border-color: var(--cre-danger-500); }
+.cre-input.is-valid { border-color: var(--cre-success-500); }
+
+/* Badge */
+.cre-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 999px;
+  background: var(--cre-bg-muted);
+  color: var(--cre-text-muted);
+  border: 1px solid var(--cre-border);
+  line-height: 1.3;
+}
+.cre-badge-success { background: color-mix(in srgb, var(--cre-success-500) 14%, transparent); color: var(--cre-success-600); border-color: color-mix(in srgb, var(--cre-success-500) 30%, transparent); }
+.cre-badge-warning { background: color-mix(in srgb, var(--cre-warning-500) 14%, transparent); color: #b45309; border-color: color-mix(in srgb, var(--cre-warning-500) 30%, transparent); }
+.cre-badge-danger  { background: color-mix(in srgb, var(--cre-danger-500) 14%, transparent);  color: var(--cre-danger-600); border-color: color-mix(in srgb, var(--cre-danger-500) 30%, transparent); }
+.cre-badge-brand   { background: color-mix(in srgb, var(--cre-brand-500) 14%, transparent);   color: var(--cre-brand-700); border-color: color-mix(in srgb, var(--cre-brand-500) 30%, transparent); }
+.cre-badge-info    { background: color-mix(in srgb, var(--cre-info-500) 14%, transparent);    color: #0e7490; border-color: color-mix(in srgb, var(--cre-info-500) 30%, transparent); }
+
+/* Scrollbar discreta */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--cre-border-strong);
+  border-radius: 999px;
+  border: 2px solid var(--cre-bg);
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--cre-text-subtle); }
+
+/* --------------------------------------------------------------------------
+   Layout shell (vive en global porque cruza encapsulación de Angular)
+   -------------------------------------------------------------------------- */
+.app-shell {
+  min-height: 100dvh;
+}
+.app-shell.with-sidebar {
+  padding-left: var(--cre-sidebar-w);
+  transition: padding-left 220ms cubic-bezier(0.32, 0.72, 0.4, 1);
+}
+app-sidebar:has(.cre-sidebar.collapsed) ~ .app-shell.with-sidebar {
+  padding-left: var(--cre-sidebar-w-collapsed);
+}
+.app-shell-inner {
+  padding: 1.5rem 2rem;
+  max-width: 1480px;
+  margin: 0 auto;
+}
+@media (max-width: 768px) {
+  .app-shell.with-sidebar,
+  app-sidebar:has(.cre-sidebar.collapsed) ~ .app-shell.with-sidebar {
+    padding-left: 0;
+  }
+  .app-shell-inner { padding: 1rem; }
+}
+
+/* Microanimaciones */
+@keyframes cre-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes cre-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.cre-fade-in { animation: cre-fade-in 220ms ease-out both; }

@@ -1,0 +1,63 @@
+<div class="login-page d-flex align-items-center py-4">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-6 col-lg-4">
+        <div class="text-center mb-4">
+          <h1 class="h3 fw-bold text-primary mb-2">CRE · Gestion de Tramites</h1>
+          <p class="text-body-secondary mb-0">Portal interno para Administradores y Funcionarios</p>
+        </div>
+
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-4">
+            <h2 class="h5 mb-4">Iniciar Sesion</h2>
+
+            @if (error()) {
+              <div class="alert alert-danger" role="alert">{{ error() }}</div>
+            }
+
+            <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+              <div class="mb-3">
+                <label for="email" class="form-label">Correo electronico</label>
+                <input
+                  id="email"
+                  type="email"
+                  class="form-control"
+                  formControlName="email"
+                  [class.is-invalid]="form.controls.email.touched && form.controls.email.invalid"
+                />
+                <div class="invalid-feedback">Email requerido o invalido.</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="password" class="form-label">Contrasena</label>
+                <input
+                  id="password"
+                  type="password"
+                  class="form-control"
+                  formControlName="password"
+                  [class.is-invalid]="form.controls.password.touched && form.controls.password.invalid"
+                />
+                <div class="invalid-feedback">Contrasena requerida (minimo 6 caracteres).</div>
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100" [disabled]="loading()">
+                @if (loading()) {
+                  <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                }
+                {{ loading() ? 'Autenticando...' : 'Ingresar' }}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card mt-3 border-info-subtle">
+          <div class="card-body p-3 small">
+            <strong>Demo:</strong><br />
+            Admin: <code>admin@cre.bo</code> / <code>admin12345</code><br />
+            Funcionario: <code>funcionario@cre.bo</code> / <code>func12345</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

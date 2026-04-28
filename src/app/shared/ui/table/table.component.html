@@ -1,0 +1,112 @@
+<div class="cre-table-shell">
+  @if (searchable()) {
+    <div class="cre-table-toolbar">
+      <div class="cre-search">
+        <span class="cre-search-icon" aria-hidden="true">
+          <lucide-icon [img]="icons.search" [size]="16"></lucide-icon>
+        </span>
+        <input
+          class="cre-input cre-search-input"
+          type="search"
+          [placeholder]="searchPlaceholder()"
+          [value]="searchInput()"
+          (input)="onSearchInput($event)"
+          aria-label="Buscar en la tabla"
+        />
+      </div>
+      <div class="cre-table-summary">{{ pageSummary() }}</div>
+    </div>
+  }
+
+  <div class="cre-table-scroll">
+    <table class="cre-table" role="table">
+      <thead>
+        <tr>
+          @for (col of columns(); track col.key) {
+            <th
+              [style.width]="col.width || null"
+              [class]="'align-' + (col.align || 'left')"
+              [class.sortable]="col.sortable !== false"
+              (click)="toggleSort(col)"
+            >
+              <span class="th-inner">
+                <span class="th-label">{{ col.label }}</span>
+                @if (col.sortable !== false) {
+                  <span class="th-sort" aria-hidden="true">
+                    <lucide-icon [img]="sortIcon(col)" [size]="12"></lucide-icon>
+                  </span>
+                }
+              </span>
+            </th>
+          }
+        </tr>
+      </thead>
+
+      <tbody>
+        @if (loading()) {
+          @for (i of [0,1,2,3,4]; track i) {
+            <tr class="skeleton-row">
+              @for (col of columns(); track col.key) {
+                <td><app-skeleton width="80%" height="0.9rem" /></td>
+              }
+            </tr>
+          }
+        } @else {
+          @for (row of paged(); track trackRow($index, row)) {
+            <tr (click)="rowClick.emit(row)">
+              @for (col of columns(); track col.key) {
+                <td [class]="'align-' + (col.align || 'left')">
+                  @if (templateForKey(col.key); as tpl) {
+                    <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row }" />
+                  } @else {
+                    {{ readCell(row, col.key) }}
+                  }
+                </td>
+              }
+            </tr>
+          } @empty {
+            <tr>
+              <td [attr.colspan]="columns().length" class="empty-cell">
+                <app-empty-state
+                  [title]="emptyTitle()"
+                  [description]="emptyDescription()"
+                  [icon]="icons.empty"
+                />
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1 && !loading()) {
+    <nav class="cre-pager" aria-label="Paginación">
+      <button
+        type="button"
+        class="cre-btn cre-btn-secondary cre-btn-sm"
+        [disabled]="currentPage() === 1"
+        (click)="goPrev()"
+        aria-label="Página anterior"
+      >
+        <lucide-icon [img]="icons.prev" [size]="14"></lucide-icon>
+        <span>Anterior</span>
+      </button>
+
+      <span class="cre-pager-info">
+        Página <strong>{{ currentPage() }}</strong> de {{ totalPages() }}
+      </span>
+
+      <button
+        type="button"
+        class="cre-btn cre-btn-secondary cre-btn-sm"
+        [disabled]="currentPage() === totalPages()"
+        (click)="goNext()"
+        aria-label="Página siguiente"
+      >
+        <span>Siguiente</span>
+        <lucide-icon [img]="icons.next" [size]="14"></lucide-icon>
+      </button>
+    </nav>
+  }
+</div>

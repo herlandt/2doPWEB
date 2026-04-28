@@ -1,0 +1,49 @@
+<div class="field" [class.has-error]="state() === 'invalid'" [class.has-success]="state() === 'valid'">
+  @if (label()) {
+    <label class="field-label" [for]="id()">
+      {{ label() }}
+      @if (required()) { <span class="req" aria-hidden="true">*</span> }
+    </label>
+  }
+
+  <div class="field-wrap">
+    @if (leadingIcon(); as icon) {
+      <span class="leading-icon" aria-hidden="true">
+        <lucide-icon [img]="icon" [size]="16"></lucide-icon>
+      </span>
+    }
+
+    <input
+      class="cre-input"
+      [class.has-leading]="leadingIcon() !== null"
+      [class.is-invalid]="state() === 'invalid'"
+      [class.is-valid]="state() === 'valid'"
+      [id]="id()"
+      [type]="type()"
+      [placeholder]="placeholder()"
+      [disabled]="disabled()"
+      [required]="required()"
+      [value]="value()"
+      (input)="handleInput($event)"
+      (blur)="handleBlur()"
+    />
+
+    @if (state() === 'invalid') {
+      <span class="trailing-icon error" aria-hidden="true">
+        <lucide-icon [img]="errorIcon" [size]="16"></lucide-icon>
+      </span>
+    } @else if (state() === 'valid') {
+      <span class="trailing-icon success" aria-hidden="true">
+        <lucide-icon [img]="successIcon" [size]="16"></lucide-icon>
+      </span>
+    }
+  </div>
+
+  @if (state() === 'invalid') {
+    <p class="msg msg-error">{{ error() }}</p>
+  } @else if (state() === 'valid' && success()) {
+    <p class="msg msg-success">{{ success() }}</p>
+  } @else if (hint()) {
+    <p class="msg msg-hint">{{ hint() }}</p>
+  }
+</div>

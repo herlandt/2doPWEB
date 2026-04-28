@@ -1,0 +1,59 @@
+<section class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Diagramas de Workflow</h1>
+    <div class="d-flex gap-2">
+      <a routerLink="/admin/diagramas/ia" class="btn btn-outline-info">Generar con IA</a>
+      <a routerLink="/admin/diagramas/nuevo" class="btn btn-primary">+ Nuevo Diagrama</a>
+    </div>
+  </div>
+
+  @if (exito()) {
+    <div class="alert alert-success" role="alert">{{ exito() }}</div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" aria-hidden="true"></div>
+    </div>
+  } @else {
+    <div class="row g-3">
+      @for (diagrama of diagramas(); track diagrama.id) {
+        <div class="col-md-6 col-lg-4">
+          <article class="card h-100 shadow-sm border-0">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span class="fw-semibold text-truncate">{{ diagrama.nombre }}</span>
+              <span [class]="'badge ms-2 ' + getEstadoBadgeClass(diagrama.estado)">{{ diagrama.estado }}</span>
+            </div>
+            <div class="card-body small">
+              <p class="text-muted mb-1">Politica: <strong>{{ getNombrePolitica(diagrama.politicaId) }}</strong></p>
+              <p class="text-muted mb-1">Version: v{{ diagrama.versionActual }}</p>
+              <p class="text-muted mb-1">
+                Swimlanes:
+                @for (lane of diagrama.swimlanes; track lane) {
+                  <span class="badge bg-light text-dark me-1">{{ lane }}</span>
+                }
+              </p>
+              @if (diagrama.generadoPorIa) {
+                <p class="mb-0"><span class="badge bg-info text-dark">Generado por IA</span></p>
+              }
+            </div>
+            <div class="card-footer d-flex gap-2">
+              <a [routerLink]="['/admin/diagramas', diagrama.id]" class="btn btn-sm btn-primary flex-fill">Ver / Editar</a>
+              <button type="button" (click)="eliminar(diagrama.id, diagrama.nombre)" class="btn btn-sm btn-outline-danger">
+                Eliminar
+              </button>
+            </div>
+          </article>
+        </div>
+      } @empty {
+        <div class="col-12">
+          <div class="text-center text-muted py-5">Sin diagramas registrados</div>
+        </div>
+      }
+    </div>
+  }
+</section>

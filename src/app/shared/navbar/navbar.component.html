@@ -1,0 +1,24 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+  <div class="container-fluid">
+    <span class="navbar-brand fw-semibold">CRE · Gestion de Tramites</span>
+
+    <div class="navbar-nav ms-auto d-flex flex-row align-items-center gap-3">
+      @if (auth.isAdmin()) {
+        <a class="nav-link text-white" routerLink="/admin/dashboard">Dashboard</a>
+        <a class="nav-link text-white" routerLink="/admin/usuarios">Usuarios</a>
+        <a class="nav-link text-white" routerLink="/admin/departamentos">Departamentos</a>
+        <a class="nav-link text-white" routerLink="/admin/politicas">Politicas</a>
+        <a class="nav-link text-white" routerLink="/admin/actividades">Actividades</a>
+        <a class="nav-link text-white" routerLink="/admin/diagramas">Diagramas</a>
+      }
+
+      @if (auth.isFuncionario()) {
+        <a class="nav-link text-white" routerLink="/funcionario/tramites">Mis Tramites</a>
+      }
+
+      <span class="text-white-50 small"> {{ auth.getUsuario()?.nombre }} ({{ auth.getRol() }}) </span>
+
+      <button class="btn btn-outline-light btn-sm" type="button" (click)="auth.logout()">Salir</button>
+    </div>
+  </div>
+</nav>

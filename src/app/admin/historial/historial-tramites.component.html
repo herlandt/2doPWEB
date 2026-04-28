@@ -1,0 +1,147 @@
+<section class="container-fluid py-4">
+
+  <div class="mb-4">
+    <h1 class="h4 mb-0">Historial y Auditoría Global</h1>
+    <p class="text-muted small mb-0">Todos los trámites del sistema con filtros y exportación de reportes.</p>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger">{{ error() }}</div>
+  }
+
+  <!-- Panel de filtros -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+
+        <div class="col-md-3">
+          <label class="form-label fw-semibold" for="filtro-estado">Estado</label>
+          <select
+            id="filtro-estado"
+            class="form-select"
+            [value]="filtroEstado()"
+            (change)="setFiltroEstado($event)"
+          >
+            <option value="">TODOS</option>
+            @for (e of estados; track e.valor) {
+              <option [value]="e.valor">{{ e.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label fw-semibold" for="filtro-desde">Desde</label>
+          <input
+            id="filtro-desde"
+            type="date"
+            class="form-control"
+            [value]="filtroDesde()"
+            (change)="setFiltroDesde($event)"
+          />
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label fw-semibold" for="filtro-hasta">Hasta</label>
+          <input
+            id="filtro-hasta"
+            type="date"
+            class="form-control"
+            [value]="filtroHasta()"
+            (change)="setFiltroHasta($event)"
+          />
+        </div>
+
+        <div class="col-md-3 d-flex gap-2">
+          <button type="button" class="btn btn-primary w-100" (click)="buscarHistorial()">
+            Buscar
+          </button>
+          <button type="button" class="btn btn-outline-secondary" (click)="limpiarFiltros()">
+            Limpiar
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de exportación (CU-26) -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="fw-semibold">
+      Resultados: <strong>{{ tramites().length }}</strong>
+    </span>
+    <div class="d-flex gap-2">
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-danger"
+        [disabled]="tramites().length === 0 || descargando()"
+        (click)="exportar('PDF')"
+      >
+        @if (descargando()) { Generando… } @else { Exportar PDF }
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-success"
+        [disabled]="tramites().length === 0 || descargando()"
+        (click)="exportar('EXCEL')"
+      >
+        @if (descargando()) { Generando… } @else { Exportar Excel }
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla de auditoría -->
+  @if (loading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" aria-hidden="true"></div>
+      <p class="mt-2 text-muted small">Consultando la base de datos...</p>
+    </div>
+  } @else {
+    <div class="table-responsive shadow-sm">
+      <table class="table table-hover table-bordered bg-white align-middle mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th>Código</th>
+            <th>Política</th>
+            <th>Estado</th>
+            <th>Inicio</th>
+            <th>Última Actualización</th>
+            <th>Cliente</th>
+            <th class="text-center">Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of tramites(); track t.id) {
+            <tr>
+              <td><strong>{{ t.codigo }}</strong></td>
+              <td class="small">{{ t.politicaNombre ?? t.politicaId ?? '—' }}</td>
+              <td>
+                <span [class]="'badge ' + getEstadoBadgeClass(t.estadoActual)">
+                  {{ t.estadoActual }}
+                </span>
+              </td>
+              <td class="small">{{ formatearFecha(t.fechaInicio) }}</td>
+              <td class="small">{{ formatearFecha(t.fechaCierreReal) }}</td>
+              <td class="small">{{ t.clienteNombre ?? t.clienteId ?? '—' }}</td>
+              <td class="text-center">
+                <a
+                  [routerLink]="['/admin/expediente', t.id]"
+                  class="btn btn-sm btn-light"
+                  title="Ver expediente"
+                >
+                  Ver
+                </a>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="text-center text-muted py-4">
+                No se encontraron trámites para los filtros seleccionados.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+</section>

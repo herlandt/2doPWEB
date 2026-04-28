@@ -1,0 +1,233 @@
+<aside class="cre-sidebar" [class.collapsed]="collapsed()" aria-label="Navegación principal">
+
+  <!-- ── Marca ──────────────────────────────────────────── -->
+  <header class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <lucide-icon [img]="icons.brand" [size]="20"></lucide-icon>
+    </span>
+    @if (!collapsed()) {
+      <span class="brand-text">
+        <span class="brand-title">CRE</span>
+        <span class="brand-subtitle">Gestión de Trámites</span>
+      </span>
+    }
+  </header>
+
+  <!-- ── Navegación ─────────────────────────────────────── -->
+  <nav class="nav">
+
+    @if (!collapsed()) {
+      <!-- ── EXPANDED: vista con grupos desplegables ── -->
+
+      @if (role() === 'admin') {
+        <!-- Dashboard (standalone) -->
+        <a routerLink="/admin/dashboard" routerLinkActive="active" class="nav-item" aria-label="Dashboard">
+          <span class="nav-icon"><lucide-icon [img]="icons.dashboard" [size]="18"></lucide-icon></span>
+          <span class="nav-label">Dashboard</span>
+        </a>
+
+        <!-- Grupo Gestión -->
+        <div class="nav-group">
+          <button
+            type="button"
+            class="nav-group-header"
+            [class.open]="groupGestion.expanded()"
+            (click)="toggleGroup(groupGestion)"
+            aria-label="Gestión"
+          >
+            <span class="nav-icon"><lucide-icon [img]="groupGestion.icon" [size]="18"></lucide-icon></span>
+            <span class="nav-label">{{ groupGestion.label }}</span>
+            <lucide-icon
+              class="group-chevron"
+              [class.rotated]="groupGestion.expanded()"
+              [img]="icons.chevronDown"
+              [size]="14"
+            ></lucide-icon>
+          </button>
+          <div class="nav-group-items" [class.open]="groupGestion.expanded()">
+            @for (item of groupGestion.items; track item.link) {
+              <a [routerLink]="item.link" routerLinkActive="active" class="nav-item nav-sub-item" [attr.aria-label]="item.label">
+                <span class="nav-icon"><lucide-icon [img]="item.icon" [size]="16"></lucide-icon></span>
+                <span class="nav-label">{{ item.label }}</span>
+              </a>
+            }
+          </div>
+        </div>
+
+        <!-- Grupo Flujos -->
+        <div class="nav-group">
+          <button
+            type="button"
+            class="nav-group-header"
+            [class.open]="groupFlujos.expanded()"
+            (click)="toggleGroup(groupFlujos)"
+            aria-label="Flujos"
+          >
+            <span class="nav-icon"><lucide-icon [img]="groupFlujos.icon" [size]="18"></lucide-icon></span>
+            <span class="nav-label">{{ groupFlujos.label }}</span>
+            <lucide-icon
+              class="group-chevron"
+              [class.rotated]="groupFlujos.expanded()"
+              [img]="icons.chevronDown"
+              [size]="14"
+            ></lucide-icon>
+          </button>
+          <div class="nav-group-items" [class.open]="groupFlujos.expanded()">
+            @for (item of groupFlujos.items; track item.link) {
+              <a [routerLink]="item.link" routerLinkActive="active" class="nav-item nav-sub-item" [attr.aria-label]="item.label">
+                <span class="nav-icon"><lucide-icon [img]="item.icon" [size]="16"></lucide-icon></span>
+                <span class="nav-label">{{ item.label }}</span>
+              </a>
+            }
+          </div>
+        </div>
+
+        <!-- Grupo Análisis (C3) -->
+        <div class="nav-group">
+          <button
+            type="button"
+            class="nav-group-header"
+            [class.open]="groupAnalisis.expanded()"
+            (click)="toggleGroup(groupAnalisis)"
+            aria-label="Análisis"
+          >
+            <span class="nav-icon"><lucide-icon [img]="groupAnalisis.icon" [size]="18"></lucide-icon></span>
+            <span class="nav-label">{{ groupAnalisis.label }}</span>
+            <lucide-icon
+              class="group-chevron"
+              [class.rotated]="groupAnalisis.expanded()"
+              [img]="icons.chevronDown"
+              [size]="14"
+            ></lucide-icon>
+          </button>
+          <div class="nav-group-items" [class.open]="groupAnalisis.expanded()">
+            @for (item of groupAnalisis.items; track item.link) {
+              <a [routerLink]="item.link" routerLinkActive="active" class="nav-item nav-sub-item" [attr.aria-label]="item.label">
+                <span class="nav-icon"><lucide-icon [img]="item.icon" [size]="16"></lucide-icon></span>
+                <span class="nav-label">{{ item.label }}</span>
+              </a>
+            }
+          </div>
+        </div>
+      }
+
+      @if (role() === 'funcionario') {
+        <a routerLink="/funcionario/tramites" routerLinkActive="active" class="nav-item" aria-label="Mis Trámites">
+          <span class="nav-icon"><lucide-icon [img]="icons.tramites" [size]="18"></lucide-icon></span>
+          <span class="nav-label">Mis Trámites</span>
+        </a>
+        <a routerLink="/funcionario/bandeja" routerLinkActive="active" class="nav-item" aria-label="Bandeja de Entrada">
+          <span class="nav-icon"><lucide-icon [img]="icons.bandeja" [size]="18"></lucide-icon></span>
+          <span class="nav-label">Bandeja de Entrada</span>
+        </a>
+      }
+
+    } @else {
+      <!-- ── COLLAPSED: íconos planos, todos visibles ── -->
+      @for (item of visibleFlatItems(); track item.link) {
+        <a
+          [routerLink]="item.link"
+          routerLinkActive="active"
+          class="nav-item"
+          [attr.aria-label]="item.label"
+          [title]="item.label"
+        >
+          <span class="nav-icon"><lucide-icon [img]="item.icon" [size]="18"></lucide-icon></span>
+        </a>
+      }
+    }
+  </nav>
+
+  <!-- ── Footer: usuario + acciones (desplegable) ────────── -->
+  <footer class="foot">
+
+    @if (!collapsed()) {
+      <!-- Sección de usuario desplegable -->
+      <div class="nav-group user-group">
+        <button
+          type="button"
+          class="nav-group-header user-group-header"
+          [class.open]="userExpanded()"
+          (click)="toggleUser()"
+          aria-label="Cuenta"
+        >
+          @if (auth.getUsuario(); as u) {
+            <span class="user-avatar" aria-hidden="true">{{ u.nombre.charAt(0) }}</span>
+            <div class="user-meta">
+              <span class="user-name">{{ u.nombre }}</span>
+              <span class="user-role">{{ u.rol }}</span>
+            </div>
+          }
+          <lucide-icon
+            class="group-chevron"
+            [class.rotated]="userExpanded()"
+            [img]="icons.chevronDown"
+            [size]="14"
+          ></lucide-icon>
+        </button>
+
+        <div class="nav-group-items" [class.open]="userExpanded()">
+          <button
+            type="button"
+            class="nav-item nav-sub-item foot-action-item"
+            (click)="theme.toggle()"
+            [title]="theme.mode() === 'dark' ? 'Modo claro' : 'Modo oscuro'"
+            aria-label="Cambiar tema"
+          >
+            <span class="nav-icon">
+              <lucide-icon [img]="theme.mode() === 'dark' ? icons.sun : icons.moon" [size]="16"></lucide-icon>
+            </span>
+            <span class="nav-label">{{ theme.mode() === 'dark' ? 'Modo claro' : 'Modo oscuro' }}</span>
+          </button>
+
+          <button
+            type="button"
+            class="nav-item nav-sub-item foot-action-item danger"
+            (click)="auth.logout()"
+            aria-label="Cerrar sesión"
+          >
+            <span class="nav-icon"><lucide-icon [img]="icons.logout" [size]="16"></lucide-icon></span>
+            <span class="nav-label">Cerrar sesión</span>
+          </button>
+        </div>
+      </div>
+
+    } @else {
+      <!-- Collapsed footer: avatar + iconos de acción -->
+      @if (auth.getUsuario(); as u) {
+        <div class="user-card collapsed">
+          <span class="user-avatar" [title]="u.nombre + ' · ' + u.rol">{{ u.nombre.charAt(0) }}</span>
+        </div>
+      }
+      <div class="foot-actions">
+        <button
+          type="button"
+          class="foot-btn"
+          (click)="theme.toggle()"
+          [title]="theme.mode() === 'dark' ? 'Modo claro' : 'Modo oscuro'"
+          aria-label="Cambiar tema"
+        >
+          <lucide-icon [img]="theme.mode() === 'dark' ? icons.sun : icons.moon" [size]="16"></lucide-icon>
+        </button>
+        <button
+          type="button"
+          class="foot-btn danger"
+          (click)="auth.logout()"
+          aria-label="Cerrar sesión"
+          title="Cerrar sesión"
+        >
+          <lucide-icon [img]="icons.logout" [size]="16"></lucide-icon>
+        </button>
+      </div>
+    }
+
+    <button
+      type="button"
+      class="collapse-btn"
+      (click)="toggle()"
+      [attr.aria-label]="collapsed() ? 'Expandir menú' : 'Colapsar menú'"
+    >
+      <lucide-icon [img]="collapsed() ? icons.chevronRight : icons.chevronLeft" [size]="14"></lucide-icon>
+    </button>
+  </footer>
+</aside>

@@ -1,0 +1,84 @@
+<section class="container py-4" style="max-width: 860px">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a routerLink="/admin/diagramas" class="btn btn-sm btn-outline-secondary">Volver</a>
+    <h1 class="h4 mb-0">Generar Diagrama con IA</h1>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">{{ error() }}</div>
+  }
+
+  <article class="card shadow-sm border-0">
+    <div class="card-body">
+      <p class="text-muted mb-3">
+        Describe en lenguaje natural el proceso a modelar. El sistema detectara departamentos, actividades y nodos.
+      </p>
+
+      <div class="mb-3">
+        <label class="form-label" for="politica">Politica asociada (opcional)</label>
+        <select id="politica" class="form-select" [ngModel]="politicaId()" (ngModelChange)="politicaId.set($event)">
+          <option value="">-- Sin politica --</option>
+          @for (politica of politicas(); track politica.id) {
+            <option [value]="politica.id">{{ politica.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="nombreDiagrama">Nombre del diagrama *</label>
+        <input
+          id="nombreDiagrama"
+          type="text"
+          class="form-control"
+          placeholder="Ej: Flujo de reconexion electrica"
+          [ngModel]="nombreDiagrama()"
+          (ngModelChange)="nombreDiagrama.set($event)"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="prompt">Descripcion del flujo *</label>
+        <textarea
+          id="prompt"
+          class="form-control"
+          rows="5"
+          placeholder="Describe el proceso paso a paso..."
+          [ngModel]="prompt()"
+          (ngModelChange)="prompt.set($event)"
+        ></textarea>
+        <div class="form-text">
+          <button type="button" class="btn btn-link btn-sm p-0" (click)="usarEjemplo()">Usar ejemplo</button>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-info" (click)="generar()" [disabled]="loading() || !prompt().trim() || !nombreDiagrama().trim()">
+        @if (loading()) {
+          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        }
+        {{ loading() ? 'Generando...' : 'Generar Diagrama' }}
+      </button>
+    </div>
+  </article>
+
+  @if (resultado(); as data) {
+    <article class="card mt-4 border-success">
+      <div class="card-header bg-success text-white fw-semibold">Diagrama generado exitosamente</div>
+      <div class="card-body">
+        <p><strong>Nombre:</strong> {{ data.diagrama.nombre }}</p>
+        <p><strong>Nodos creados:</strong> {{ data.nodos.length }}</p>
+        <p><strong>Transiciones:</strong> {{ data.transiciones.length }}</p>
+
+        <div class="mt-2">
+          <p class="fw-semibold mb-1">Nodos:</p>
+          <div class="d-flex flex-wrap gap-1">
+            @for (nodo of data.nodos; track nodo.id) {
+              <span class="badge bg-primary">{{ nodo.nombre }}</span>
+            }
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-success mt-3" (click)="verDiagrama()">Ver y editar diagrama</button>
+      </div>
+    </article>
+  }
+</section>

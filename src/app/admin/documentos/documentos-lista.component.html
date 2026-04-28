@@ -1,0 +1,171 @@
+<section class="container-fluid py-4">
+  <h1 class="h4 mb-4">Gestión de Documentos</h1>
+
+  @if (exito()) {
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      {{ exito() }}
+      <button type="button" class="btn-close" (click)="exito.set('')"></button>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      {{ error() }}
+      <button type="button" class="btn-close" (click)="error.set('')"></button>
+    </div>
+  }
+
+  <div class="row g-4">
+    <!-- Formulario -->
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0">
+        <div class="card-header">
+          {{ modoEdicion() ? 'Editar' : 'Nuevo' }} Documento
+        </div>
+        <div class="card-body">
+          <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+            <div class="mb-3">
+              <label class="form-label small" for="nombre">
+                Nombre <span class="text-danger">*</span>
+              </label>
+              <input
+                id="nombre"
+                type="text"
+                class="form-control form-control-sm"
+                formControlName="nombre"
+                placeholder="Ej: Cédula de Identidad"
+              />
+              @if (form.get('nombre')?.invalid && form.get('nombre')?.touched) {
+                <small class="text-danger d-block mt-1">
+                  El nombre es requerido (mín. 3 caracteres)
+                </small>
+              }
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small" for="descripcion">
+                Descripción <span class="text-danger">*</span>
+              </label>
+              <textarea
+                id="descripcion"
+                class="form-control form-control-sm"
+                rows="3"
+                formControlName="descripcion"
+                placeholder="Describe el propósito de este documento..."
+              ></textarea>
+              @if (form.get('descripcion')?.invalid && form.get('descripcion')?.touched) {
+                <small class="text-danger d-block mt-1">
+                  La descripción es requerida (mín. 5 caracteres)
+                </small>
+              }
+            </div>
+
+            <div class="mb-3 form-check">
+              <input
+                id="activo"
+                type="checkbox"
+                class="form-check-input"
+                formControlName="activo"
+              />
+              <label class="form-check-label small" for="activo">
+                Activo (disponible para usar)
+              </label>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button
+                type="submit"
+                class="btn btn-primary btn-sm"
+                [disabled]="loading() || form.invalid"
+              >
+                {{ modoEdicion() ? 'Actualizar' : 'Crear' }}
+              </button>
+              @if (modoEdicion()) {
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  (click)="cancelar()"
+                >
+                  Cancelar
+                </button>
+              }
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de documentos -->
+    <div class="col-md-8">
+      <div class="card shadow-sm border-0">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Documentos Registrados</span>
+          <span class="badge bg-secondary">{{ documentos().length }}</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Estado</th>
+                <th>Fecha Creación</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (documento of documentos(); track documento.id) {
+                <tr>
+                  <td>
+                    <strong>{{ documento.nombre }}</strong>
+                  </td>
+                  <td>
+                    <small class="text-muted">{{ documento.descripcion }}</small>
+                  </td>
+                  <td>
+                    @if (documento.activo) {
+                      <span class="badge bg-success">Activo</span>
+                    } @else {
+                      <span class="badge bg-secondary">Inactivo</span>
+                    }
+                  </td>
+                  <td>
+                    <small class="text-muted">
+                      {{ documento.fechaCreacion | date: 'dd/MM/yyyy' }}
+                    </small>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        (click)="editar(documento)"
+                        title="Editar documento"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger"
+                        (click)="eliminar(documento.id)"
+                        title="Eliminar documento"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">
+                    Sin documentos registrados
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,54 @@
+<section class="container py-4" style="max-width: 640px">
+  <h1 class="h4 mb-4">{{ esEdicion ? 'Editar' : 'Nueva' }} Politica</h1>
+
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">{{ error() }}</div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="mb-3">
+      <label class="form-label" for="nombre">Nombre *</label>
+      <input
+        id="nombre"
+        class="form-control"
+        formControlName="nombre"
+        placeholder="ej: Nueva conexion residencial"
+      />
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="descripcion">Descripcion *</label>
+      <textarea id="descripcion" class="form-control" formControlName="descripcion" rows="3"></textarea>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label" for="categoria">Categoria *</label>
+        <select id="categoria" class="form-select" formControlName="categoria">
+          @for (categoria of categorias; track categoria) {
+            <option [value]="categoria">{{ categoria }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label" for="estado">Estado *</label>
+        <select id="estado" class="form-select" formControlName="estado">
+          <option value="borrador">Borrador</option>
+          <option value="activa">Activa</option>
+          <option value="archivada">Archivada</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary" [disabled]="loading() || form.invalid">
+        @if (loading()) {
+          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        }
+        {{ esEdicion ? 'Actualizar' : 'Crear' }}
+      </button>
+      <a routerLink="/admin/politicas" class="btn btn-secondary">Cancelar</a>
+    </div>
+  </form>
+</section>

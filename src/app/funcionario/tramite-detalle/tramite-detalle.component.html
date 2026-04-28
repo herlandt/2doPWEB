@@ -1,0 +1,146 @@
+@if (tramite(); as data) {
+  <section class="container py-4">
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a routerLink="/funcionario/tramites" class="btn btn-sm btn-outline-secondary">Volver</a>
+      <h1 class="h4 mb-0">Tramite: <code>{{ data.codigo }}</code></h1>
+      <span [class]="'badge ' + getEstadoBadgeClass(data.estado)">{{ data.estado }}</span>
+    </div>
+
+    @if (exito()) {
+      <div class="alert alert-success" role="alert">{{ exito() }}</div>
+    }
+
+    @if (error()) {
+      <div class="alert alert-danger" role="alert">{{ error() }}</div>
+    }
+
+    @if (loading()) {
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" aria-hidden="true"></div>
+      </div>
+    } @else {
+      <div class="row g-4">
+        <div class="col-md-5">
+          <article class="card mb-3 shadow-sm border-0">
+            <div class="card-header fw-semibold">Informacion del Tramite</div>
+            <div class="card-body small">
+              <table class="table table-sm mb-0">
+                <tr>
+                  <td class="text-muted">Politica</td>
+                  <td>{{ data.politicaNombre }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Cliente</td>
+                  <td>{{ data.clienteNombre ?? data.clienteId }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Inicio</td>
+                  <td>{{ data.fechaInicio | date: 'short' }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Progreso</td>
+                  <td>
+                    <div class="progress" style="height: 6px; width: 120px">
+                      <div class="progress-bar" [style.width.%]="data.progreso"></div>
+                    </div>
+                    {{ data.progreso }}%
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </article>
+
+          @if (data.nodoActual; as nodo) {
+            <article class="card shadow-sm border-0">
+              <div class="card-header fw-semibold d-flex justify-content-between">
+                <span>Nodo Actual</span>
+                <span [class]="'badge ' + getEstadoBadgeClass(nodo.estado)">{{ nodo.estado }}</span>
+              </div>
+              <div class="card-body">
+                <p class="fw-bold mb-1">{{ nodo.nombre }}</p>
+                <p class="text-muted small">Tipo: {{ nodo.tipo }}</p>
+
+                @if (puedeCompletar()) {
+                  <div class="mt-3 border-top pt-3">
+                    <p class="fw-semibold small mb-2">Completar este nodo:</p>
+
+                    <form [formGroup]="form" (ngSubmit)="completarNodo()" novalidate>
+                      <div class="mb-2">
+                        <label class="form-label small" for="resultado">Resultado *</label>
+                        <select id="resultado" class="form-select form-select-sm" formControlName="resultado">
+                          <option value="completado">Completado</option>
+                          <option value="aprobado">Aprobado</option>
+                          <option value="rechazado">Rechazado</option>
+                        </select>
+                      </div>
+
+                      <div class="mb-3">
+                        <label class="form-label small" for="observaciones">Observaciones</label>
+                        <textarea
+                          id="observaciones"
+                          class="form-control form-control-sm"
+                          rows="2"
+                          formControlName="observaciones"
+                        ></textarea>
+                      </div>
+
+                      <button type="submit" class="btn btn-success btn-sm w-100" [disabled]="procesando()">
+                        @if (procesando()) {
+                          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                        }
+                        {{ procesando() ? 'Procesando...' : 'Completar Nodo' }}
+                      </button>
+                    </form>
+                  </div>
+                }
+
+                @if (data.estado === 'completado') {
+                  <div class="text-center text-success mt-3">Tramite finalizado</div>
+                }
+              </div>
+            </article>
+          }
+        </div>
+
+        <div class="col-md-7">
+          <article class="card shadow-sm border-0">
+            <div class="card-header fw-semibold">Historial del Flujo</div>
+            <div class="card-body p-0">
+              <ul class="list-group list-group-flush">
+                @for (hito of data.historial; track hito.nodoId + '-' + (hito.fechaCompletado ?? '')) {
+                  <li class="list-group-item py-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <div>
+                        <span class="fw-semibold">{{ hito.nombre }}</span><br />
+                        @if (hito.observaciones) {
+                          <span class="text-muted small">{{ hito.observaciones }}</span>
+                        }
+                      </div>
+                      <div class="text-end">
+                        <span [class]="'badge ' + getEstadoBadgeClass(hito.estado)">{{ hito.estado }}</span><br />
+                        @if (hito.resultado) {
+                          <span class="text-muted small">{{ hito.resultado }}</span>
+                        }
+                      </div>
+                    </div>
+                  </li>
+                } @empty {
+                  <li class="list-group-item text-muted text-center py-3">Sin historial aun</li>
+                }
+              </ul>
+            </div>
+          </article>
+        </div>
+      </div>
+    }
+  </section>
+} @else {
+  <section class="container py-4 text-center">
+    @if (loading()) {
+      <div class="spinner-border text-primary" aria-hidden="true"></div>
+    } @else {
+      <p class="text-muted">Tramite no encontrado</p>
+      <a routerLink="/funcionario/tramites" class="btn btn-secondary">Volver</a>
+    }
+  </section>
+}

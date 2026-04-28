@@ -1,0 +1,21 @@
+@if (open()) {
+  <div class="cre-backdrop" (click)="onBackdrop()" aria-hidden="true"></div>
+  <div class="cre-modal-wrap" role="dialog" aria-modal="true" [attr.aria-label]="title()">
+    <div class="cre-modal" [class]="'size-' + size()">
+      @if (title()) {
+        <header class="cre-modal-head">
+          <h3 class="cre-modal-title">{{ title() }}</h3>
+          <button type="button" class="cre-btn cre-btn-ghost cre-btn-icon" (click)="close()" aria-label="Cerrar">
+            <lucide-icon [img]="closeIcon" [size]="16"></lucide-icon>
+          </button>
+        </header>
+      }
+      <div class="cre-modal-body">
+        <ng-content></ng-content>
+      </div>
+      <footer class="cre-modal-foot">
+        <ng-content select="[modal-footer]"></ng-content>
+      </footer>
+    </div>
+  </div>
+}

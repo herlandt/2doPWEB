@@ -1,0 +1,129 @@
+<section class="container-fluid py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h4 mb-0">Tablero de Rendimiento</h1>
+      <p class="text-muted small mb-0">Métricas de tiempos y alertas de cuellos de botella del workflow.</p>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="cargarCuellos()">
+      Actualizar
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" aria-hidden="true"></div>
+      <p class="mt-2 text-muted small">Calculando tiempos de atención...</p>
+    </div>
+  } @else {
+
+    <!-- CU-25: Alertas de cuellos de botella -->
+    @if (cuellosDeBotella().length > 0) {
+      <div class="card border-danger shadow-sm mb-4">
+        <div class="card-header bg-danger text-white d-flex align-items-center gap-2">
+          <strong>Alertas — Cuellos de Botella Detectados ({{ cuellosDeBotella().length }})</strong>
+        </div>
+        <div class="card-body bg-light">
+          <div class="row g-3">
+            @for (cb of cuellosDeBotella(); track cb.id) {
+              <div class="col-md-6">
+                <div class="card h-100 border-warning shadow-sm">
+                  <div class="card-body">
+                    <h6 class="card-title text-danger mb-2">Actividad: {{ cb.actividadId }}</h6>
+                    <p class="small mb-1">
+                      <strong>Departamento:</strong> {{ cb.departamentoId }}
+                    </p>
+                    <p class="small mb-1">
+                      <strong>Trámites afectados:</strong> {{ cb.tramitesAcumulados }}
+                    </p>
+                    <p class="small mb-2">
+                      Tiempo promedio sobrepasa el SLA en
+                      <strong class="text-danger">{{ cb.desviacionPorcentaje | number:'1.1-1' }}%</strong>.
+                    </p>
+                    @if (cb.causaSugerida) {
+                      <p class="small text-muted fst-italic mb-0">{{ cb.causaSugerida }}</p>
+                    }
+                  </div>
+                  <div class="card-footer bg-white border-0 pt-0">
+                    <small class="text-muted">Detectado: {{ cb.fechaDeteccion | date:'dd/MM/yyyy HH:mm' }}</small>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="alert alert-success mb-4">
+        El sistema opera dentro de los tiempos SLA. No hay anomalías detectadas.
+      </div>
+    }
+
+    <!-- CU-24: Buscar métricas por trámite -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header">
+        <strong>Métricas por Trámite (CU-24)</strong>
+      </div>
+      <div class="card-body">
+        <div class="d-flex gap-2 mb-3">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="ID del trámite..."
+            [value]="tramiteIdBusqueda()"
+            (input)="setTramiteIdBusqueda($event)"
+          />
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="!tramiteIdBusqueda()"
+            (click)="buscarMetricasTramite()"
+          >
+            Buscar
+          </button>
+        </div>
+
+        @if (metricas().length > 0) {
+          <div class="table-responsive">
+            <table class="table table-hover table-sm align-middle mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Trámite ID</th>
+                  <th>ID Actividad</th>
+                  <th>Departamento</th>
+                  <th>Tiempo Real (h)</th>
+                  <th>Estatus SLA</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of metricas(); track m.actividadId) {
+                  <tr>
+                    <td class="small text-muted">{{ m.tramiteId }}</td>
+                    <td><strong>{{ m.actividadId }}</strong></td>
+                    <td>{{ m.departamentoId }}</td>
+                    <td>{{ formatearHoras(m.tiempoSegundos) }} h</td>
+                    <td>
+                      @if (m.superoSla) {
+                        <span class="badge bg-danger">SLA Excedido</span>
+                      } @else {
+                        <span class="badge bg-success">Dentro del SLA</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="text-muted small mb-0">Ingrese un ID de trámite para ver sus métricas de tiempo.</p>
+        }
+      </div>
+    </div>
+
+  }
+
+</section>

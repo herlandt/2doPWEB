@@ -1,0 +1,78 @@
+<section class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Gestion de Usuarios</h1>
+    <a class="btn btn-primary" routerLink="/admin/usuarios/nuevo">+ Nuevo Usuario</a>
+  </div>
+
+  @if (exito()) {
+    <div class="alert alert-success" role="alert">{{ exito() }}</div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" aria-hidden="true"></div>
+    </div>
+  } @else {
+    <div class="card shadow-sm border-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Tipo</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (usuario of usuarios(); track usuario.id) {
+              <tr>
+                <td>{{ usuario.nombre }} {{ usuario.apellido }}</td>
+                <td>{{ usuario.email }}</td>
+                <td>{{ getNombreRol(usuario.rolId) }}</td>
+                <td>
+                  <span
+                    class="badge"
+                    [class.bg-danger]="usuario.tipo === 'administrador'"
+                    [class.bg-primary]="usuario.tipo === 'funcionario'"
+                    [class.bg-secondary]="usuario.tipo === 'cliente'"
+                  >
+                    {{ usuario.tipo }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge" [class.bg-success]="usuario.activo" [class.bg-secondary]="!usuario.activo">
+                    {{ usuario.activo ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <a [routerLink]="['/admin/usuarios', usuario.id, 'editar']" class="btn btn-outline-secondary">
+                      Editar
+                    </a>
+                    <button type="button" (click)="toggleActivo(usuario)" class="btn btn-outline-warning">
+                      {{ usuario.activo ? 'Desactivar' : 'Activar' }}
+                    </button>
+                    <button type="button" (click)="eliminar(usuario.id)" class="btn btn-outline-danger">
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="text-center text-muted py-4">Sin usuarios registrados</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</section>

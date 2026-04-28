@@ -1,0 +1,263 @@
+@if (loading()) {
+  <div class="text-center py-5">
+    <div class="spinner-border text-primary" aria-hidden="true"></div>
+    <p class="mt-2 text-muted small">Cargando expediente...</p>
+  </div>
+}
+
+@if (!loading() && error() && !expediente()) {
+  <div class="container-fluid py-4">
+    <div class="alert alert-danger">{{ error() }}</div>
+    <a [routerLink]="volverUrl()" class="btn btn-secondary btn-sm">Volver</a>
+  </div>
+}
+
+@if (!loading() && expediente(); as exp) {
+  <section class="container-fluid py-4">
+
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="h4 mb-0">Expediente Digital</h1>
+        <span class="text-muted small">Trámite ID: {{ exp.expediente?.tramiteId ?? tramiteId }}</span>
+      </div>
+      <a [routerLink]="volverUrl()" class="btn btn-sm btn-outline-secondary">
+        ← Volver
+      </a>
+    </div>
+
+    @if (error()) {
+      <div class="alert alert-danger mb-3">{{ error() }}</div>
+    }
+    @if (exito()) {
+      <div class="alert alert-success mb-3">{{ exito() }}</div>
+    }
+
+    <div class="row g-4">
+      <!-- Secciones del expediente -->
+      <div class="col-md-8">
+        @for (seccion of exp.secciones; track (seccion.infoSeccion?.nodoId || $index)) {
+          <div class="card mb-3 shadow-sm border-0">
+            <div
+              class="card-header"
+              [class.bg-success]="seccion.infoSeccion?.estado === 'completada'"
+              [class.text-white]="seccion.infoSeccion?.estado === 'completada'"
+              [class.bg-warning]="seccion.infoSeccion?.estado === 'en_curso'"
+              [class.bg-light]="seccion.infoSeccion?.estado === 'bloqueada'"
+            >
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">
+                  Sección {{ seccion.infoSeccion?.ordenSeccion }} —
+                  Depto: {{ seccion.departamentoNombre ?? seccion.infoSeccion?.departamentoId ?? '—' }}
+                </span>
+                <span
+                  class="badge"
+                  [class.bg-success]="seccion.infoSeccion?.estado === 'completada'"
+                  [class.bg-warning]="seccion.infoSeccion?.estado === 'en_curso'"
+                  [class.bg-secondary]="seccion.infoSeccion?.estado === 'bloqueada'"
+                  [class.text-dark]="seccion.infoSeccion?.estado === 'en_curso'"
+                >
+                  {{ seccion.infoSeccion?.estado }}
+                </span>
+              </div>
+            </div>
+            <div class="card-body p-0">
+              @if (seccion.campos && seccion.campos.length > 0) {
+                <ul class="list-group list-group-flush">
+                  @for (campo of seccion.campos; track (campo.campoPlantillaId || $index)) {
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                      <strong class="text-muted small">{{ campo.campoPlantillaId }}</strong>
+                      <span class="ms-2 text-end">{{ campo.valor ?? 'Sin valor' }}</span>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="text-muted small p-3 mb-0">Sin campos registrados.</p>
+              }
+            </div>
+          </div>
+        } @empty {
+          <div class="text-muted py-4 text-center">No hay secciones en este expediente.</div>
+        }
+      </div>
+
+      <!-- Resumen lateral -->
+      <div class="col-md-4">
+        <div class="card shadow-sm border-info sticky-top" style="top: 1rem">
+          <div class="card-header bg-info text-white">
+            <strong>Resumen del Expediente</strong>
+          </div>
+          <div class="card-body small">
+            <p class="mb-1"><strong>Trámite ID:</strong> {{ exp.expediente?.tramiteId ?? tramiteId }}</p>
+            <p class="mb-1"><strong>Creado:</strong> {{ formatearFecha(exp.expediente?.fechaCreacion) }}</p>
+            <p class="mb-1"><strong>Última actualización:</strong> {{ formatearFecha(exp.expediente?.ultimaActualizacion) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    @if (mostrarAcciones()) {
+      <!-- ── Panel de Decisiones (G2W-C2: CU-16, CU-18, CU-17, CU-11) ── -->
+      <hr class="mt-5">
+      <div class="card border-primary mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Informe y Resolución (Acción Actual)</h5>
+        </div>
+        <div class="card-body">
+
+        <!-- CU-16 + CU-30: Justificación con dictado por voz -->
+        <div class="mb-3">
+          <label class="form-label fw-bold" for="justificacion">
+            Justificación / Observaciones <span class="text-danger">*</span>
+          </label>
+          <div class="input-group">
+            <textarea
+              id="justificacion"
+              class="form-control"
+              rows="3"
+              [value]="justificacion()"
+              (input)="setJustificacion($event)"
+              [placeholder]="grabando() ? 'Grabando... Habla ahora.' : 'Escriba o dicte sus observaciones...'"
+              [class.border-danger]="grabando()"
+            ></textarea>
+            <!-- CU-30: botón micrófono -->
+            <button
+              type="button"
+              class="btn"
+              [class.btn-danger]="grabando()"
+              [class.btn-outline-secondary]="!grabando()"
+              [title]="grabando() ? 'Detener grabación' : 'Dictar por voz (CU-30)'"
+              (click)="grabando() ? detenerGrabacion() : iniciarGrabacion()"
+            >
+              {{ grabando() ? '⏹' : '🎙' }}
+            </button>
+          </div>
+
+          @if (grabando()) {
+            <div class="text-danger small mt-1 d-flex align-items-center gap-1">
+              <span class="spinner-grow spinner-grow-sm text-danger" aria-hidden="true"></span>
+              Grabando... Haz clic en el botón para detener y transcribir.
+            </div>
+          }
+
+          @if (errorMicrofono()) {
+            <div class="alert alert-warning py-2 mt-2 small">{{ errorMicrofono() }}</div>
+          }
+        </div>
+
+        <!-- CU-17: Selector de nodo destino (solo al elegir DEVOLVER) -->
+        @if (accionSeleccionada() === 'DEVOLVER') {
+          <div class="mb-3 p-3 bg-warning-subtle border rounded">
+            <label class="form-label fw-bold" for="nodoDestino">Devolver a la sección:</label>
+            <select
+              id="nodoDestino"
+              class="form-select"
+              [value]="nodoDestinoId()"
+              (change)="setNodoDestino($event)"
+            >
+              <option value="" disabled>-- Seleccione a dónde retroceder --</option>
+              @for (s of seccionesAnteriores(); track (s.infoSeccion?.nodoId || $index)) {
+                <option [value]="s.infoSeccion.nodoId">
+                  Sección {{ s.infoSeccion.ordenSeccion }} — {{ s.departamentoNombre ?? s.infoSeccion.departamentoId }}
+                </option>
+              }
+            </select>
+          </div>
+        }
+
+        <!-- CU-11: Selector de funcionario (solo al elegir DERIVAR) -->
+        @if (accionSeleccionada() === 'DERIVAR') {
+          <div class="mb-3 p-3 bg-light border rounded">
+            <label class="form-label fw-bold" for="funcionarioDestino">Seleccione al nuevo responsable:</label>
+            <select
+              id="funcionarioDestino"
+              class="form-select"
+              [value]="funcionarioDestinoId()"
+              (change)="setFuncionarioDestino($event)"
+            >
+              <option value="" disabled>-- Seleccione un compañero --</option>
+              @for (f of listaFuncionarios(); track f.id) {
+                <option [value]="f.id">{{ f.nombre }} ({{ f.email }})</option>
+              }
+            </select>
+          </div>
+        }
+
+        <!-- Botonera principal -->
+        <div class="d-flex flex-wrap gap-2 mt-3">
+
+          <!-- CU-18: Aprobar -->
+          <button
+            type="button"
+            class="btn btn-success"
+            [disabled]="procesando() || !justificacion()"
+            (click)="ejecutarAccion('APROBAR')"
+          >
+            Aprobar (Avanzar)
+          </button>
+
+          <!-- CU-18: Rechazar -->
+          <button
+            type="button"
+            class="btn btn-danger"
+            [disabled]="procesando() || !justificacion()"
+            (click)="ejecutarAccion('RECHAZAR')"
+          >
+            Rechazar Definitivo
+          </button>
+
+          <!-- CU-17: Devolver -->
+          <button
+            type="button"
+            class="btn btn-warning"
+            [disabled]="procesando()"
+            (click)="prepararDevolucion()"
+          >
+            Devolver a Corregir
+          </button>
+          @if (accionSeleccionada() === 'DEVOLVER') {
+            <button
+              type="button"
+              class="btn btn-warning"
+              [disabled]="procesando() || !justificacion() || !nodoDestinoId()"
+              (click)="ejecutarAccion('DEVOLVER')"
+            >
+              Confirmar Devolución
+            </button>
+          }
+
+          <!-- CU-11: Derivar -->
+          <button
+            type="button"
+            class="btn btn-info text-white"
+            [disabled]="procesando()"
+            (click)="prepararDerivacion()"
+          >
+            Derivar a Compañero
+          </button>
+          @if (accionSeleccionada() === 'DERIVAR') {
+            <button
+              type="button"
+              class="btn btn-info text-white"
+              [disabled]="procesando() || !funcionarioDestinoId() || !justificacion()"
+              (click)="ejecutarAccion('DERIVAR')"
+            >
+              Confirmar Derivación
+            </button>
+          }
+
+        </div>
+
+        @if (procesando()) {
+          <div class="mt-3 text-center">
+            <div class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></div>
+            <span class="ms-2 small text-muted">Procesando...</span>
+          </div>
+        }
+
+        </div>
+      </div>
+    }
+
+  </section>
+}

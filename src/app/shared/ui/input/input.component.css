@@ -1,0 +1,47 @@
+:host { display: block; }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--cre-text);
+}
+.req { color: var(--cre-danger-500); margin-left: 2px; }
+
+.field-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.leading-icon,
+.trailing-icon {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--cre-text-subtle);
+}
+.leading-icon { left: 0.7rem; }
+.trailing-icon { right: 0.7rem; }
+.trailing-icon.success { color: var(--cre-success-600); }
+.trailing-icon.error { color: var(--cre-danger-600); }
+
+.cre-input.has-leading { padding-left: 2.2rem; }
+.field.has-error .cre-input,
+.field.has-success .cre-input { padding-right: 2.2rem; }
+
+.msg {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+.msg-hint { color: var(--cre-text-muted); }
+.msg-error { color: var(--cre-danger-600); }
+.msg-success { color: var(--cre-success-600); }

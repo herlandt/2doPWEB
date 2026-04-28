@@ -1,0 +1,16 @@
+<div class="cre-toast-stack" role="region" aria-live="polite" aria-label="Notificaciones">
+  @for (t of svc.toasts(); track t.id) {
+    <div class="cre-toast" [class]="'variant-' + t.variant" role="alert">
+      <span class="cre-toast-icon" aria-hidden="true">
+        <lucide-icon [img]="iconFor(t.variant)" [size]="18"></lucide-icon>
+      </span>
+      <div class="cre-toast-body">
+        @if (t.title) { <strong class="cre-toast-title">{{ t.title }}</strong> }
+        <span class="cre-toast-msg">{{ t.message }}</span>
+      </div>
+      <button type="button" class="cre-toast-close" (click)="svc.dismiss(t.id)" aria-label="Cerrar">
+        <lucide-icon [img]="closeIcon" [size]="14"></lucide-icon>
+      </button>
+    </div>
+  }
+</div>

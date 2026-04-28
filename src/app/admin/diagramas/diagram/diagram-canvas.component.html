@@ -1,0 +1,187 @@
+<div class="diagram-shell" [class.is-readonly]="readonly()" [class.palette-collapsed]="paletteCollapsed()">
+  @if (!readonly()) {
+    <aside class="palette" [class.collapsed]="paletteCollapsed()">
+      <header class="palette-head">
+        @if (!paletteCollapsed()) {
+          <span class="palette-title-block">
+            <span class="palette-title">Paleta UML</span>
+            <span class="palette-hint">Arrastra al lienzo</span>
+          </span>
+        }
+        <button
+          type="button"
+          class="palette-toggle"
+          (click)="togglePalette()"
+          [title]="paletteCollapsed() ? 'Expandir paleta' : 'Colapsar paleta'"
+          [attr.aria-label]="paletteCollapsed() ? 'Expandir paleta' : 'Colapsar paleta'"
+        >
+          <lucide-icon [img]="paletteCollapsed() ? icons.panelOpen : icons.panelClose" [size]="16"></lucide-icon>
+        </button>
+      </header>
+
+      <div class="palette-list">
+        @for (item of paletteItems; track item.tipo) {
+          <button
+            type="button"
+            class="palette-item"
+            draggable="true"
+            (dragstart)="onPaletteDragStart($event, item.tipo)"
+            [title]="paletteCollapsed() ? (item.label + ' — ' + item.descripcion) : item.descripcion"
+          >
+            <span class="palette-glyph" [class]="'glyph-' + item.tipo" aria-hidden="true">
+              @switch (item.tipo) {
+                @case ('inicio')    { <span class="g-circle g-success"></span> }
+                @case ('fin')       { <span class="g-circle g-end"></span> }
+                @case ('actividad') { <span class="g-rect g-brand"></span> }
+                @case ('decision')  { <span class="g-diamond"></span> }
+                @case ('fork')      { <span class="g-bar"></span> }
+                @case ('join')      { <span class="g-bar"></span> }
+              }
+            </span>
+            @if (!paletteCollapsed()) {
+              <span class="palette-meta">
+                <span class="palette-label">{{ item.label }}</span>
+                <span class="palette-desc">{{ item.descripcion }}</span>
+              </span>
+            }
+          </button>
+        }
+
+        <div class="palette-section">
+          <span class="palette-section-title">Configuracion rapida</span>
+          <button
+            type="button"
+            class="palette-item palette-action"
+            (click)="createDepartamento.emit()"
+            [title]="paletteCollapsed() ? 'Crear departamento' : 'Crear departamento'"
+          >
+            <span class="palette-glyph" aria-hidden="true">🏢</span>
+            @if (!paletteCollapsed()) {
+              <span class="palette-meta">
+                <span class="palette-label">Crear departamento</span>
+                <span class="palette-desc">Agrega un nuevo departamento</span>
+              </span>
+            }
+          </button>
+          <button
+            type="button"
+            class="palette-item palette-action"
+            (click)="createActividad.emit()"
+            [title]="paletteCollapsed() ? 'Crear actividad' : 'Crear actividad'"
+          >
+            <span class="palette-glyph" aria-hidden="true">🧩</span>
+            @if (!paletteCollapsed()) {
+              <span class="palette-meta">
+                <span class="palette-label">Crear actividad</span>
+                <span class="palette-desc">Agrega una nueva actividad</span>
+              </span>
+            }
+          </button>
+        </div>
+      </div>
+    </aside>
+  }
+
+  <div class="canvas-wrap">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        @if (!readonly()) {
+          <div class="mode-group" role="group" aria-label="Modo del cursor">
+            <button
+              type="button"
+              class="mode-btn"
+              [class.active]="cursorMode() === 'move'"
+              (click)="setMode('move')"
+              title="Mover nodos"
+            >
+              <lucide-icon [img]="icons.modeMove" [size]="14"></lucide-icon>
+            </button>
+            <button
+              type="button"
+              class="mode-btn"
+              [class.active]="cursorMode() === 'pan'"
+              (click)="setMode('pan')"
+              title="Arrastrar lienzo"
+            >
+              <lucide-icon [img]="icons.modePan" [size]="14"></lucide-icon>
+            </button>
+            <button
+              type="button"
+              class="mode-btn"
+              [class.active]="cursorMode() === 'connect'"
+              (click)="setMode('connect')"
+              title="Solo conectar enlaces"
+            >
+              <lucide-icon [img]="icons.modeConnect" [size]="14"></lucide-icon>
+            </button>
+          </div>
+
+          <span class="toolbar-divider"></span>
+
+          <button type="button" class="cre-btn cre-btn-ghost cre-btn-sm" (click)="undo()" title="Deshacer">
+            <lucide-icon [img]="icons.undo" [size]="14"></lucide-icon>
+          </button>
+          <button type="button" class="cre-btn cre-btn-ghost cre-btn-sm" (click)="redo()" title="Rehacer">
+            <lucide-icon [img]="icons.redo" [size]="14"></lucide-icon>
+          </button>
+          <span class="toolbar-divider"></span>
+        }
+        <span class="toolbar-hint">
+          @if (!readonly()) {
+            @switch (cursorMode()) {
+              @case ('move')    { Modo Mover · arrastra nodos · Supr para eliminar }
+              @case ('pan')     { Modo Mano · arrastra el lienzo con click izquierdo }
+              @case ('connect') { Modo Conexión · arrastra desde borde de un nodo a otro }
+            }
+          } @else {
+            Vista de solo lectura
+          }
+        </span>
+      </div>
+      <div class="toolbar-right">
+        <button type="button" class="cre-btn cre-btn-ghost cre-btn-sm" (click)="zoomOut()" title="Alejar">
+          <lucide-icon [img]="icons.zoomOut" [size]="14"></lucide-icon>
+        </button>
+        <span class="zoom-readout">{{ (zoomLevel() * 100) | number:'1.0-0' }}%</span>
+        <button type="button" class="cre-btn cre-btn-ghost cre-btn-sm" (click)="zoomIn()" title="Acercar">
+          <lucide-icon [img]="icons.zoomIn" [size]="14"></lucide-icon>
+        </button>
+        <button type="button" class="cre-btn cre-btn-ghost cre-btn-sm" (click)="zoomFit()" title="Ajustar a contenido">
+          <lucide-icon [img]="icons.fit" [size]="14"></lucide-icon>
+        </button>
+      </div>
+    </div>
+
+    <div
+      #canvas
+      class="canvas"
+      [class.cursor-mode-move]="cursorMode() === 'move'"
+      [class.cursor-mode-pan]="cursorMode() === 'pan'"
+      [class.cursor-mode-connect]="cursorMode() === 'connect'"
+      (dragover)="onCanvasDragOver($event)"
+      (drop)="onCanvasDrop($event)"
+      tabindex="0"
+    ></div>
+
+    <div class="minimap" #minimap></div>
+  </div>
+
+  @if (contextMenu(); as ctx) {
+    <div
+      class="ctx-menu"
+      role="menu"
+      [style.left.px]="ctx.x"
+      [style.top.px]="ctx.y"
+    >
+      <button
+        type="button"
+        class="ctx-item ctx-danger"
+        role="menuitem"
+        (click)="onContextMenuDelete()"
+      >
+        <lucide-icon [img]="icons.trash" [size]="13"></lucide-icon>
+        {{ ctx.cellType === 'node' ? 'Eliminar nodo' : 'Eliminar conexión' }}
+      </button>
+    </div>
+  }
+</div>

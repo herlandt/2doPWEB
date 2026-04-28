@@ -1,0 +1,60 @@
+<section class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h4 mb-0">Bandeja de Entrada</h1>
+      <p class="text-muted small mb-0">Trámites pendientes de su revisión según el Workflow.</p>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="cargar()">
+      Actualizar
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" aria-hidden="true"></div>
+    </div>
+  } @else {
+    @if (tramites().length === 0) {
+      <div class="text-center text-muted py-5">
+        <p class="mb-0">No tiene trámites asignados en este momento.</p>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th>Código</th>
+              <th>Política</th>
+              <th>Estado Actual</th>
+              <th>Fecha de Recibido</th>
+              <th>Prioridad</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (tramite of tramites(); track tramite.id) {
+              <tr>
+                <td><strong>{{ tramite.codigo }}</strong></td>
+                <td>{{ tramite.politicaNombre ?? '—' }}</td>
+                <td>
+                  <span class="badge bg-warning text-dark">{{ tramite.estadoActual ?? tramite.estado }}</span>
+                </td>
+                <td>{{ formatearFecha(tramite.fechaInicio) }}</td>
+                <td>{{ tramite.prioridad ?? '—' }}</td>
+                <td>
+                  <button class="btn btn-primary btn-sm" type="button" (click)="verExpediente(tramite.id)">
+                    Revisar Expediente
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>

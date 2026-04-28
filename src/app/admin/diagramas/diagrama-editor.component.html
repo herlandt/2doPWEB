@@ -1,0 +1,517 @@
+@if (!diagramaId) {
+  <section class="diagram-create">
+    <div class="diagram-create-head">
+      <a routerLink="/admin/diagramas" class="cre-btn cre-btn-secondary cre-btn-sm">← Volver</a>
+      <div>
+        <h1 class="diagram-create-title">Nuevo Diagrama</h1>
+        <p class="diagram-create-sub">Define los datos básicos. Después podrás dibujar el flujo arrastrando elementos.</p>
+      </div>
+    </div>
+
+    @if (error()) {
+      <div class="cre-alert cre-alert-danger">
+        <strong>{{ error() }}</strong>
+        @if (errorDetalles().length > 0) {
+          <ul class="cre-alert-list">
+            @for (d of errorDetalles(); track d) { <li>{{ d }}</li> }
+          </ul>
+        }
+      </div>
+    }
+
+    <div class="cre-card">
+      <div class="cre-card-body">
+        <div class="form-row">
+          <label class="form-label" for="nombre">Nombre <span class="req">*</span></label>
+          <input #nombre id="nombre" class="cre-input" placeholder="Flujo · Nueva conexión residencial" />
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="politica">Política (opcional)</label>
+          <select #politica id="politica" class="cre-input">
+            <option value="">— Sin política —</option>
+            @for (item of politicas(); track item.id) {
+              <option [value]="item.id">{{ item.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="estado">Estado</label>
+          <select #estado id="estado" class="cre-input">
+            <option value="borrador">Borrador</option>
+            <option value="publicado">Publicado</option>
+            <option value="archivado">Archivado</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">Departamentos que participan (calles del diagrama) <span class="req">*</span></label>
+          <p class="diagram-create-sub" style="margin: 4px 0 8px 0">
+            Selecciona los departamentos cuyos funcionarios intervendrán en este flujo. Cada uno será una swimlane.
+          </p>
+          @if (departamentos().length === 0) {
+            <div class="cre-alert cre-alert-danger">
+              No hay departamentos registrados. Crea departamentos primero en
+              <a routerLink="/admin/departamentos">/admin/departamentos</a>.
+            </div>
+          } @else {
+            <div style="display: flex; flex-wrap: wrap; gap: 8px">
+              @for (depto of departamentos(); track depto.id) {
+                <label
+                  style="display: inline-flex; align-items: center; gap: 6px;
+                         padding: 6px 12px; border: 1px solid var(--cre-border, #ced4da);
+                         border-radius: 6px; cursor: pointer; user-select: none;"
+                  [style.background]="isSwimlaneSeleccionada(depto.codigo) ? 'var(--cre-primary-light, #e7efff)' : 'transparent'"
+                  [style.borderColor]="isSwimlaneSeleccionada(depto.codigo) ? 'var(--cre-primary, #3b5bdb)' : 'var(--cre-border, #ced4da)'"
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="isSwimlaneSeleccionada(depto.codigo)"
+                    (change)="toggleSwimlane(depto.codigo)"
+                  />
+                  <strong>{{ depto.codigo }}</strong>
+                  <span style="color: var(--cre-text-muted, #6c757d)">— {{ depto.nombre }}</span>
+                </label>
+              }
+            </div>
+          }
+        </div>
+
+        <button
+          type="button"
+          class="cre-btn cre-btn-primary"
+          (click)="crearDiagrama(nombre.value, politica.value, estado.value)"
+        >
+          Crear diagrama
+        </button>
+      </div>
+    </div>
+  </section>
+} @else {
+  @if (diagrama(); as data) {
+    <section class="diagram-page">
+      <header class="diagram-head">
+        <div class="diagram-head-left">
+          <a routerLink="/admin/diagramas" class="cre-btn cre-btn-secondary cre-btn-sm">← Volver</a>
+          <div class="diagram-titles">
+            <h1 class="diagram-title">{{ data.nombre }}</h1>
+            <p class="diagram-meta">
+              <span class="cre-badge cre-badge-brand">v{{ data.versionActual }}</span>
+              <span class="cre-badge">{{ data.estado }}</span>
+              <span class="meta-sep">·</span>
+              <span>{{ getNombrePolitica(data.politicaId) }}</span>
+              <span class="meta-sep">·</span>
+              <span>{{ nodos().length }} nodos · {{ transiciones().length }} transiciones</span>
+            </p>
+          </div>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+          @if (data.estado === 'borrador') {
+            <button type="button" class="cre-btn cre-btn-success cre-btn-sm" (click)="cambiarEstado('publicado')">
+              Publicar
+            </button>
+          }
+          @if (data.estado === 'publicado') {
+            <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="cambiarEstado('archivado')">
+              Archivar
+            </button>
+          }
+          <!-- CU-15: botón de colaboración -->
+          <button type="button" class="cre-btn cre-btn-primary cre-btn-sm" (click)="abrirModalColab()">
+            + Invitar Colaborador
+          </button>
+        </div>
+      </header>
+
+      <!-- ── Modal CU-15: Invitar Colaborador ── -->
+      @if (mostrarModalColab()) {
+        <div
+          class="modal-backdrop-colab"
+          style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1040;display:flex;align-items:center;justify-content:center"
+          (click)="cerrarModalColab()"
+        >
+          <div
+            class="cre-card"
+            style="width:100%;max-width:480px;z-index:1050;border-radius:12px;overflow:hidden"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="cre-card-body" style="padding:0">
+              <div style="background:var(--cre-primary,#3b5bdb);color:#fff;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center">
+                <strong>Invitar Colaborador (CU-15)</strong>
+                <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="cerrarModalColab()" style="padding:2px 8px">×</button>
+              </div>
+
+              <div style="padding:1.25rem">
+                <p class="small text-muted mb-3">
+                  Selecciona el usuario que colaborará en el diseño de este diagrama.<br>
+                  Un usuario no puede participar en más de 4 diagramas activos simultáneamente.
+                </p>
+
+                @if (cargandoUsuarios()) {
+                  <div class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></div>
+                    <span class="ms-2 small">Cargando usuarios...</span>
+                  </div>
+                } @else {
+                  <div class="form-row mb-3">
+                    <label class="form-label" for="colab-usuario">Usuario a invitar</label>
+                    <select
+                      id="colab-usuario"
+                      class="cre-input"
+                      [value]="usuarioInvitadoId()"
+                      (change)="setUsuarioInvitado($event)"
+                    >
+                      <option value="" disabled>-- Seleccione un usuario --</option>
+                      @for (u of usuariosDisponibles(); track u.id) {
+                        <option [value]="u.id">{{ u.nombre }} — {{ u.email }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="form-row">
+                    <label class="form-label" for="colab-permisos">Permisos</label>
+                    <select
+                      id="colab-permisos"
+                      class="cre-input"
+                      [value]="permisosInvitado()"
+                      (change)="setPermisosInvitado($event)"
+                    >
+                      <option value="editor">Editor (puede modificar el diagrama)</option>
+                      <option value="visualizador">Visualizador (solo lectura)</option>
+                    </select>
+                  </div>
+                }
+              </div>
+
+              <div style="padding:0.75rem 1.25rem;border-top:1px solid var(--cre-border,#e9ecef);display:flex;gap:.5rem;justify-content:flex-end">
+                <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="cerrarModalColab()">Cancelar</button>
+                <button
+                  type="button"
+                  class="cre-btn cre-btn-primary cre-btn-sm"
+                  [disabled]="!usuarioInvitadoId() || enviandoInvitacion()"
+                  (click)="enviarInvitacion()"
+                >
+                  @if (enviandoInvitacion()) { Enviando… } @else { Enviar Invitación }
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── Modal: Crear Departamento ── -->
+      @if (mostrarModalDepto()) {
+        <div class="modal-backdrop" (click)="cerrarModalDepto()">
+          <div class="modal-card" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <strong>Nuevo Departamento</strong>
+              <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="cerrarModalDepto()">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-row">
+                <label class="form-label" for="depto-codigo">Codigo <span class="req">*</span></label>
+                <input
+                  id="depto-codigo"
+                  class="cre-input"
+                  [value]="deptoCodigo()"
+                  (input)="deptoCodigo.set($any($event.target).value)"
+                  placeholder="ATC"
+                />
+              </div>
+              <div class="form-row">
+                <label class="form-label" for="depto-nombre">Nombre <span class="req">*</span></label>
+                <input
+                  id="depto-nombre"
+                  class="cre-input"
+                  [value]="deptoNombre()"
+                  (input)="deptoNombre.set($any($event.target).value)"
+                  placeholder="Atencion al Cliente"
+                />
+              </div>
+              <div class="form-row">
+                <label class="form-label" for="depto-desc">Descripcion</label>
+                <textarea
+                  id="depto-desc"
+                  class="cre-input"
+                  rows="3"
+                  [value]="deptoDescripcion()"
+                  (input)="deptoDescripcion.set($any($event.target).value)"
+                  placeholder="Recepcion de solicitudes"
+                ></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="cerrarModalDepto()">Cancelar</button>
+              <button type="button" class="cre-btn cre-btn-primary cre-btn-sm" (click)="crearDepartamento()">Crear</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── Modal: Crear Actividad ── -->
+      @if (mostrarModalActividad()) {
+        <div class="modal-backdrop" (click)="cerrarModalActividad()">
+          <div class="modal-card" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <strong>Nueva Actividad</strong>
+              <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="cerrarModalActividad()">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-row">
+                <label class="form-label" for="act-nombre">Nombre <span class="req">*</span></label>
+                <input
+                  id="act-nombre"
+                  class="cre-input"
+                  [value]="actNombre()"
+                  (input)="actNombre.set($any($event.target).value)"
+                  placeholder="Inspeccion tecnica"
+                />
+              </div>
+              <div class="form-row">
+                <label class="form-label" for="act-depto">Departamento <span class="req">*</span></label>
+                <select
+                  id="act-depto"
+                  class="cre-input"
+                  [value]="actDepartamentoId()"
+                  (change)="onActDepartamentoChange($event)"
+                >
+                  <option value="">-- Seleccione --</option>
+                  @for (depto of departamentos(); track depto.id) {
+                    <option [value]="depto.id">{{ depto.codigo }} · {{ depto.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-row">
+                <label class="form-label" for="act-funcionario">Funcionario responsable</label>
+                <select
+                  id="act-funcionario"
+                  class="cre-input"
+                  [value]="actFuncionarioResponsableId()"
+                  (change)="actFuncionarioResponsableId.set($any($event.target).value)"
+                >
+                  <option value="">-- Sin asignar --</option>
+                  @for (f of funcionariosFiltrados(); track f.id) {
+                    <option [value]="f.id">{{ f.nombre }} ({{ f.email }})</option>
+                  }
+                </select>
+              </div>
+              <div class="form-row">
+                <label class="form-label" for="act-sla">SLA (horas) <span class="req">*</span></label>
+                <input
+                  id="act-sla"
+                  type="number"
+                  min="1"
+                  class="cre-input"
+                  [value]="actSlaHoras()"
+                  (input)="actSlaHoras.set($any($event.target).value)"
+                />
+              </div>
+              <div class="form-row">
+                <label class="form-label" for="act-tipo">Tipo salida</label>
+                <select
+                  id="act-tipo"
+                  class="cre-input"
+                  [value]="actTipoSalida()"
+                  (change)="actTipoSalida.set($any($event.target).value)"
+                >
+                  @for (tipo of tiposSalida; track tipo) {
+                    <option [value]="tipo">{{ tipo }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-row">
+                <label class="form-label" for="act-desc">Descripcion</label>
+                <textarea
+                  id="act-desc"
+                  class="cre-input"
+                  rows="3"
+                  [value]="actDescripcion()"
+                  (input)="actDescripcion.set($any($event.target).value)"
+                ></textarea>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;font-size:0.8125rem">
+                <input
+                  type="checkbox"
+                  [checked]="actReutilizable()"
+                  (change)="actReutilizable.set($any($event.target).checked)"
+                />
+                Reutilizable
+              </label>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="cerrarModalActividad()">Cancelar</button>
+              <button type="button" class="cre-btn cre-btn-primary cre-btn-sm" (click)="crearActividad()">Crear</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (exito()) {
+        <div class="cre-alert cre-alert-success">{{ exito() }}</div>
+      }
+      @if (error()) {
+        <div class="cre-alert cre-alert-danger">
+          <strong>{{ error() }}</strong>
+          @if (errorDetalles().length > 0) {
+            <ul class="cre-alert-list">
+              @for (d of errorDetalles(); track d) { <li>{{ d }}</li> }
+            </ul>
+          }
+        </div>
+      }
+
+      @if (loading()) {
+        <div class="diagram-loading">
+          <div class="cre-spinner" aria-hidden="true"></div>
+          <span>Cargando diagrama…</span>
+        </div>
+      } @else {
+        <div class="diagram-stage">
+          <app-diagram-canvas
+            [nodos]="nodos()"
+            [transiciones]="transiciones()"
+            [swimlanes]="data.swimlanes"
+            [actividades]="actividades()"
+            [departamentos]="departamentos()"
+            [highlightNodoId]="selectedNodo()?.id ?? null"
+            (nodoCreated)="onNodoCreated($event)"
+            (nodoMoved)="onNodoMoved($event)"
+            (edgeCreated)="onEdgeCreated($event)"
+            (nodoDeleted)="onNodoDeleted($event)"
+            (edgeDeleted)="onEdgeDeleted($event)"
+            (nodoSelected)="onNodoSelected($event)"
+            (createDepartamento)="abrirModalDepto()"
+            (createActividad)="abrirModalActividad()"
+          ></app-diagram-canvas>
+
+          @if (inspectorDraft(); as draft) {
+            <aside class="inspector-floating">
+              <header class="inspector-head">
+                <div>
+                  <span class="inspector-title">Inspector</span>
+                  <span class="inspector-subtitle">{{ draft.tipo }}</span>
+                </div>
+                <button
+                  type="button"
+                  class="inspector-close"
+                  (click)="onNodoSelected(null)"
+                  aria-label="Cerrar inspector"
+                >×</button>
+              </header>
+
+              <div class="inspector-body">
+                <div class="inspector-row">
+                  <span class="inspector-key">Nombre</span>
+                  @if (draft.tipo === 'actividad') {
+                    <input
+                      id="insp-nombre"
+                      class="cre-input"
+                      [value]="draft.nombre"
+                      (input)="updateDraftNombre($event)"
+                      placeholder="Nombre del nodo"
+                    />
+                  } @else {
+                    <span class="inspector-val">{{ draft.nombre }}</span>
+                  }
+                </div>
+
+                @if (draft.tipo === 'decision') {
+                  <div class="inspector-row">
+                    <span class="inspector-key">Ramas de decisión</span>
+                    @if (transicionesSalientes().length === 0) {
+                      <span class="inspector-hint">Conecta este nodo a otros para asignar Sí / No.</span>
+                    } @else {
+                      <div class="inspector-branches">
+                        @for (trans of transicionesSalientes(); track trans.id) {
+                          <div class="inspector-branch-row">
+                            <span class="inspector-branch-dest">→ {{ getNombreNodo(trans.nodoDestinoId) }}</span>
+                            <select
+                              class="cre-input"
+                              [value]="trans.etiqueta ?? ''"
+                              (change)="onTransEtiqueta($event, trans.id)"
+                            >
+                              <option value="">— Sin etiqueta —</option>
+                              <option value="si">Sí</option>
+                              <option value="no">No</option>
+                            </select>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                <div class="inspector-row">
+                  <label class="inspector-key" for="insp-depto">Calle / Departamento</label>
+                  <select
+                    id="insp-depto"
+                    class="cre-input"
+                    [value]="draft.departamentoId ?? ''"
+                    (change)="updateDraftDepartamento($event)"
+                  >
+                    <option value="">— Sin departamento —</option>
+                    @for (depto of departamentos(); track depto.id) {
+                      <option [value]="depto.id">{{ depto.codigo }} · {{ depto.nombre }}</option>
+                    }
+                  </select>
+                  <div class="inspector-inline">
+                    <span class="inspector-hint">Cambiar el departamento mueve el nodo a esa calle.</span>
+                    <button type="button" class="inspector-link" (click)="abrirModalDepto()">+ Crear</button>
+                  </div>
+                </div>
+
+                @if (draft.tipo === 'actividad') {
+                  <div class="inspector-row">
+                    <label class="inspector-key" for="insp-actividad">Actividad</label>
+                    <select
+                      id="insp-actividad"
+                      class="cre-input"
+                      [value]="draft.actividadId ?? ''"
+                      (change)="updateDraftActividad($event)"
+                      [disabled]="!draft.departamentoId"
+                    >
+                      <option value="">— Sin actividad —</option>
+                      @for (act of actividadesDelDraft(); track act.id) {
+                        <option [value]="act.id">{{ act.nombre }}</option>
+                      }
+                    </select>
+                    <div class="inspector-inline">
+                      <span class="inspector-hint">La actividad depende del departamento.</span>
+                      <button type="button" class="inspector-link" (click)="abrirModalActividad()">+ Crear</button>
+                    </div>
+                    @if (!draft.departamentoId) {
+                      <span class="inspector-hint warn">Asigna un departamento primero.</span>
+                    }
+                  </div>
+                }
+
+                <div class="inspector-row inspector-meta">
+                  <span class="inspector-key">Posición</span>
+                  <span class="inspector-val">({{ draft.posicion?.x ?? '—' }}, {{ draft.posicion?.y ?? '—' }})</span>
+                </div>
+              </div>
+
+              <footer class="inspector-foot">
+                <button
+                  type="button"
+                  class="cre-btn cre-btn-secondary cre-btn-sm"
+                  (click)="descartarInspector()"
+                  [disabled]="!inspectorDirty() || guardandoNodo()"
+                >Descartar</button>
+                <button
+                  type="button"
+                  class="cre-btn cre-btn-primary cre-btn-sm"
+                  (click)="guardarInspector()"
+                  [disabled]="!inspectorDirty() || guardandoNodo()"
+                >
+                  @if (guardandoNodo()) { Guardando… } @else { Guardar }
+                </button>
+              </footer>
+            </aside>
+          }
+        </div>
+      }
+    </section>
+  }
+}
