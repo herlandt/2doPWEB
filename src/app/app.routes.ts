@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { ActividadesComponent } from './admin/actividades/actividades.component';
 import { DepartamentosComponent } from './admin/departamentos/departamentos.component';
+import { DocumentosComponent } from './admin/documentos/documentos.component';
 import { DashboardComponent } from './admin/dashboard/dashboard.component';
 import { DiagramaEditorComponent } from './admin/diagramas/diagrama-editor.component';
 import { DiagramaIaComponent } from './admin/diagramas/diagrama-ia.component';
@@ -32,6 +33,7 @@ export const routes: Routes = [
 			{ path: 'usuarios/nuevo', component: UsuarioFormComponent },
 			{ path: 'usuarios/:id/editar', component: UsuarioFormComponent },
 			{ path: 'departamentos', component: DepartamentosComponent },
+			{ path: 'documentos', component: DocumentosComponent },
 			{ path: 'politicas', component: PoliticasListaComponent },
 			{ path: 'politicas/nueva', component: PoliticaFormComponent },
 			{ path: 'politicas/:id/editar', component: PoliticaFormComponent },

@@ -1,0 +1,88 @@
+<section class="container-fluid py-4">
+  <h1 class="h4 mb-4">Documentos Requeridos</h1>
+
+  @if (exito()) {
+    <div class="alert alert-success" role="alert">{{ exito() }}</div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">{{ error() }}</div>
+  }
+
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0">
+        <div class="card-header">{{ modoEdicion() ? 'Editar' : 'Nuevo' }} Documento</div>
+        <div class="card-body">
+          <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+            <div class="mb-2">
+              <label class="form-label small" for="nombre">Nombre *</label>
+              <input id="nombre" class="form-control form-control-sm" formControlName="nombre" />
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label small" for="descripcion">Descripción *</label>
+              <textarea id="descripcion" class="form-control form-control-sm" rows="3" formControlName="descripcion"></textarea>
+            </div>
+
+            <div class="mb-3 form-check">
+              <input id="activo" type="checkbox" class="form-check-input" formControlName="activo" />
+              <label class="form-check-label small" for="activo">Activo</label>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary btn-sm" [disabled]="loading() || form.invalid">
+                {{ modoEdicion() ? 'Actualizar' : 'Crear' }}
+              </button>
+              @if (modoEdicion()) {
+                <button type="button" class="btn btn-secondary btn-sm" (click)="cancelar()">Cancelar</button>
+              }
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (doc of documentos(); track doc.id) {
+                <tr>
+                  <td><strong>{{ doc.nombre }}</strong></td>
+                  <td><small>{{ doc.descripcion }}</small></td>
+                  <td>
+                    @if (doc.activo) {
+                      <span class="badge bg-success">Activo</span>
+                    } @else {
+                      <span class="badge bg-secondary">Inactivo</span>
+                    }
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <button type="button" class="btn btn-outline-secondary" (click)="editar(doc)">Editar</button>
+                      <button type="button" class="btn btn-outline-danger" (click)="eliminar(doc.id)">Eliminar</button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-4">Sin documentos registrados</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
