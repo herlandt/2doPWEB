@@ -79,22 +79,40 @@ export class ActividadesComponent {
   cargar(): void {
     this.actividadSvc.listar().subscribe({
       next: (actividades) => this.actividades.set(actividades),
-      error: () => this.error.set('Error al cargar actividades'),
+      error: (err) => {
+        console.error('Error al cargar actividades:', err);
+        this.error.set('Error al cargar actividades');
+      },
     });
 
     this.deptoSvc.listar().subscribe({
       next: (departamentos) => this.departamentos.set(departamentos),
-      error: () => this.error.set('Error al cargar departamentos'),
+      error: (err) => {
+        console.error('Error al cargar departamentos:', err);
+        this.error.set('Error al cargar departamentos');
+      },
     });
 
     this.docSvc.listarActivos().subscribe({
-      next: (documentos) => this.documentos.set(documentos),
-      error: () => this.error.set('Error al cargar documentos'),
+      next: (documentos) => {
+        console.log('✅ Documentos cargados:', documentos);
+        this.documentos.set(documentos);
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar documentos:', err);
+        this.error.set('Error al cargar documentos');
+      },
     });
 
     this.funcSvc.getUsuarios().subscribe({
-      next: (lista) => this.funcionarios.set(lista as FuncionarioOption[]),
-      error: () => this.funcionarios.set([]),
+      next: (lista) => {
+        console.log('✅ Funcionarios cargados:', lista);
+        this.funcionarios.set(lista as FuncionarioOption[]);
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar funcionarios:', err);
+        this.funcionarios.set([]);
+      },
     });
   }
 
