@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -20,6 +20,11 @@ export class DiagramaService {
 
   listarDiagramas(): Observable<DiagramaWorkflow[]> {
     return this.http.get<DiagramaWorkflow[]>(`${this.url}/diagramas`);
+  }
+
+  listarHuerfanos(): Observable<DiagramaWorkflow[]> {
+    const params = new HttpParams().set('sinPolitica', 'true');
+    return this.http.get<DiagramaWorkflow[]>(`${this.url}/diagramas`, { params });
   }
 
   obtenerDiagrama(id: string): Observable<DiagramaWorkflow> {

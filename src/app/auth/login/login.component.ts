@@ -23,6 +23,22 @@ export class LoginComponent {
     password: ['', [Validators.required, Validators.minLength(6)]],
   });
 
+  /** Credenciales reales del seed (UsuarioSeeder.java). Las usa el panel demo. */
+  readonly cuentasDemo = [
+    { label: 'Administrador', email: 'admin@cre.bo',       password: 'admin12345',   variant: 'primary' },
+    { label: 'Func. TEC',     email: 'funcionario@cre.bo', password: 'func12345',    variant: 'success' },
+    { label: 'Func. ATC',     email: 'func_atc@cre.bo',    password: 'func12345',    variant: 'success' },
+    { label: 'Func. LEG',     email: 'func_leg@cre.bo',    password: 'func12345',    variant: 'success' },
+    { label: 'Func. OPE',     email: 'func_ope@cre.bo',    password: 'func12345',    variant: 'success' },
+    { label: 'Cliente',       email: 'cliente@cre.bo',     password: 'cliente12345', variant: 'info' },
+  ];
+
+  /** Autollena el formulario con las credenciales seleccionadas. */
+  llenarDemo(c: { email: string; password: string }): void {
+    this.form.patchValue({ email: c.email, password: c.password });
+    this.error.set('');
+  }
+
   constructor() {
     if (this.auth.isAuthenticated()) {
       this.redirigirSegunRol();
@@ -57,7 +73,7 @@ export class LoginComponent {
     }
 
     if (this.auth.isFuncionario()) {
-      this.router.navigateByUrl('/funcionario/tramites');
+      this.router.navigateByUrl('/funcionario/bandeja');
       return;
     }
 

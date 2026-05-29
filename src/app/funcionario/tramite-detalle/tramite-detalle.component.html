@@ -1,7 +1,7 @@
 @if (tramite(); as data) {
   <section class="container py-4">
     <div class="d-flex align-items-center gap-3 mb-4">
-      <a routerLink="/funcionario/tramites" class="btn btn-sm btn-outline-secondary">Volver</a>
+      <a routerLink="/funcionario/bandeja" class="btn btn-sm btn-outline-secondary">Volver</a>
       <h1 class="h4 mb-0">Tramite: <code>{{ data.codigo }}</code></h1>
       <span [class]="'badge ' + getEstadoBadgeClass(data.estado)">{{ data.estado }}</span>
     </div>
@@ -103,6 +103,11 @@
         </div>
 
         <div class="col-md-7">
+          <!-- CU-42 (Ruta óptima IA) removido de la vista del funcionario.
+               El flujo correcto es: el cliente describe su problema desde la
+               app móvil (CU-40 → IniciarTramiteIaScreen) y la IA sugiere
+               qué trámite usar — no se le sugiere ruta al funcionario. -->
+
           <article class="card shadow-sm border-0">
             <div class="card-header fw-semibold">Historial del Flujo</div>
             <div class="card-body p-0">
@@ -140,7 +145,7 @@
       <div class="spinner-border text-primary" aria-hidden="true"></div>
     } @else {
       <p class="text-muted">Tramite no encontrado</p>
-      <a routerLink="/funcionario/tramites" class="btn btn-secondary">Volver</a>
+      <a routerLink="/funcionario/bandeja" class="btn btn-secondary">Volver</a>
     }
   </section>
 }

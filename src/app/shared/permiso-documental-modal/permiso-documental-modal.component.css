@@ -1,0 +1,2 @@
+.modal.d-block { background-color: rgba(0, 0, 0, 0); }
+.modal-backdrop.show { opacity: 0.5; }

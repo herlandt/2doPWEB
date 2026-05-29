@@ -1,0 +1,84 @@
+.salidas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.salida-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.55rem 0.7rem 0.55rem 0.7rem;
+  border: 1.5px solid #dee2e6;
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background-color 0.12s ease, transform 0.06s ease;
+  min-height: 92px;
+}
+.salida-card:hover { background: #f8f9fa; }
+.salida-card:active { transform: scale(0.98); }
+
+.salida-icon { font-size: 1.05rem; line-height: 1; }
+.salida-label { font-weight: 600; font-size: 0.85rem; }
+.salida-desc {
+  font-size: 0.7rem;
+  color: #6c757d;
+  line-height: 1.15;
+}
+
+.salida-check {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+/* Estados activos por color */
+.salida-card--active[data-color="success"] {
+  border-color: #198754;
+  background: rgba(25, 135, 84, 0.08);
+  color: #146c43;
+}
+.salida-card--active[data-color="success"] .salida-check { color: #198754; }
+
+.salida-card--active[data-color="danger"] {
+  border-color: #dc3545;
+  background: rgba(220, 53, 69, 0.08);
+  color: #b02a37;
+}
+.salida-card--active[data-color="danger"] .salida-check { color: #dc3545; }
+
+.salida-card--active[data-color="info"] {
+  border-color: #0dcaf0;
+  background: rgba(13, 202, 240, 0.10);
+  color: #087990;
+}
+.salida-card--active[data-color="info"] .salida-check { color: #0dcaf0; }
+
+.salida-card--active[data-color="warning"] {
+  border-color: #ffc107;
+  background: rgba(255, 193, 7, 0.12);
+  color: #997404;
+}
+.salida-card--active[data-color="warning"] .salida-check { color: #d39e00; }
+
+.salida-card--active[data-color="secondary"] {
+  border-color: #6c757d;
+  background: rgba(108, 117, 125, 0.10);
+  color: #495057;
+}
+.salida-card--active[data-color="secondary"] .salida-check { color: #6c757d; }
+
+/* Badges en la tabla */
+.salida-badge { font-weight: 500; }
+.salida-badge[data-color="success"] { background: #198754; color: #fff; }
+.salida-badge[data-color="danger"] { background: #dc3545; color: #fff; }
+.salida-badge[data-color="info"] { background: #0dcaf0; color: #052c33; }
+.salida-badge[data-color="warning"] { background: #ffc107; color: #2c2200; }
+.salida-badge[data-color="secondary"] { background: #6c757d; color: #fff; }

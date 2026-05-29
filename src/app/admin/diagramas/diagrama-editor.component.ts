@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ColaboracionService } from '../../core/services/colaboracion.service';
-import { Actividad } from '../../core/models/actividad.model';
+import { Actividad, SALIDAS_INFO, SalidaActividad, SalidaInfo } from '../../core/models/actividad.model';
 import { Departamento } from '../../core/models/departamento.model';
 import {
   DiagramaRequest,
@@ -11,10 +11,14 @@ import {
   NodoRequest,
   TransicionRequest,
 } from '../../core/models/diagrama.model';
+import { Documento } from '../../core/models/documento.model';
 import { Politica } from '../../core/models/politica.model';
 import { ActividadService } from '../../core/services/actividad.service';
+import { AuthService } from '../../core/services/auth.service';
+import { ColaboracionRtService, DiagramaEventoRT } from '../../core/services/colaboracion-rt.service';
 import { DepartamentoService } from '../../core/services/departamento.service';
 import { DiagramaService } from '../../core/services/diagrama.service';
+import { DocumentoService } from '../../core/services/documento.service';
 import { PoliticaService } from '../../core/services/politica.service';
 import { TramiteC2Service } from '../../core/services/tramite-c2.service';
 import {
@@ -23,6 +27,7 @@ import {
   NodoCreatedPayload,
   NodoMovedPayload,
 } from './diagram/diagram-canvas.component';
+import { FormularioDisenadorComponent } from './formulario-disenador.component';
 
 interface FuncionarioOption {
   id: string;
@@ -33,7 +38,7 @@ interface FuncionarioOption {
 
 @Component({
   selector: 'app-diagrama-editor',
-  imports: [RouterLink, DiagramCanvasComponent],
+  imports: [RouterLink, DiagramCanvasComponent, FormularioDisenadorComponent],
   templateUrl: './diagrama-editor.component.html',
   styleUrl: './diagrama-editor.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,11 +49,16 @@ export class DiagramaEditorComponent {
   private readonly diagramaSvc = inject(DiagramaService);
   private readonly actSvc = inject(ActividadService);
   private readonly deptoSvc = inject(DepartamentoService);
+  private readonly docSvc = inject(DocumentoService);
   private readonly politicaSvc = inject(PoliticaService);
   private readonly colabSvc = inject(ColaboracionService);
   private readonly funcSvc = inject(TramiteC2Service);
+  private readonly rt = inject(ColaboracionRtService);
+  private readonly auth = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly diagramaId = this.route.snapshot.params['id'] as string | undefined;
+  readonly politicaIdPreseleccionada = (this.route.snapshot.queryParamMap.get('politicaId') ?? '') as string;
 
   readonly diagrama = signal<DiagramaWorkflow | null>(null);
   readonly politicas = signal<Politica[]>([]);
@@ -57,6 +67,7 @@ export class DiagramaEditorComponent {
   readonly actividades = signal<Actividad[]>([]);
   readonly departamentos = signal<Departamento[]>([]);
   readonly funcionarios = signal<FuncionarioOption[]>([]);
+  readonly documentos = signal<Documento[]>([]);
 
   readonly loading = signal(false);
   readonly error = signal('');
@@ -67,6 +78,9 @@ export class DiagramaEditorComponent {
   // Borrador del inspector (lo que el usuario está editando)
   readonly inspectorDraft = signal<NodoDiagrama | null>(null);
   readonly guardandoNodo = signal(false);
+
+  // CU-13b: diseñador de formulario del nodo
+  readonly nodoEnDiseno = signal<NodoDiagrama | null>(null);
 
   // Modales: crear departamento / actividad
   readonly mostrarModalDepto = signal(false);
@@ -81,10 +95,24 @@ export class DiagramaEditorComponent {
   readonly actDepartamentoId = signal('');
   readonly actFuncionarioResponsableId = signal('');
   readonly actSlaHoras = signal('24');
-  readonly actTipoSalida = signal('derivar');
+  readonly actSalidasPosibles = signal<SalidaActividad[]>(['derivar']);
   readonly actReutilizable = signal(true);
 
-  readonly tiposSalida = ['aprobar', 'rechazar', 'derivar', 'observar', 'completar'];
+  readonly salidasInfo: readonly SalidaInfo[] = SALIDAS_INFO;
+
+  toggleActSalida(s: SalidaActividad): void {
+    this.actSalidasPosibles.update((curr) =>
+      curr.includes(s) ? curr.filter((x) => x !== s) : [...curr, s],
+    );
+  }
+
+  isActSalidaSeleccionada(s: SalidaActividad): boolean {
+    return this.actSalidasPosibles().includes(s);
+  }
+
+  getSalidaInfo(value: string): SalidaInfo | undefined {
+    return this.salidasInfo.find((s) => s.value === value);
+  }
 
   readonly funcionariosFiltrados = computed(() => {
     const deptoId = this.actDepartamentoId();
@@ -99,6 +127,20 @@ export class DiagramaEditorComponent {
     const acts = this.actividades();
     if (!draft?.departamentoId) return acts;
     return acts.filter((a) => a.departamentoId === draft.departamentoId);
+  });
+
+  // Documentos requeridos por la actividad del nodo seleccionado.
+  // Visible solo cuando el nodo es de tipo "actividad" y tiene actividadId.
+  readonly documentosRequeridosDelDraft = computed<Documento[]>(() => {
+    const draft = this.inspectorDraft();
+    if (!draft || draft.tipo !== 'actividad' || !draft.actividadId) return [];
+    const act = this.actividades().find((a) => a.id === draft.actividadId);
+    const ids = act?.documentoIds ?? [];
+    if (ids.length === 0) return [];
+    const mapa = new Map(this.documentos().map((d) => [d.id, d]));
+    return ids
+      .map((id) => mapa.get(id))
+      .filter((d): d is Documento => !!d);
   });
 
   // Transiciones salientes del nodo decisión seleccionado
@@ -154,6 +196,14 @@ export class DiagramaEditorComponent {
       error: () => this.error.set('Error al cargar actividades'),
     });
 
+    // Carga el catálogo de documentos para resolver los IDs guardados en
+    // Actividad.documentoIds a nombre/descripción legibles en el inspector.
+    this.docSvc.listar().subscribe({
+      next: (docs) => this.documentos.set(docs),
+      // Sin documentos seedeados el inspector simplemente no muestra la lista.
+      error: () => undefined,
+    });
+
     this.deptoSvc.listar().subscribe({
       next: (departamentos) => this.departamentos.set(departamentos),
       error: () => this.error.set('Error al cargar departamentos'),
@@ -166,6 +216,81 @@ export class DiagramaEditorComponent {
 
     if (this.diagramaId) {
       this.cargar();
+      this.suscribirColaboracionRT(this.diagramaId);
+    }
+  }
+
+  /**
+   * CU-15: aplica en vivo los cambios que hagan otros colaboradores sobre el
+   * mismo diagrama. Ignora los eventos cuyo autor es uno mismo (echo).
+   */
+  private suscribirColaboracionRT(diagramaId: string): void {
+    const sub = this.rt.observarDiagrama(diagramaId).subscribe({
+      next: (evt) => this.aplicarEventoRemoto(evt),
+      error: () => {
+        /* la reconexión la maneja RxStomp; sin acción explícita */
+      },
+    });
+    this.destroyRef.onDestroy(() => sub.unsubscribe());
+  }
+
+  private aplicarEventoRemoto(evt: DiagramaEventoRT): void {
+    const miUserId = this.auth.getUserId();
+    if (evt.autorId && miUserId && evt.autorId === miUserId) return;
+
+    switch (evt.tipo) {
+      case 'nodo-creado': {
+        const nuevo = evt.payload as NodoDiagrama;
+        this.nodos.update((lista) =>
+          lista.some((n) => n.id === nuevo.id) ? lista : [...lista, nuevo],
+        );
+        break;
+      }
+      case 'nodo-actualizado': {
+        const actualizado = evt.payload as NodoDiagrama;
+        this.nodos.update((lista) =>
+          lista.map((n) => (n.id === actualizado.id ? actualizado : n)),
+        );
+        if (this.selectedNodo()?.id === actualizado.id) {
+          this.selectedNodo.set(actualizado);
+          this.inspectorDraft.set({ ...actualizado });
+        }
+        break;
+      }
+      case 'nodo-eliminado': {
+        const id = (evt.payload as { id: string })?.id;
+        if (!id) break;
+        this.nodos.update((lista) => lista.filter((n) => n.id !== id));
+        this.transiciones.update((lista) =>
+          lista.filter((t) => t.nodoOrigenId !== id && t.nodoDestinoId !== id),
+        );
+        if (this.selectedNodo()?.id === id) {
+          this.selectedNodo.set(null);
+          this.inspectorDraft.set(null);
+        }
+        break;
+      }
+      case 'trans-creada': {
+        const nueva = evt.payload as FlujoTransicion;
+        this.transiciones.update((lista) =>
+          lista.some((t) => t.id === nueva.id) ? lista : [...lista, nueva],
+        );
+        break;
+      }
+      case 'trans-actualizada': {
+        const actualizada = evt.payload as FlujoTransicion;
+        this.transiciones.update((lista) =>
+          lista.map((t) => (t.id === actualizada.id ? actualizada : t)),
+        );
+        break;
+      }
+      case 'trans-eliminada': {
+        const id = (evt.payload as { id: string })?.id;
+        if (id) {
+          this.transiciones.update((lista) => lista.filter((t) => t.id !== id));
+        }
+        break;
+      }
     }
   }
 
@@ -185,7 +310,7 @@ export class DiagramaEditorComponent {
     this.actDescripcion.set('');
     this.actFuncionarioResponsableId.set('');
     this.actSlaHoras.set('24');
-    this.actTipoSalida.set('derivar');
+    this.actSalidasPosibles.set(['derivar']);
     this.actReutilizable.set(true);
     const draft = this.inspectorDraft();
     this.actDepartamentoId.set(draft?.departamentoId ?? '');
@@ -235,11 +360,16 @@ export class DiagramaEditorComponent {
     const descripcion = this.actDescripcion().trim();
     const departamentoId = this.actDepartamentoId();
     const slaHoras = Number(this.actSlaHoras());
-    const tipoSalida = this.actTipoSalida();
+    const salidasPosibles = this.actSalidasPosibles();
     const funcionarioResponsableId = this.actFuncionarioResponsableId().trim();
 
     if (!nombre || !departamentoId || Number.isNaN(slaHoras) || slaHoras <= 0) {
       this.setError('Completa nombre, departamento y SLA valido');
+      return;
+    }
+
+    if (salidasPosibles.length === 0) {
+      this.setError('Selecciona al menos una salida posible para la actividad');
       return;
     }
 
@@ -249,7 +379,7 @@ export class DiagramaEditorComponent {
       departamentoId,
       funcionarioResponsableId: funcionarioResponsableId || undefined,
       slaHoras,
-      tipoSalida,
+      salidasPosibles,
       reutilizable: this.actReutilizable(),
     }).subscribe({
       next: (creada) => {
@@ -559,6 +689,20 @@ export class DiagramaEditorComponent {
     const sel = this.selectedNodo();
     this.inspectorDraft.set(sel ? { ...sel } : null);
     this.clearError();
+  }
+
+  abrirDisenadorFormulario(): void {
+    const nodo = this.selectedNodo();
+    if (!nodo) return;
+    if (nodo.tipo !== 'actividad') {
+      this.setError('Solo los nodos de actividad admiten formulario.');
+      return;
+    }
+    this.nodoEnDiseno.set(nodo);
+  }
+
+  cerrarDisenadorFormulario(): void {
+    this.nodoEnDiseno.set(null);
   }
 
   getNombreNodo(nodoId: string): string {

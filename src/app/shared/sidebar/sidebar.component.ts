@@ -126,8 +126,12 @@ export class SidebarComponent {
     icon: this.icons.metricas,
     expanded: signal(true),
     items: [
-      { label: 'Métricas',  icon: this.icons.metricas,  link: '/admin/metricas',  roles: ['admin'] },
-      { label: 'Historial', icon: this.icons.historial, link: '/admin/historial', roles: ['admin'] },
+      { label: 'Métricas',          icon: this.icons.metricas,   link: '/admin/metricas',           roles: ['admin'] },
+      { label: 'Historial',         icon: this.icons.historial,  link: '/admin/historial',          roles: ['admin'] },
+      { label: 'Anomalías IA',      icon: this.icons.aiSparkles, link: '/admin/anomalias',          roles: ['admin'] },
+      { label: 'Reportes IA',       icon: this.icons.aiSparkles, link: '/admin/reportes-naturales', roles: ['admin'] },
+      // "Sugerir trámite" (CU-40) pertenece al flujo del cliente, no al admin —
+      // se accede desde la app móvil. Quitado del sidebar admin.
     ],
   };
 
@@ -144,10 +148,12 @@ export class SidebarComponent {
     { label: 'Documentos',    icon: this.icons.documents,   link: '/admin/documentos',    roles: ['admin'] },
     { label: 'Diagramas',     icon: this.icons.workflows,   link: '/admin/diagramas',     roles: ['admin'] },
     { label: 'Diseño con IA', icon: this.icons.aiSparkles,  link: '/admin/diagramas/ia',  roles: ['admin'] },
-    { label: 'Métricas',      icon: this.icons.metricas,    link: '/admin/metricas',       roles: ['admin'] },
-    { label: 'Historial',     icon: this.icons.historial,   link: '/admin/historial',      roles: ['admin'] },
-    { label: 'Mis Trámites',  icon: this.icons.tramites,    link: '/funcionario/tramites', roles: ['funcionario'] },
-    { label: 'Bandeja',       icon: this.icons.bandeja,     link: '/funcionario/bandeja',  roles: ['funcionario'] },
+    { label: 'Métricas',      icon: this.icons.metricas,    link: '/admin/metricas',           roles: ['admin'] },
+    { label: 'Historial',     icon: this.icons.historial,   link: '/admin/historial',          roles: ['admin'] },
+    { label: 'Anomalías IA',  icon: this.icons.aiSparkles,  link: '/admin/anomalias',          roles: ['admin'] },
+    { label: 'Reportes IA',   icon: this.icons.aiSparkles,  link: '/admin/reportes-naturales', roles: ['admin'] },
+    // "Mis Trámites" se quitó por duplicar la Bandeja de Entrada (mismo endpoint).
+    { label: 'Bandeja',       icon: this.icons.bandeja,     link: '/funcionario/bandeja',      roles: ['funcionario'] },
   ];
 
   readonly visibleFlatItems = computed(() => {

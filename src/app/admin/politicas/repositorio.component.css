@@ -1,0 +1,14 @@
+/* Modal trick: usar .modal.d-block sin Bootstrap JS — controlado por Angular */
+.modal.d-block {
+  background-color: rgba(0, 0, 0, 0);
+}
+
+/* Backdrop manual encima del fondo, debajo del modal */
+.modal-backdrop.show {
+  opacity: 0.5;
+}
+
+/* Iframe del PDF sin scroll horizontal en cards angostas */
+iframe {
+  display: block;
+}

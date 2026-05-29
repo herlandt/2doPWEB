@@ -67,6 +67,10 @@ export class AuthService {
     return this._usuario();
   }
 
+  getUserId(): string {
+    return this._usuario()?.userId ?? '';
+  }
+
   getRol(): string {
     return this._usuario()?.rol ?? '';
   }

@@ -1,0 +1,114 @@
+@if (abierto()) {
+  <div class="modal d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title mb-0">Permiso documental</h5>
+            <p class="text-muted small mb-0">
+              Actividad: <strong>{{ actividad()?.nombre }}</strong>
+            </p>
+          </div>
+          <button type="button" class="btn-close" (click)="cerrar()"></button>
+        </div>
+
+        <div class="modal-body">
+          @if (error()) {
+            <div class="alert alert-danger py-2">{{ error() }}</div>
+          }
+          @if (exito()) {
+            <div class="alert alert-success py-2">{{ exito() }}</div>
+          }
+
+          <!-- 1. Política -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Política *</label>
+            <select
+              class="form-select"
+              [value]="politicaSeleccionadaId()"
+              (change)="cambiarPolitica($event)"
+            >
+              <option value="">— Seleccionar política —</option>
+              @for (p of politicas(); track p.id) {
+                <option [value]="p.id">
+                  {{ p.nombre }}
+                  @if (p.estado !== 'activa') { · ({{ p.estado }}) }
+                </option>
+              }
+            </select>
+            <small class="text-muted">
+              El permiso se aplica a la combinación (política × actividad).
+            </small>
+          </div>
+
+          @if (politicaSeleccionadaId()) {
+            @if (cargando()) {
+              <div class="text-center py-3">
+                <div class="spinner-border spinner-border-sm"></div>
+              </div>
+            } @else {
+              <!-- 2. Nivel de acceso -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Nivel de acceso *</label>
+                @for (n of niveles; track n.value) {
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="radio"
+                      name="nivel"
+                      [id]="'nivel-' + n.value"
+                      [value]="n.value"
+                      [checked]="nivelSeleccionado() === n.value"
+                      (change)="nivelSeleccionado.set(n.value)"
+                    />
+                    <label class="form-check-label" [for]="'nivel-' + n.value">
+                      <strong>{{ n.label }}</strong>
+                      <span class="text-muted small ms-2">— {{ n.descripcion }}</span>
+                    </label>
+                  </div>
+                }
+              </div>
+
+              <!-- 3. Tipos de documento visibles -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Tipos de documento visibles</label>
+                <div class="d-flex flex-wrap gap-2">
+                  @for (t of tiposDoc; track t) {
+                    <button
+                      type="button"
+                      class="btn btn-sm"
+                      [class.btn-primary]="isTipoSeleccionado(t)"
+                      [class.btn-outline-secondary]="!isTipoSeleccionado(t)"
+                      (click)="toggleTipo(t)"
+                    >
+                      {{ t }}
+                    </button>
+                  }
+                </div>
+                <small class="text-muted d-block mt-1">
+                  Si dejas vacío, se asumen todos.
+                </small>
+              </div>
+            }
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrar()">Cerrar</button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="guardar()"
+            [disabled]="guardando() || cargando() || !politicaSeleccionadaId()"
+          >
+            @if (guardando()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Guardar permiso
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}

@@ -61,18 +61,134 @@
                 </span>
               </div>
             </div>
-            <div class="card-body p-0">
-              @if (seccion.campos && seccion.campos.length > 0) {
-                <ul class="list-group list-group-flush">
-                  @for (campo of seccion.campos; track (campo.campoPlantillaId || $index)) {
-                    <li class="list-group-item d-flex justify-content-between align-items-start">
-                      <strong class="text-muted small">{{ campo.campoPlantillaId }}</strong>
-                      <span class="ms-2 text-end">{{ campo.valor ?? 'Sin valor' }}</span>
-                    </li>
-                  }
-                </ul>
+            <div class="card-body">
+              @if (!seccion.campos || seccion.campos.length === 0) {
+                <p class="text-muted small mb-0">
+                  Esta sección no tiene formulario asociado al nodo del workflow.
+                </p>
               } @else {
-                <p class="text-muted small p-3 mb-0">Sin campos registrados.</p>
+                @let editable = mostrarAcciones() && seccion.infoSeccion?.estado === 'en_curso';
+                <div class="row g-3">
+                  @for (campo of seccion.campos; track (campo.campoPlantillaId || campo.id || $index)) {
+                    <div class="col-md-6">
+                      <label class="form-label small fw-semibold">
+                        {{ campo.etiqueta || campo.nombre }}
+                        @if (campo.obligatorio) {
+                          <span class="text-danger">*</span>
+                        }
+                        @if (campo.fueDictado) {
+                          <span class="badge bg-info text-dark ms-1" title="Valor sugerido por dictado">IA</span>
+                        }
+                      </label>
+
+                      @switch (campo.tipo) {
+                        @case ('texto') {
+                          <input
+                            type="text"
+                            class="form-control form-control-sm"
+                            [value]="campo.valor || ''"
+                            [readonly]="!editable"
+                            (input)="setCampoValor(campo.id, $event)"
+                          />
+                        }
+                        @case ('numero') {
+                          <input
+                            type="number"
+                            class="form-control form-control-sm"
+                            [value]="campo.valor || ''"
+                            [readonly]="!editable"
+                            (input)="setCampoValor(campo.id, $event)"
+                          />
+                        }
+                        @case ('fecha') {
+                          <input
+                            type="date"
+                            class="form-control form-control-sm"
+                            [value]="campo.valor || ''"
+                            [readonly]="!editable"
+                            (input)="setCampoValor(campo.id, $event)"
+                          />
+                        }
+                        @case ('textarea') {
+                          <textarea
+                            class="form-control form-control-sm"
+                            rows="2"
+                            [value]="campo.valor || ''"
+                            [readonly]="!editable"
+                            (input)="setCampoValor(campo.id, $event)"
+                          ></textarea>
+                        }
+                        @case ('checkbox') {
+                          <div class="form-check">
+                            <input
+                              type="checkbox"
+                              class="form-check-input"
+                              [checked]="campo.valor === 'true'"
+                              [disabled]="!editable"
+                              (change)="setCampoCheck(campo.id, $event)"
+                            />
+                            <label class="form-check-label small text-muted">
+                              {{ campo.valor === 'true' ? 'Sí' : 'No' }}
+                            </label>
+                          </div>
+                        }
+                        @case ('select') {
+                          <select
+                            class="form-select form-select-sm"
+                            [value]="campo.valor || ''"
+                            [disabled]="!editable"
+                            (change)="setCampoValor(campo.id, $event)"
+                          >
+                            <option value="">— Seleccionar —</option>
+                            @for (op of (campo.opciones || []); track op) {
+                              <option [value]="op">{{ op }}</option>
+                            }
+                          </select>
+                        }
+                        @default {
+                          <input
+                            type="text"
+                            class="form-control form-control-sm"
+                            [value]="campo.valor || ''"
+                            [readonly]="!editable"
+                            (input)="setCampoValor(campo.id, $event)"
+                          />
+                        }
+                      }
+                    </div>
+                  }
+                </div>
+
+                @if (mostrarAcciones() && seccion.infoSeccion?.estado === 'en_curso') {
+                  <div class="d-flex justify-content-end mt-3 gap-2">
+                    @if (guardadoOkSeccionId() === seccion.infoSeccion.id) {
+                      <span class="text-success small align-self-center">
+                        ✓ Borrador guardado
+                      </span>
+                    }
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary"
+                      [disabled]="guardandoSeccionId() === seccion.infoSeccion.id"
+                      (click)="guardarBorradorSeccion(seccion)"
+                    >
+                      @if (guardandoSeccionId() === seccion.infoSeccion.id) {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                      }
+                      Guardar borrador
+                    </button>
+                  </div>
+                }
+              }
+
+              <!-- CU-39 · Dictado por voz solo para secciones activas y rol funcionario -->
+              @if (mostrarAcciones() && seccion.infoSeccion?.estado === 'en_curso' && seccion.infoSeccion?.id) {
+                <div class="mt-3 pt-3 border-top">
+                  <app-dictar-seccion
+                    [seccionId]="seccion.infoSeccion.id"
+                    (aplicado)="onDictadoAplicado($event)"
+                  />
+                </div>
               }
             </div>
           </div>
@@ -81,9 +197,9 @@
         }
       </div>
 
-      <!-- Resumen lateral -->
+      <!-- Resumen lateral + Documentos del trámite -->
       <div class="col-md-4">
-        <div class="card shadow-sm border-info sticky-top" style="top: 1rem">
+        <div class="card shadow-sm border-info" style="top: 1rem">
           <div class="card-header bg-info text-white">
             <strong>Resumen del Expediente</strong>
           </div>
@@ -91,6 +207,62 @@
             <p class="mb-1"><strong>Trámite ID:</strong> {{ exp.expediente?.tramiteId ?? tramiteId }}</p>
             <p class="mb-1"><strong>Creado:</strong> {{ formatearFecha(exp.expediente?.fechaCreacion) }}</p>
             <p class="mb-1"><strong>Última actualización:</strong> {{ formatearFecha(exp.expediente?.ultimaActualizacion) }}</p>
+          </div>
+        </div>
+
+        <!-- CU-34 · Documentos del repositorio asociados al trámite -->
+        <div class="card shadow-sm border-0 mt-3">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <strong>Documentos del trámite</strong>
+            @if (cargandoDocumentos()) {
+              <span class="spinner-border spinner-border-sm text-muted"></span>
+            } @else {
+              <span class="badge bg-secondary">{{ documentos().length }}</span>
+            }
+          </div>
+          <div class="card-body p-0">
+            @if (errorDocumentos()) {
+              <div class="alert alert-warning small m-2 mb-0">{{ errorDocumentos() }}</div>
+            }
+
+            @if (!cargandoDocumentos() && documentos().length === 0 && !errorDocumentos()) {
+              <p class="text-muted small px-3 py-3 mb-0">
+                Aún no se han cargado documentos para este trámite.
+              </p>
+            }
+
+            <ul class="list-group list-group-flush">
+              @for (d of documentos(); track d.id) {
+                <li class="list-group-item d-flex align-items-start gap-2 py-2">
+                  <span style="font-size: 1.1rem">{{ iconoTipoDoc(d.tipoDocumento) }}</span>
+                  <div class="flex-grow-1" style="min-width: 0">
+                    <div class="small fw-semibold text-truncate" [title]="d.nombreLogico">
+                      {{ d.nombreLogico }}
+                    </div>
+                    <div class="text-muted" style="font-size: 0.7rem">
+                      v{{ d.numeroVersionActual }} · {{ d.tipoDocumento }}
+                      @if (d.obligatorio) { · <span class="text-danger">obligatorio</span> }
+                      @if (d.fechaCreacion) {
+                        · {{ d.fechaCreacion | date: 'short' }}
+                      }
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary"
+                    [disabled]="previewCargandoId() === d.id"
+                    (click)="verDocumento(d)"
+                    title="Abrir en pestaña nueva"
+                  >
+                    @if (previewCargandoId() === d.id) {
+                      <span class="spinner-border spinner-border-sm"></span>
+                    } @else {
+                      Ver
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
           </div>
         </div>
       </div>
@@ -105,44 +277,26 @@
         </div>
         <div class="card-body">
 
-        <!-- CU-16 + CU-30: Justificación con dictado por voz -->
+        <!-- CU-16: Comentarios opcionales para la decisión.
+             El dictado por voz (CU-30) ya vive dentro de cada sección activa
+             con <app-dictar-seccion> — quitamos el botón micrófono duplicado
+             para evitar confusión. -->
         <div class="mb-3">
           <label class="form-label fw-bold" for="justificacion">
-            Justificación / Observaciones <span class="text-danger">*</span>
+            Comentarios
+            <span class="text-muted fw-normal small">(opcional)</span>
           </label>
-          <div class="input-group">
-            <textarea
-              id="justificacion"
-              class="form-control"
-              rows="3"
-              [value]="justificacion()"
-              (input)="setJustificacion($event)"
-              [placeholder]="grabando() ? 'Grabando... Habla ahora.' : 'Escriba o dicte sus observaciones...'"
-              [class.border-danger]="grabando()"
-            ></textarea>
-            <!-- CU-30: botón micrófono -->
-            <button
-              type="button"
-              class="btn"
-              [class.btn-danger]="grabando()"
-              [class.btn-outline-secondary]="!grabando()"
-              [title]="grabando() ? 'Detener grabación' : 'Dictar por voz (CU-30)'"
-              (click)="grabando() ? detenerGrabacion() : iniciarGrabacion()"
-            >
-              {{ grabando() ? '⏹' : '🎙' }}
-            </button>
-          </div>
-
-          @if (grabando()) {
-            <div class="text-danger small mt-1 d-flex align-items-center gap-1">
-              <span class="spinner-grow spinner-grow-sm text-danger" aria-hidden="true"></span>
-              Grabando... Haz clic en el botón para detener y transcribir.
-            </div>
-          }
-
-          @if (errorMicrofono()) {
-            <div class="alert alert-warning py-2 mt-2 small">{{ errorMicrofono() }}</div>
-          }
+          <textarea
+            id="justificacion"
+            class="form-control"
+            rows="3"
+            [value]="justificacion()"
+            (input)="setJustificacion($event)"
+            placeholder="Notas adicionales sobre tu decisión (motivo de devolución, razón de derivación, etc.)"
+          ></textarea>
+          <small class="text-muted">
+            El formulario de la sección activa ya recoge los datos del trámite — esto es solo para notas de la decisión.
+          </small>
         </div>
 
         <!-- CU-17: Selector de nodo destino (solo al elegir DEVOLVER) -->
@@ -186,11 +340,12 @@
         <!-- Botonera principal -->
         <div class="d-flex flex-wrap gap-2 mt-3">
 
-          <!-- CU-18: Aprobar -->
+          <!-- CU-18: Aprobar. Los comentarios son opcionales — el formulario
+               de la sección activa ya recoge los datos del trámite. -->
           <button
             type="button"
             class="btn btn-success"
-            [disabled]="procesando() || !justificacion()"
+            [disabled]="procesando()"
             (click)="ejecutarAccion('APROBAR')"
           >
             Aprobar (Avanzar)
@@ -200,7 +355,7 @@
           <button
             type="button"
             class="btn btn-danger"
-            [disabled]="procesando() || !justificacion()"
+            [disabled]="procesando()"
             (click)="ejecutarAccion('RECHAZAR')"
           >
             Rechazar Definitivo
@@ -219,7 +374,7 @@
             <button
               type="button"
               class="btn btn-warning"
-              [disabled]="procesando() || !justificacion() || !nodoDestinoId()"
+              [disabled]="procesando() || !nodoDestinoId()"
               (click)="ejecutarAccion('DEVOLVER')"
             >
               Confirmar Devolución
@@ -239,7 +394,7 @@
             <button
               type="button"
               class="btn btn-info text-white"
-              [disabled]="procesando() || !funcionarioDestinoId() || !justificacion()"
+              [disabled]="procesando() || !funcionarioDestinoId()"
               (click)="ejecutarAccion('DERIVAR')"
             >
               Confirmar Derivación

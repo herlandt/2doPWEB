@@ -10,7 +10,7 @@
   }
 
   <div class="row g-4">
-    <div class="col-md-4">
+    <div class="col-md-5">
       <div class="card shadow-sm border-0">
         <div class="card-header">{{ modoEdicion() ? 'Editar' : 'Nueva' }} Actividad</div>
         <div class="card-body">
@@ -53,19 +53,39 @@
               <small class="text-muted">Se filtra según el departamento seleccionado.</small>
             </div>
 
-            <div class="row g-2 mb-2">
-              <div class="col-6">
-                <label class="form-label small" for="slaHoras">SLA (horas) *</label>
-                <input id="slaHoras" type="number" min="1" class="form-control form-control-sm" formControlName="slaHoras" />
+            <div class="mb-2">
+              <label class="form-label small" for="slaHoras">SLA (horas) *</label>
+              <input id="slaHoras" type="number" min="1" class="form-control form-control-sm" formControlName="slaHoras" />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small d-block">
+                Salidas posibles <span class="text-danger">*</span>
+                <small class="text-muted d-block fst-italic">
+                  Marca todas las acciones que el funcionario podrá ejecutar al cerrar esta actividad.
+                </small>
+              </label>
+              <div class="salidas-grid">
+                @for (s of salidasInfo; track s.value) {
+                  <button
+                    type="button"
+                    class="salida-card"
+                    [class.salida-card--active]="isSalidaSeleccionada(s.value)"
+                    [attr.data-color]="s.color"
+                    (click)="toggleSalida(s.value)"
+                  >
+                    <span class="salida-icon">{{ s.icono }}</span>
+                    <span class="salida-label">{{ s.label }}</span>
+                    <small class="salida-desc">{{ s.descripcion }}</small>
+                    @if (isSalidaSeleccionada(s.value)) {
+                      <span class="salida-check">✓</span>
+                    }
+                  </button>
+                }
               </div>
-              <div class="col-6">
-                <label class="form-label small" for="tipoSalida">Tipo salida *</label>
-                <select id="tipoSalida" class="form-select form-select-sm" formControlName="tipoSalida">
-                  @for (tipo of tiposSalida; track tipo) {
-                    <option [value]="tipo">{{ tipo }}</option>
-                  }
-                </select>
-              </div>
+              @if (salidasSeleccionadas().length === 0) {
+                <small class="text-danger">Selecciona al menos una salida.</small>
+              }
             </div>
 
             <div class="mb-2">
@@ -102,7 +122,11 @@
             </div>
 
             <div class="d-flex gap-2">
-              <button type="submit" class="btn btn-primary btn-sm" [disabled]="loading() || form.invalid">
+              <button
+                type="submit"
+                class="btn btn-primary btn-sm"
+                [disabled]="loading() || form.invalid || salidasSeleccionadas().length === 0"
+              >
                 {{ modoEdicion() ? 'Actualizar' : 'Crear' }}
               </button>
               @if (modoEdicion()) {
@@ -114,7 +138,7 @@
       </div>
     </div>
 
-    <div class="col-md-8">
+    <div class="col-md-7">
       <div class="card shadow-sm border-0">
         <div class="table-responsive">
           <table class="table table-sm table-hover mb-0 align-middle">
@@ -124,7 +148,7 @@
                 <th>Dept.</th>
                 <th>Responsable</th>
                 <th>SLA</th>
-                <th>Tipo Salida</th>
+                <th>Salidas posibles</th>
                 <th>Documentos</th>
                 <th>Reutilizable</th>
                 <th>Acciones</th>
@@ -139,7 +163,17 @@
                     <small>{{ getNombreFuncionario(actividad.funcionarioResponsableId) }}</small>
                   </td>
                   <td>{{ actividad.slaHoras }}h</td>
-                  <td><span class="badge bg-info text-dark">{{ actividad.tipoSalida }}</span></td>
+                  <td>
+                    <div class="d-flex flex-wrap gap-1">
+                      @for (s of actividad.salidasPosibles; track s) {
+                        @if (getSalidaInfo(s); as info) {
+                          <span class="badge salida-badge" [attr.data-color]="info.color" [title]="info.descripcion">
+                            {{ info.icono }} {{ info.label }}
+                          </span>
+                        }
+                      }
+                    </div>
+                  </td>
                   <td>
                     @if (actividad.documentoIds && actividad.documentoIds.length > 0) {
                       <div class="d-flex flex-wrap gap-1">
@@ -161,6 +195,14 @@
                   <td>
                     <div class="btn-group btn-group-sm">
                       <button type="button" class="btn btn-outline-secondary" (click)="editar(actividad)">Editar</button>
+                      <button
+                        type="button"
+                        class="btn btn-outline-dark"
+                        (click)="abrirPermisos(actividad)"
+                        title="Configurar permiso documental por punto de atención (CU-36)"
+                      >
+                        Permisos
+                      </button>
                       <button type="button" class="btn btn-outline-danger" (click)="eliminar(actividad.id)">Eliminar</button>
                     </div>
                   </td>
@@ -177,3 +219,9 @@
     </div>
   </div>
 </section>
+
+<!-- CU-36 · Modal de permiso documental -->
+<app-permiso-documental-modal
+  [actividad]="actividadParaPermiso()"
+  (cerrado)="cerrarPermisos()"
+/>

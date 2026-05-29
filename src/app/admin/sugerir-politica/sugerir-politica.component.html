@@ -1,0 +1,160 @@
+<section class="container py-4" style="max-width: 720px;">
+  <div class="mb-3">
+    <h1 class="h4 mb-1">Iniciar trámite con IA ✨</h1>
+    <p class="text-muted small mb-0">
+      CU-40 — describe lo que necesitas en tus propias palabras y la IA te sugerirá la política correcta.
+    </p>
+  </div>
+
+  <!-- Paso 1: descripción -->
+  @if (!sugerencia() && !feedbackFinal()) {
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <label for="desc" class="form-label fw-semibold">¿Qué necesitas hacer?</label>
+        <textarea
+          id="desc"
+          class="form-control"
+          rows="5"
+          placeholder="Ej: necesito una nueva conexión eléctrica para mi casa nueva."
+          [(ngModel)]="descripcion"
+          name="descripcion"
+          [disabled]="procesando()"
+        ></textarea>
+
+        <div class="mt-2">
+          <small class="text-muted">Ejemplos:</small>
+          @for (ej of ejemplos; track ej) {
+            <button
+              type="button"
+              class="btn btn-sm btn-link text-decoration-none p-0 ms-2 small"
+              (click)="usarEjemplo(ej)"
+            >
+              {{ ej.slice(0, 50) }}…
+            </button>
+          }
+        </div>
+
+        @if (error()) {
+          <div class="alert alert-danger mt-3 small mb-0">{{ error() }}</div>
+        }
+
+        <div class="d-flex justify-content-end mt-3">
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="sugerir()"
+            [disabled]="procesando() || !descripcion().trim()"
+          >
+            @if (procesando()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Analizando…
+            } @else {
+              Analizar con IA
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Paso 2: ver sugerencia y elegir -->
+  @if (sugerencia(); as s) {
+    @if (!feedbackFinal()) {
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h2 class="h6 mb-3">
+            Política sugerida
+            <span class="badge bg-primary ms-2">
+              {{ (s.confianza * 100) | number: '1.0-0' }}% confianza
+            </span>
+          </h2>
+
+          @if (error()) {
+            <div class="alert alert-danger small">{{ error() }}</div>
+          }
+
+          <p class="small text-muted">
+            Selecciona la política correcta. Si la sugerida es la indicada déjala marcada;
+            si no, elige otra del listado.
+          </p>
+
+          <div class="list-group mb-3">
+            @for (c of s.top3; track c.politicaId) {
+              <label
+                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                [class.active]="seleccionada() === c.politicaId"
+              >
+                <div>
+                  <input
+                    type="radio"
+                    name="politica"
+                    class="form-check-input me-2"
+                    [checked]="seleccionada() === c.politicaId"
+                    (change)="elegir(c)"
+                  />
+                  <strong>{{ c.nombre }}</strong>
+                  @if (c.politicaId === s.politicaSugeridaId) {
+                    <span class="badge bg-info text-dark ms-2 small">sugerida</span>
+                  }
+                </div>
+                <span class="badge {{ badgeConfianza(c.confianza) }}">
+                  {{ (c.confianza * 100) | number: '1.0-0' }}%
+                </span>
+              </label>
+            }
+          </div>
+
+          <div class="d-flex justify-content-between gap-2">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              (click)="cancelar()"
+              [disabled]="confirmando()"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn btn-success"
+              (click)="confirmar()"
+              [disabled]="confirmando() || !puedeConfirmar()"
+            >
+              @if (confirmando()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              @if (esCambioDeOpcion()) {
+                Confirmar mi elección
+              } @else {
+                Aceptar sugerencia
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- Paso 3: confirmación -->
+  @if (feedbackFinal(); as fb) {
+    <div class="card border-0 shadow-sm text-center">
+      <div class="card-body py-5">
+        @if (fb === 'ACEPTADA') {
+          <div class="display-3 mb-2">✅</div>
+          <h2 class="h5">Sugerencia aceptada</h2>
+          <p class="text-muted">El feedback ayuda a entrenar el modelo IA.</p>
+        } @else if (fb === 'CAMBIADA') {
+          <div class="display-3 mb-2">↪️</div>
+          <h2 class="h5">Cambio registrado</h2>
+          <p class="text-muted">Tu elección queda guardada para mejorar futuras sugerencias.</p>
+        } @else {
+          <div class="display-3 mb-2">✋</div>
+          <h2 class="h5">Sugerencia cancelada</h2>
+          <p class="text-muted">No se procesó ningún trámite.</p>
+        }
+        <button type="button" class="btn btn-primary" (click)="reset()">
+          Hacer otra consulta
+        </button>
+      </div>
+    </div>
+  }
+</section>

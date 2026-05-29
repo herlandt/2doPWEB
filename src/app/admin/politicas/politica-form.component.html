@@ -41,6 +41,19 @@
       </div>
     </div>
 
+    <div class="mb-3">
+      <label class="form-label" for="diagramaId">Diagrama vinculado</label>
+      <select id="diagramaId" class="form-select" formControlName="diagramaId">
+        <option value="">-- Sin diagrama --</option>
+        @for (d of diagramasDisponibles(); track d.id) {
+          <option [value]="d.id">{{ d.nombre }} (v{{ d.versionActual }} - {{ d.estado }})</option>
+        }
+      </select>
+      <small class="form-text text-muted">
+        Solo aparecen diagramas sin politica asociada{{ diagramaActual() ? ' y el actualmente vinculado' : '' }}.
+      </small>
+    </div>
+
     <div class="d-flex gap-2">
       <button type="submit" class="btn btn-primary" [disabled]="loading() || form.invalid">
         @if (loading()) {

@@ -1,0 +1,81 @@
+<div class="card border-0 shadow-sm">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <strong class="small">🎙️ Dictar formulario por voz</strong>
+      @if (resultado() || error()) {
+        <button type="button" class="btn btn-sm btn-link text-decoration-none" (click)="limpiar()">
+          Otro dictado
+        </button>
+      }
+    </div>
+
+    @if (!resultado() && !error() && !procesando()) {
+      <app-grabador-voz (audioGrabado)="onAudio($event)" />
+      <p class="small text-muted mt-2 mb-0">
+        Habla con naturalidad. La IA mapeará cada fragmento al campo correcto del formulario.
+      </p>
+    }
+
+    @if (procesando()) {
+      <div class="d-flex align-items-center gap-2 text-muted small">
+        <div class="spinner-border spinner-border-sm"></div>
+        Transcribiendo y mapeando campos…
+      </div>
+    }
+
+    @if (error()) {
+      <div class="alert alert-danger small mb-2">{{ error() }}</div>
+      <button type="button" class="btn btn-sm btn-secondary" (click)="reintentar()">
+        Reintentar
+      </button>
+    }
+
+    @if (resultado(); as r) {
+      <div class="border rounded p-2 mb-2 bg-light small">
+        <div class="text-muted mb-1">Texto transcrito:</div>
+        <div>{{ r.textoTranscrito }}</div>
+      </div>
+
+      @if (r.campos.length > 0) {
+        <div class="table-responsive">
+          <table class="table table-sm mb-2">
+            <thead>
+              <tr>
+                <th class="small">Campo</th>
+                <th class="small">Valor sugerido</th>
+                <th class="small text-center">Confianza</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of r.campos; track c.campo) {
+                <tr>
+                  <td><code class="small">{{ c.campo }}</code></td>
+                  <td class="small">{{ c.valor || '—' }}</td>
+                  <td class="text-center">
+                    <span class="badge {{ badgeConfianza(c.confianza) }}">
+                      {{ (c.confianza * 100) | number: '1.0-0' }}%
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-primary" (click)="aplicar()">
+            Aplicar al formulario
+          </button>
+        </div>
+      } @else {
+        <div class="alert alert-info small mb-0">
+          No se mapearon campos automáticamente. Usa el texto transcrito como referencia.
+        </div>
+      }
+
+      <p class="small text-muted mt-2 mb-0">
+        ⚠️ Revisa siempre los valores sugeridos antes de guardar.
+      </p>
+    }
+  </div>
+</div>

@@ -1,0 +1,87 @@
+@if (visible()) {
+  <button
+    type="button"
+    class="agente-fab"
+    [class.agente-fab--open]="abierto()"
+    (click)="toggle()"
+    [attr.aria-label]="abierto() ? 'Cerrar asistente' : 'Abrir asistente'"
+    [attr.aria-expanded]="abierto()"
+  >
+    @if (abierto()) {
+      <lucide-icon [img]="icons.close" [size]="22"></lucide-icon>
+    } @else {
+      <lucide-icon [img]="icons.chat" [size]="22"></lucide-icon>
+    }
+  </button>
+
+  @if (abierto()) {
+    <section class="agente-panel" role="dialog" aria-label="Asistente de soporte">
+      <header class="agente-panel__header">
+        <div class="agente-panel__title">
+          <lucide-icon [img]="icons.bot" [size]="18"></lucide-icon>
+          <span>Asistente del sistema</span>
+        </div>
+        <button
+          type="button"
+          class="agente-panel__close"
+          (click)="toggle()"
+          aria-label="Cerrar"
+        >
+          <lucide-icon [img]="icons.close" [size]="16"></lucide-icon>
+        </button>
+      </header>
+
+      <div #scrollBox class="agente-panel__messages">
+        @for (m of mensajes(); track $index) {
+          <div
+            class="agente-msg"
+            [class.agente-msg--user]="m.fromUser"
+            [class.agente-msg--bot]="!m.fromUser"
+          >
+            <div class="agente-msg__bubble">{{ m.text }}</div>
+            @if (!m.fromUser && m.action) {
+              <button
+                type="button"
+                class="agente-action"
+                (click)="ejecutarAccion(m.action)"
+              >
+                <span>{{ m.action.label }}</span>
+                <lucide-icon [img]="icons.arrow" [size]="14"></lucide-icon>
+              </button>
+            }
+            @if (!m.fromUser && m.fuente) {
+              <span class="agente-msg__fuente">{{ m.fuente }}</span>
+            }
+          </div>
+        }
+        @if (cargando()) {
+          <div class="agente-msg agente-msg--bot">
+            <div class="agente-msg__bubble agente-msg__bubble--typing">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <form class="agente-panel__input" (submit)="$event.preventDefault(); enviar()">
+        <textarea
+          [ngModel]="consulta()"
+          (ngModelChange)="consulta.set($event)"
+          (keydown)="onKeydown($event)"
+          name="consulta"
+          rows="1"
+          placeholder="Escribe tu consulta…"
+          [disabled]="cargando()"
+        ></textarea>
+        <button
+          type="submit"
+          class="agente-panel__send"
+          [disabled]="cargando() || !consulta().trim()"
+          aria-label="Enviar"
+        >
+          <lucide-icon [img]="icons.send" [size]="16"></lucide-icon>
+        </button>
+      </form>
+    </section>
+  }
+}

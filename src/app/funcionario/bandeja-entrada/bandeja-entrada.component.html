@@ -1,14 +1,51 @@
 <section class="container-fluid py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <!-- Cabecera con título + contador de riesgo + acciones -->
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
       <h1 class="h4 mb-0">Bandeja de Entrada</h1>
       <p class="text-muted small mb-0">Trámites pendientes de su revisión según el Workflow.</p>
     </div>
-    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="cargar()">
-      Actualizar
-    </button>
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+      @if (riesgoDisponible() && contadorAltos() > 0) {
+        <div class="alert alert-danger py-1 px-3 mb-0 small">
+          <strong>{{ contadorAltos() }}</strong>
+          @if (contadorAltos() === 1) { trámite en riesgo alto }
+          @else { trámites en riesgo alto }
+        </div>
+      }
+
+      <!-- CU-44: toggle de orden -->
+      <div class="btn-group btn-group-sm" role="group" aria-label="Ordenar por">
+        <button
+          type="button"
+          class="btn"
+          [class.btn-primary]="orden() === 'fecha'"
+          [class.btn-outline-primary]="orden() !== 'fecha'"
+          (click)="cambiarOrden('fecha')"
+        >
+          Por fecha
+        </button>
+        <button
+          type="button"
+          class="btn"
+          [class.btn-primary]="orden() === 'ia'"
+          [class.btn-outline-primary]="orden() !== 'ia'"
+          (click)="cambiarOrden('ia')"
+          title="Ordenar por prioridad recomendada por la IA (CU-44)"
+        >
+          Por IA ✨
+        </button>
+      </div>
+
+      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="cargar()">
+        Actualizar
+      </button>
+    </div>
   </div>
 
+  @if (avisoIa()) {
+    <div class="alert alert-warning small py-2">{{ avisoIa() }}</div>
+  }
   @if (error()) {
     <div class="alert alert-danger" role="alert">{{ error() }}</div>
   }
@@ -29,25 +66,42 @@
             <tr>
               <th>Código</th>
               <th>Política</th>
-              <th>Estado Actual</th>
-              <th>Fecha de Recibido</th>
-              <th>Prioridad</th>
+              <th>Estado</th>
+              <th>Recibido</th>
+              <th class="text-center" title="CU-43 — predicción de SLA">Riesgo</th>
+              <th class="text-center">Prioridad</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             @for (tramite of tramites(); track tramite.id) {
-              <tr>
+              <tr [title]="tooltipRiesgo(tramite)">
                 <td><strong>{{ tramite.codigo }}</strong></td>
                 <td>{{ tramite.politicaNombre ?? '—' }}</td>
                 <td>
-                  <span class="badge bg-warning text-dark">{{ tramite.estadoActual ?? tramite.estado }}</span>
+                  <span class="badge bg-warning text-dark">
+                    {{ tramite.estadoActual ?? tramite.estado }}
+                  </span>
                 </td>
-                <td>{{ formatearFecha(tramite.fechaInicio) }}</td>
-                <td>{{ tramite.prioridad ?? '—' }}</td>
+                <td class="small">{{ formatearFecha(tramite.fechaInicio) }}</td>
+                <td class="text-center">
+                  @if (riesgoDisponible()) {
+                    <app-chip-riesgo
+                      [nivel]="tramite.riesgoDemora ?? 'desconocido'"
+                      [probSla]="tramite.probSuperarSla"
+                    />
+                  } @else {
+                    <span class="text-muted small">—</span>
+                  }
+                </td>
+                <td class="text-center">{{ tramite.prioridad ?? '—' }}</td>
                 <td>
-                  <button class="btn btn-primary btn-sm" type="button" (click)="verExpediente(tramite.id)">
-                    Revisar Expediente
+                  <button
+                    class="btn btn-primary btn-sm"
+                    type="button"
+                    (click)="verExpediente(tramite.id)"
+                  >
+                    Revisar
                   </button>
                 </td>
               </tr>

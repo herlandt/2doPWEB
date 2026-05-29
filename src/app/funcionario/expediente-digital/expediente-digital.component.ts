@@ -1,11 +1,16 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { DocumentoArchivoService } from '../../core/services/documento-archivo.service';
 import { TramiteC2Service } from '../../core/services/tramite-c2.service';
+import { DocumentoArchivo } from '../../core/models/documento-archivo.model';
+import { DictarSeccionComponent } from '../../shared/dictar-seccion/dictar-seccion.component';
+import { DictarFormularioResponse } from '../../core/models/dictado-formulario.model';
 
 @Component({
   selector: 'app-expediente-digital',
-  imports: [RouterLink],
+  imports: [RouterLink, DatePipe, DictarSeccionComponent],
   templateUrl: './expediente-digital.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -14,6 +19,7 @@ export class ExpedienteDigitalComponent {
   private readonly router = inject(Router);
   private readonly tramiteC2Svc = inject(TramiteC2Service);
   private readonly authSvc = inject(AuthService);
+  private readonly docSvc = inject(DocumentoArchivoService);
 
   readonly volverUrl = computed(() =>
     this.authSvc.isAdmin() ? '/admin/historial' : '/funcionario/bandeja',
@@ -42,14 +48,119 @@ export class ExpedienteDigitalComponent {
   readonly funcionarioDestinoId = signal('');
   readonly listaFuncionarios = signal<any[]>([]);
 
-  // CU-30: Dictado por voz
-  readonly grabando = signal(false);
-  readonly errorMicrofono = signal('');
-  private mediaRecorder: MediaRecorder | null = null;
-  private chunksAudio: BlobPart[] = [];
+  // CU-30: el dictado por voz se canaliza a través de <app-dictar-seccion>
+  // dentro de cada sección activa. El botón micrófono duplicado que vivía
+  // en este componente se removió para evitar dos puntos de entrada.
+
+  // CU-34 — documentos del repositorio asociados al trámite
+  readonly documentos = signal<DocumentoArchivo[]>([]);
+  readonly cargandoDocumentos = signal(false);
+  readonly errorDocumentos = signal('');
+  readonly previewCargandoId = signal<string | null>(null);
+
+  // CU-13c — valores en edición por campoId (no persiste hasta "Guardar borrador").
+  readonly valoresEnEdicion = signal<Record<string, string>>({});
+  readonly guardandoSeccionId = signal<string | null>(null);
+  readonly guardadoOkSeccionId = signal<string | null>(null);
 
   constructor() {
     this.cargarExpediente();
+    this.cargarDocumentos();
+  }
+
+  // ── CU-13c: llenado del formulario de la sección activa ───────────────
+
+  setCampoValor(campoId: string, ev: Event): void {
+    const target = ev.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+    this.valoresEnEdicion.update((curr) => ({ ...curr, [campoId]: target.value }));
+  }
+
+  setCampoCheck(campoId: string, ev: Event): void {
+    const target = ev.target as HTMLInputElement;
+    this.valoresEnEdicion.update((curr) => ({ ...curr, [campoId]: target.checked ? 'true' : 'false' }));
+  }
+
+  guardarBorradorSeccion(seccion: any): void {
+    const seccionId = seccion?.infoSeccion?.id;
+    if (!seccionId) return;
+
+    const editados = this.valoresEnEdicion();
+    const campos = (seccion.campos ?? [])
+      .map((c: any) => ({
+        campoId: c.id,
+        // Si el usuario tocó el campo usamos lo editado; si no, dejamos el valor que ya venía.
+        valor: editados[c.id] !== undefined ? editados[c.id] : (c.valor ?? ''),
+      }))
+      .filter((c: any) => c.campoId);
+
+    this.guardandoSeccionId.set(seccionId);
+    this.guardadoOkSeccionId.set(null);
+    this.tramiteC2Svc.guardarBorradorSeccion(seccionId, campos).subscribe({
+      next: () => {
+        this.guardandoSeccionId.set(null);
+        this.guardadoOkSeccionId.set(seccionId);
+        // Refrescamos para que los valores del servidor se reflejen en pantalla.
+        this.cargarExpediente();
+        setTimeout(() => this.guardadoOkSeccionId.set(null), 3000);
+      },
+      error: (err: any) => {
+        this.guardandoSeccionId.set(null);
+        const msg = err?.error?.message ?? err?.error?.detail ?? 'No se pudo guardar el borrador';
+        this.error.set(msg);
+      },
+    });
+  }
+
+  private cargarDocumentos(): void {
+    if (!this.tramiteId) return;
+    this.cargandoDocumentos.set(true);
+    this.errorDocumentos.set('');
+    this.docSvc.listarPorTramite(this.tramiteId).subscribe({
+      next: (docs) => {
+        this.documentos.set(docs);
+        this.cargandoDocumentos.set(false);
+      },
+      error: (err: any) => {
+        this.cargandoDocumentos.set(false);
+        if (err?.status === 403) {
+          this.errorDocumentos.set('Sin permiso de lectura para los documentos de este trámite.');
+        } else if (err?.status !== 404) {
+          this.errorDocumentos.set('No se pudieron cargar los documentos.');
+        }
+        // 404 = repositorio aún no creado → lista vacía sin mensaje.
+      },
+    });
+  }
+
+  /** Pide la URL S3 firmada y la abre en una pestaña nueva. */
+  verDocumento(doc: DocumentoArchivo): void {
+    if (this.previewCargandoId() === doc.id) return;
+    this.previewCargandoId.set(doc.id);
+    this.docSvc.preview(doc.id).subscribe({
+      next: (p) => {
+        this.previewCargandoId.set(null);
+        if (p?.urlPreview) {
+          window.open(p.urlPreview, '_blank', 'noopener');
+        }
+      },
+      error: () => {
+        this.previewCargandoId.set(null);
+        this.errorDocumentos.set('No se pudo generar la vista previa.');
+        setTimeout(() => this.errorDocumentos.set(''), 4000);
+      },
+    });
+  }
+
+  iconoTipoDoc(tipo: string): string {
+    switch ((tipo || '').toUpperCase()) {
+      case 'PDF':    return '📕';
+      case 'IMAGEN': return '🖼️';
+      case 'WORD':   return '📝';
+      case 'EXCEL':  return '📊';
+      case 'AUDIO':  return '🎵';
+      case 'VIDEO':  return '🎬';
+      default:       return '📄';
+    }
   }
 
   cargarExpediente(): void {
@@ -157,68 +268,6 @@ export class ExpedienteDigitalComponent {
     this.error.set(`Error al procesar la acción: ${msg}`);
   }
 
-  // CU-30: iniciar grabación con MediaRecorder
-  iniciarGrabacion(): void {
-    this.errorMicrofono.set('');
-    if (!navigator.mediaDevices?.getUserMedia) {
-      this.errorMicrofono.set('Tu navegador no soporta grabación de audio.');
-      return;
-    }
-
-    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-      this.chunksAudio = [];
-      this.mediaRecorder = new MediaRecorder(stream);
-
-      this.mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) this.chunksAudio.push(e.data);
-      };
-
-      this.mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(this.chunksAudio, { type: 'audio/webm' });
-        this.enviarAudio(audioBlob);
-        stream.getTracks().forEach((t) => t.stop());
-      };
-
-      this.mediaRecorder.start();
-      this.grabando.set(true);
-    }).catch(() => {
-      this.errorMicrofono.set('No se pudo acceder al micrófono. Verifica los permisos del navegador.');
-    });
-  }
-
-  detenerGrabacion(): void {
-    if (this.mediaRecorder && this.grabando()) {
-      this.mediaRecorder.stop();
-      this.grabando.set(false);
-    }
-  }
-
-  private enviarAudio(audioBlob: Blob): void {
-    const exp = this.expediente();
-    const secciones: any[] = exp?.secciones ?? [];
-    const activa = secciones.find((s: any) => s.infoSeccion?.estado === 'en_curso');
-    const seccionId: string | null = activa?.infoSeccion?.id ?? null;
-
-    if (!seccionId) {
-      this.errorMicrofono.set('No hay sección activa en este expediente para transcribir.');
-      return;
-    }
-
-    this.justificacion.set('Transcribiendo audio...');
-
-    this.tramiteC2Svc.transcribirVoz(seccionId, audioBlob).subscribe({
-      next: (res) => {
-        this.justificacion.set(res.textoTranscrito ?? '');
-      },
-      error: () => {
-        this.justificacion.set('');
-        this.errorMicrofono.set(
-          'El servicio de transcripción no está disponible. Escribe tu respuesta manualmente.',
-        );
-      },
-    });
-  }
-
   formatearFecha(iso: string | undefined): string {
     if (!iso) return '—';
     try {
@@ -226,5 +275,16 @@ export class ExpedienteDigitalComponent {
     } catch {
       return iso;
     }
+  }
+
+  // CU-39 · dictado por voz aplicado a una sección
+  onDictadoAplicado(resp: DictarFormularioResponse): void {
+    const aplicados = resp.campos.filter((c) => c.valor).length;
+    this.exito.set(
+      aplicados > 0
+        ? `${aplicados} campo(s) sugeridos por IA listos. Revisa y guarda manualmente.`
+        : 'Dictado registrado. No se mapeó ningún campo automáticamente.',
+    );
+    setTimeout(() => this.exito.set(''), 5000);
   }
 }

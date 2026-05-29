@@ -3,10 +3,11 @@ import { RouterOutlet } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { SidebarComponent } from './shared/sidebar/sidebar.component';
 import { ToastContainerComponent } from './shared/toast/toast-container.component';
+import { AgenteFlotanteComponent } from './shared/agente/agente-flotante.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, SidebarComponent, ToastContainerComponent],
+  imports: [RouterOutlet, SidebarComponent, ToastContainerComponent, AgenteFlotanteComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

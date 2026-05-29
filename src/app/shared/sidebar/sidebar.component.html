@@ -112,10 +112,10 @@
       }
 
       @if (role() === 'funcionario') {
-        <a routerLink="/funcionario/tramites" routerLinkActive="active" class="nav-item" aria-label="Mis Trámites">
-          <span class="nav-icon"><lucide-icon [img]="icons.tramites" [size]="18"></lucide-icon></span>
-          <span class="nav-label">Mis Trámites</span>
-        </a>
+        <!-- "Mis Trámites" se removió: duplicaba endpoint con la Bandeja de
+             Entrada (ambas consumen GET /tramites/mis-pendientes). La Bandeja
+             es estrictamente superior — añade chip de riesgo IA (CU-43) y
+             orden por IA (CU-44). La ruta sigue accesible por URL directa. -->
         <a routerLink="/funcionario/bandeja" routerLinkActive="active" class="nav-item" aria-label="Bandeja de Entrada">
           <span class="nav-icon"><lucide-icon [img]="icons.bandeja" [size]="18"></lucide-icon></span>
           <span class="nav-label">Bandeja de Entrada</span>

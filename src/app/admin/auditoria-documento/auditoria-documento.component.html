@@ -1,0 +1,153 @@
+<section class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <a routerLink="/admin/politicas" class="small text-decoration-none">&larr; Políticas</a>
+      <h1 class="h4 mb-0 mt-1">
+        Auditoría documental
+        <span class="text-muted fs-6">· documento {{ documentoId.slice(-6) }}</span>
+      </h1>
+      <p class="text-muted small mb-0">
+        CU-37 — timeline inmutable de accesos, descargas y modificaciones.
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <button
+        class="btn btn-sm btn-outline-success"
+        type="button"
+        (click)="exportarCsv()"
+        [disabled]="!hayDatos()"
+      >
+        Descargar CSV (página actual)
+      </button>
+      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="cargar()">
+        Actualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label small fw-semibold">Desde</label>
+          <input type="date" class="form-control form-control-sm"
+                 [value]="desde()" (input)="desde.set($any($event.target).value)" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-semibold">Hasta</label>
+          <input type="date" class="form-control form-control-sm"
+                 [value]="hasta()" (input)="hasta.set($any($event.target).value)" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-semibold">Acción</label>
+          <select class="form-select form-select-sm"
+                  [value]="filtroAccion()" (change)="filtroAccion.set($any($event.target).value)">
+            <option value="">Todas</option>
+            @for (a of acciones; track a) {
+              <option [value]="a">{{ a }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+          <button class="btn btn-sm btn-primary" type="button" (click)="aplicarFiltros()">
+            Aplicar
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="limpiarFiltros()">
+            Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary"></div>
+    </div>
+  } @else if (!hayDatos()) {
+    <div class="text-center text-muted py-5">
+      Sin eventos registrados para este documento.
+    </div>
+  } @else {
+    <!-- Resumen -->
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body py-2">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+          <span class="text-muted small">
+            Total: <strong>{{ conteoTotal() }}</strong> evento(s) ·
+            Mostrando <strong>{{ conteoPagina() }}</strong> de esta página
+          </span>
+          @for (kv of conteoPorAccion() | keyvalue; track kv.key) {
+            <span class="badge {{ badgeAccion(kv.key) }}">
+              {{ iconoAccion(kv.key) }} {{ kv.key }} · {{ kv.value }}
+            </span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <ol class="timeline">
+      @for (it of itemsVisibles(); track it.id) {
+        <li>
+          <div class="d-flex gap-3">
+            <div class="time-col text-muted small">
+              {{ it.timestamp | date: 'dd MMM HH:mm:ss' }}
+            </div>
+            <div class="dot {{ badgeAccion(it.accion) }}">
+              {{ iconoAccion(it.accion) }}
+            </div>
+            <div class="content flex-grow-1">
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span class="badge {{ badgeAccion(it.accion) }}">{{ it.accion }}</span>
+                <strong class="small">{{ it.usuarioNombre || it.usuarioId }}</strong>
+                @if (it.rol) {
+                  <span class="badge bg-light text-muted small">{{ it.rol }}</span>
+                }
+                @if (it.versionId) {
+                  <span class="text-muted small">· versión {{ it.versionId.slice(-6) }}</span>
+                }
+              </div>
+              <div class="small text-muted mt-1">
+                @if (it.ip) { IP {{ it.ip }} · }
+                @if (it.userAgent) { {{ it.userAgent }} }
+              </div>
+              @if (it.detalle) {
+                <details class="small text-muted mt-1">
+                  <summary>detalle</summary>
+                  <pre class="mb-0">{{ it.detalle | json }}</pre>
+                </details>
+              }
+            </div>
+          </div>
+        </li>
+      }
+    </ol>
+
+    <!-- Paginación -->
+    @if (pagina(); as p) {
+      <nav class="d-flex justify-content-between align-items-center mt-3">
+        <span class="small text-muted">
+          Página {{ p.number + 1 }} de {{ p.totalPages || 1 }}
+        </span>
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-outline-secondary"
+                  [disabled]="p.number === 0"
+                  (click)="paginaAnterior()">
+            ← Anterior
+          </button>
+          <button class="btn btn-outline-secondary"
+                  [disabled]="p.number >= p.totalPages - 1"
+                  (click)="paginaSiguiente()">
+            Siguiente →
+          </button>
+        </div>
+      </nav>
+    }
+  }
+</section>

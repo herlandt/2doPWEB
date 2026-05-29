@@ -17,6 +17,7 @@ export interface PoliticaRequest {
   descripcion: string;
   categoria: string;
   estado: string;
+  diagramaId?: string;
 }
 
 export interface PoliticaEstadoRequest {

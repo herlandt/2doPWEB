@@ -29,9 +29,9 @@
         <div class="form-row">
           <label class="form-label" for="politica">Política (opcional)</label>
           <select #politica id="politica" class="cre-input">
-            <option value="">— Sin política —</option>
+            <option value="" [selected]="!politicaIdPreseleccionada">— Sin política —</option>
             @for (item of politicas(); track item.id) {
-              <option [value]="item.id">{{ item.nombre }}</option>
+              <option [value]="item.id" [selected]="item.id === politicaIdPreseleccionada">{{ item.nombre }}</option>
             }
           </select>
         </div>
@@ -308,17 +308,30 @@
                 />
               </div>
               <div class="form-row">
-                <label class="form-label" for="act-tipo">Tipo salida</label>
-                <select
-                  id="act-tipo"
-                  class="cre-input"
-                  [value]="actTipoSalida()"
-                  (change)="actTipoSalida.set($any($event.target).value)"
-                >
-                  @for (tipo of tiposSalida; track tipo) {
-                    <option [value]="tipo">{{ tipo }}</option>
+                <label class="form-label">
+                  Salidas posibles <span class="req">*</span>
+                  <small class="cre-hint">
+                    Marca todas las acciones que el funcionario podrá ejecutar al cerrar la actividad.
+                  </small>
+                </label>
+                <div class="salidas-grid">
+                  @for (s of salidasInfo; track s.value) {
+                    <button
+                      type="button"
+                      class="salida-card"
+                      [class.salida-card--active]="isActSalidaSeleccionada(s.value)"
+                      [attr.data-color]="s.color"
+                      (click)="toggleActSalida(s.value)"
+                    >
+                      <span class="salida-icon">{{ s.icono }}</span>
+                      <span class="salida-label">{{ s.label }}</span>
+                      <small class="salida-desc">{{ s.descripcion }}</small>
+                      @if (isActSalidaSeleccionada(s.value)) {
+                        <span class="salida-check">✓</span>
+                      }
+                    </button>
                   }
-                </select>
+                </div>
               </div>
               <div class="form-row">
                 <label class="form-label" for="act-desc">Descripcion</label>
@@ -384,6 +397,15 @@
             (createDepartamento)="abrirModalDepto()"
             (createActividad)="abrirModalActividad()"
           ></app-diagram-canvas>
+
+          @if (nodoEnDiseno(); as nodo) {
+            <app-formulario-disenador
+              [nodoId]="nodo.id"
+              [nodoNombre]="nodo.nombre"
+              [readonly]="data.estado !== 'borrador'"
+              (cerrado)="cerrarDisenadorFormulario()"
+            ></app-formulario-disenador>
+          }
 
           @if (inspectorDraft(); as draft) {
             <aside class="inspector-floating">
@@ -482,6 +504,45 @@
                     </div>
                     @if (!draft.departamentoId) {
                       <span class="inspector-hint warn">Asigna un departamento primero.</span>
+                    }
+                  </div>
+
+                  <div class="inspector-row">
+                    <span class="inspector-key">Formulario del nodo</span>
+                    <button
+                      type="button"
+                      class="cre-btn cre-btn-primary cre-btn-sm"
+                      (click)="abrirDisenadorFormulario()"
+                    >
+                      Diseñar formulario
+                    </button>
+                    <span class="inspector-hint">
+                      Crea o edita los campos (espacios y checks) que el funcionario rellenará en este paso.
+                    </span>
+                  </div>
+
+                  <!-- Documentos requeridos por la actividad asociada -->
+                  <div class="inspector-row">
+                    <span class="inspector-key">Documentos requeridos</span>
+                    @if (!draft.actividadId) {
+                      <span class="inspector-hint">
+                        Asigna una actividad primero para ver los documentos que el cliente debe presentar.
+                      </span>
+                    } @else if (documentosRequeridosDelDraft().length === 0) {
+                      <span class="inspector-hint">
+                        Esta actividad no tiene documentos asociados. Edítala desde la pantalla "Actividades".
+                      </span>
+                    } @else {
+                      <ul class="inspector-doclist">
+                        @for (doc of documentosRequeridosDelDraft(); track doc.id) {
+                          <li class="inspector-docitem" [title]="doc.descripcion">
+                            <span class="inspector-docname">{{ doc.nombre }}</span>
+                          </li>
+                        }
+                      </ul>
+                      <span class="inspector-hint">
+                        Configurados en la actividad — para cambiarlos, edita la actividad.
+                      </span>
                     }
                   </div>
                 }

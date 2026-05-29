@@ -1,0 +1,307 @@
+<div class="fd-backdrop" (click)="cerrar()">
+  <div class="fd-modal" (click)="$event.stopPropagation()">
+    <header class="fd-header">
+      <div>
+        <strong class="fd-title">Diseñador de Formulario</strong>
+        <span class="fd-sub">Nodo: {{ nodoNombre() || '(sin nombre)' }}</span>
+      </div>
+      <button type="button" class="fd-close" (click)="cerrar()" aria-label="Cerrar">×</button>
+    </header>
+
+    @if (exito()) {
+      <div class="fd-alert fd-alert-success">{{ exito() }}</div>
+    }
+    @if (error()) {
+      <div class="fd-alert fd-alert-danger">{{ error() }}</div>
+    }
+
+    @if (cargando()) {
+      <div class="fd-loading">Cargando formulario…</div>
+    } @else {
+      <!-- ── 1. Cabecera ────────────────────────────────────── -->
+      <section class="fd-section">
+        <div class="fd-step-head">
+          <span class="fd-step-num">1</span>
+          <div>
+            <h3 class="fd-section-title">Cabecera del formulario</h3>
+            <small class="fd-section-sub">Nombre del formulario y opciones globales.</small>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="fd-nombre">Nombre del formulario <span class="req">*</span></label>
+          <input
+            id="fd-nombre"
+            class="cre-input"
+            [value]="nombre()"
+            (input)="nombre.set($any($event.target).value)"
+            placeholder="Ej. Inspección técnica en campo"
+            [disabled]="readonly()"
+          />
+        </div>
+
+        <div class="fd-checks">
+          <label class="fd-check">
+            <input
+              type="checkbox"
+              [checked]="permiteAdjuntos()"
+              (change)="permiteAdjuntos.set($any($event.target).checked)"
+              [disabled]="readonly()"
+            />
+            <span>📎 Permitir adjuntar archivos al enviar</span>
+          </label>
+          <label class="fd-check">
+            <input
+              type="checkbox"
+              [checked]="permiteDictadoVoz()"
+              (change)="permiteDictadoVoz.set($any($event.target).checked)"
+              [disabled]="readonly()"
+            />
+            <span>🎙 Permitir dictado por voz</span>
+          </label>
+        </div>
+
+        <div class="fd-actions">
+          <button
+            type="button"
+            class="cre-btn cre-btn-primary cre-btn-sm"
+            (click)="guardarCabecera()"
+            [disabled]="guardandoForm() || readonly()"
+          >
+            @if (formulario()) {
+              @if (guardandoForm()) { Guardando… } @else { Guardar cabecera }
+            } @else {
+              @if (guardandoForm()) { Creando… } @else { Crear formulario }
+            }
+          </button>
+          @if (formulario() && !readonly()) {
+            <button
+              type="button"
+              class="cre-btn cre-btn-danger cre-btn-sm"
+              (click)="eliminarFormulario()"
+            >Eliminar formulario</button>
+          }
+        </div>
+      </section>
+
+      <!-- ── 2. Constructor visual ─────────────────────────── -->
+      @if (formulario()) {
+        <section class="fd-section">
+          <div class="fd-step-head">
+            <span class="fd-step-num">2</span>
+            <div class="fd-step-head-text">
+              <h3 class="fd-section-title">Diseña el formulario</h3>
+              <small class="fd-section-sub">
+                Arrastra un componente desde la <strong>paleta de la izquierda</strong> hacia el <strong>lienzo del centro</strong>.
+                Haz clic en un campo para editar sus propiedades a la derecha.
+              </small>
+            </div>
+          </div>
+
+          <div class="fd-rad" [class.fd-rad--readonly]="readonly()">
+            <!-- ── PALETA ── -->
+            <aside class="fd-paleta" aria-label="Paleta de componentes">
+              <div class="fd-paleta-titulo">Componentes</div>
+              @for (t of tiposVisual; track t.value) {
+                <div
+                  class="fd-paleta-item"
+                  [attr.draggable]="readonly() ? null : 'true'"
+                  (dragstart)="onPaletaDragStart($event, t.value)"
+                  [title]="t.descripcion"
+                >
+                  <span class="fd-paleta-icon">{{ t.icono }}</span>
+                  <div class="fd-paleta-text">
+                    <strong>{{ t.label }}</strong>
+                    <small>{{ t.descripcion }}</small>
+                  </div>
+                  <span class="fd-paleta-grip" aria-hidden="true">⋮⋮</span>
+                </div>
+              }
+              <p class="fd-paleta-tip">Arrastra hacia el lienzo →</p>
+            </aside>
+
+            <!-- ── CANVAS ── -->
+            <main
+              class="fd-canvas"
+              [class.fd-canvas--hover]="hoveringCanvas()"
+              (dragover)="onCanvasDragOver($event)"
+              (dragleave)="onCanvasDragLeave()"
+              (drop)="onCanvasDrop($event)"
+            >
+              <div class="fd-canvas-titulo">
+                Lienzo · {{ campos().length }} {{ campos().length === 1 ? 'campo' : 'campos' }}
+              </div>
+
+              @if (campos().length === 0) {
+                <div class="fd-canvas-vacio">
+                  <div class="fd-canvas-vacio-icon">⇧</div>
+                  <p class="fd-canvas-vacio-text">Suelta aquí cualquier componente de la paleta para comenzar.</p>
+                </div>
+              }
+
+              @for (c of campos(); let i = $index; track c.id) {
+                @if (indicadorIndice() === i) {
+                  <div class="fd-drop-indicator"></div>
+                }
+                <div
+                  class="fd-canvas-campo"
+                  [class.fd-canvas-campo--sel]="isCampoSeleccionado(c.id)"
+                  [attr.draggable]="readonly() ? null : 'true'"
+                  (dragstart)="onCampoDragStart($event, c.id)"
+                  (dragover)="onCampoSlotDragOver($event, i)"
+                  (click)="seleccionarCampo(c)"
+                >
+                  <div class="fd-canvas-campo-bar">
+                    <span class="fd-canvas-campo-grip" aria-hidden="true">⋮⋮</span>
+                    <span class="fd-canvas-campo-tipo" [title]="tipoLabel(c.tipo)">
+                      {{ tipoIcono(c.tipo) }} {{ tipoLabel(c.tipo) }}
+                    </span>
+                    @if (c.obligatorio) {
+                      <span class="fd-tag warn">obligatorio</span>
+                    }
+                    <span class="fd-canvas-campo-orden">#{{ c.orden }}</span>
+                    @if (!readonly()) {
+                      <div class="fd-canvas-campo-acts">
+                        <button type="button" class="fd-icon-btn" title="Duplicar" (click)="duplicarCampo(c, $event)">⎘</button>
+                        <button type="button" class="fd-icon-btn fd-icon-btn-danger" title="Eliminar" (click)="eliminarCampo(c, $event)">×</button>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Render del campo como se verá -->
+                  <div class="fd-canvas-campo-render">
+                    @if (c.etiqueta) {
+                      <label class="fd-render-label">
+                        {{ c.etiqueta }}
+                        @if (c.obligatorio) { <span class="req">*</span> }
+                      </label>
+                    }
+                    @switch (c.tipo) {
+                      @case ('texto')    { <input type="text" class="cre-input" disabled /> }
+                      @case ('textarea') { <textarea class="cre-input" rows="2" disabled></textarea> }
+                      @case ('numero')   { <input type="number" class="cre-input" disabled /> }
+                      @case ('fecha')    { <input type="date" class="cre-input" disabled /> }
+                      @case ('select')   {
+                        <select class="cre-input" disabled>
+                          <option>-- Seleccione --</option>
+                          @for (o of c.opciones ?? []; track o) { <option>{{ o }}</option> }
+                        </select>
+                      }
+                      @case ('radio')    {
+                        @for (o of c.opciones ?? []; track o) {
+                          <label class="fd-render-inline">
+                            <input type="radio" disabled name="prev-{{ c.id }}" /> <span>{{ o }}</span>
+                          </label>
+                        }
+                      }
+                      @case ('checkbox') {
+                        <label class="fd-render-inline">
+                          <input type="checkbox" disabled />
+                          <span>{{ c.etiqueta || 'Marcar opción' }}</span>
+                        </label>
+                      }
+                      @case ('archivo')  { <input type="file" class="cre-input" disabled /> }
+                    }
+                  </div>
+                </div>
+              }
+              @if (indicadorIndice() !== null && indicadorIndice() === campos().length) {
+                <div class="fd-drop-indicator"></div>
+              }
+            </main>
+
+            <!-- ── PANEL DE PROPIEDADES ── -->
+            <aside class="fd-propiedades" aria-label="Propiedades del campo">
+              @if (campoSeleccionado(); as sel) {
+                <div class="fd-propiedades-head">
+                  <strong>{{ tipoIcono(sel.tipo) }} Propiedades</strong>
+                  <button type="button" class="fd-icon-btn" (click)="cerrarPanelPropiedades()" title="Cerrar">×</button>
+                </div>
+
+                <div class="form-row">
+                  <label class="form-label">
+                    Etiqueta visible <span class="req">*</span>
+                    <small class="fd-hint">Texto que verá quien rellene el formulario.</small>
+                  </label>
+                  <input
+                    class="cre-input"
+                    [value]="sel.etiqueta"
+                    (input)="updateCampoProperty('etiqueta', $any($event.target).value)"
+                    placeholder="Ej. Domicilio del inmueble"
+                  />
+                </div>
+
+                <div class="form-row">
+                  <label class="form-label">
+                    ID interno
+                    <small class="fd-hint">Se genera automáticamente desde la etiqueta.</small>
+                  </label>
+                  <code class="fd-readonly-pill">{{ sel.nombre }}</code>
+                </div>
+
+                @if (necesitaOpciones()) {
+                  <div class="form-row">
+                    <label class="form-label">
+                      Opciones (una por línea) <span class="req">*</span>
+                    </label>
+                    <textarea
+                      class="cre-input"
+                      rows="4"
+                      [value]="opcionesTexto()"
+                      (input)="onOpcionesChange($event)"
+                      placeholder="Opción 1&#10;Opción 2&#10;Opción 3"
+                    ></textarea>
+                    @if (opcionesPreview().length > 0) {
+                      <small class="fd-hint">{{ opcionesPreview().length }} opciones detectadas.</small>
+                    }
+                  </div>
+                }
+
+                <div class="form-row">
+                  <label class="form-label">
+                    Validación (regex, opcional)
+                    <small class="fd-hint">Patrón que el valor deberá cumplir. Avanzado.</small>
+                  </label>
+                  <input
+                    class="cre-input fd-input-mono"
+                    [value]="sel.validacionRegex ?? ''"
+                    (input)="updateCampoProperty('validacionRegex', $any($event.target).value)"
+                    placeholder="Ej. ^[0-9]{6,9}$"
+                  />
+                </div>
+
+                <label class="fd-check fd-check-block">
+                  <input
+                    type="checkbox"
+                    [checked]="sel.obligatorio"
+                    (change)="updateCampoProperty('obligatorio', $any($event.target).checked)"
+                  />
+                  <span>Obligatorio (no se puede dejar vacío)</span>
+                </label>
+
+                <div class="fd-actions">
+                  <button
+                    type="button"
+                    class="cre-btn cre-btn-primary cre-btn-sm"
+                    (click)="guardarCampoSeleccionado()"
+                    [disabled]="guardandoCampo()"
+                  >
+                    @if (guardandoCampo()) { Guardando… } @else { Guardar cambios }
+                  </button>
+                </div>
+              } @else {
+                <div class="fd-propiedades-vacio">
+                  <p>Haz clic sobre un campo del lienzo para editar sus propiedades.</p>
+                </div>
+              }
+            </aside>
+          </div>
+        </section>
+      } @else {
+        <p class="fd-empty">
+          Crea la cabecera del formulario para empezar a diseñar.
+        </p>
+      }
+    }
+  </div>
+</div>

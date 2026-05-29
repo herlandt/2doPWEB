@@ -9,18 +9,19 @@
 import type { Graph } from '@antv/x6';
 
 const COLORS = {
-  brand: '#ffffff',
-  brandDark: '#111827',
-  text: '#0f172a',
-  white: '#ffffff',
-  success: '#ffffff',
-  successDark: '#111827',
-  warning: '#ffffff',
-  warningDark: '#111827',
-  warningInk: '#0f172a',
-  ink: '#0f172a',
-  border: '#94a3b8',
+  brand:        '#ffffff',   //   ← Color principal (blanco)
+  brandDark:    '#111827',     // ← Borde oscuro
+  text:         '#0f172a',      //← Texto oscuro
+  white:        '#ffffff',      //← Blanco puro
+  success:      '#ffffff',    //  ← Color éxito (inicio)
+  successDark:  '#111827',  //    ← Borde éxito oscuro
+  warning:      '#ffffff',     // ← Color advertencia
+  warningDark:  '#111827',      //← Borde advertencia oscuro
+  warningInk:   '#0f172a',     // ← Texto advertencia
+  ink:          '#0f172a',    //  ← Texto oscuro general
+  border:       '#94a3b8',  //    ← Bordes grises
 };
+
 
 let registered = false;
 

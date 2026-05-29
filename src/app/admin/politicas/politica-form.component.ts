@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PoliticaService } from '../../core/services/politica.service';
+import { DiagramaService } from '../../core/services/diagrama.service';
 import { PoliticaRequest } from '../../core/models/politica.model';
+import { DiagramaWorkflow } from '../../core/models/diagrama.model';
 
 @Component({
   selector: 'app-politica-form',
@@ -13,6 +15,7 @@ import { PoliticaRequest } from '../../core/models/politica.model';
 export class PoliticaFormComponent {
   private readonly fb = inject(FormBuilder);
   private readonly politicaSvc = inject(PoliticaService);
+  private readonly diagramaSvc = inject(DiagramaService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -24,6 +27,17 @@ export class PoliticaFormComponent {
   readonly esEdicion = !!this.politicaId;
 
   readonly categorias = ['conexiones', 'reconexiones', 'mantenimiento', 'reclamos', 'otros'];
+
+  readonly diagramasHuerfanos = signal<DiagramaWorkflow[]>([]);
+  readonly diagramaActual = signal<DiagramaWorkflow | null>(null);
+
+  readonly diagramasDisponibles = computed<DiagramaWorkflow[]>(() => {
+    const actual = this.diagramaActual();
+    const huerfanos = this.diagramasHuerfanos();
+    if (!actual) return huerfanos;
+    const yaIncluido = huerfanos.some((d) => d.id === actual.id);
+    return yaIncluido ? huerfanos : [actual, ...huerfanos];
+  });
 
   private getApiErrorMessage(err: unknown, fallback: string): string {
     const apiError = err as {
@@ -43,9 +57,15 @@ export class PoliticaFormComponent {
     descripcion: ['', [Validators.required]],
     categoria: ['conexiones', [Validators.required]],
     estado: ['borrador', [Validators.required]],
+    diagramaId: [''],
   });
 
   constructor() {
+    this.diagramaSvc.listarHuerfanos().subscribe({
+      next: (lista) => this.diagramasHuerfanos.set(lista),
+      error: () => this.diagramasHuerfanos.set([]),
+    });
+
     if (this.esEdicion && this.politicaId) {
       this.politicaSvc.buscarPorId(this.politicaId).subscribe({
         next: (politica) => {
@@ -55,7 +75,15 @@ export class PoliticaFormComponent {
             descripcion: politica.descripcion,
             categoria: politica.categoria,
             estado: politica.estado,
+            diagramaId: politica.diagramaId ?? '',
           });
+
+          if (politica.diagramaId) {
+            this.diagramaSvc.obtenerDiagrama(politica.diagramaId).subscribe({
+              next: (d) => this.diagramaActual.set(d),
+              error: () => this.diagramaActual.set(null),
+            });
+          }
         },
         error: () => this.error.set('Error al cargar politica'),
       });
@@ -71,7 +99,11 @@ export class PoliticaFormComponent {
     this.loading.set(true);
     this.error.set('');
 
-    const payload: PoliticaRequest = this.form.getRawValue();
+    const raw = this.form.getRawValue();
+    const payload: PoliticaRequest = {
+      ...raw,
+      diagramaId: raw.diagramaId || undefined,
+    };
 
     if (this.esEdicion && this.politicaId) {
       const estadoObjetivo = payload.estado;

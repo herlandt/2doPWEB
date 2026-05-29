@@ -9,8 +9,11 @@ export class TramiteC2Service {
   private readonly base = `${environment.apiUrl}`;
 
   // CU-09: Trámites asignados al usuario autenticado (bandeja de entrada)
-  getMisPendientes(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.base}/tramites/mis-pendientes`);
+  // CU-44: parámetro opcional ordenarPor=ia delega al microservicio IA para
+  // reordenar la bandeja por prioridad recomendada (fallback a fecha si IA cae).
+  getMisPendientes(ordenarPor?: 'fecha' | 'ia'): Observable<any[]> {
+    const q = ordenarPor ? `?ordenarPor=${ordenarPor}` : '';
+    return this.http.get<any[]>(`${this.base}/tramites/mis-pendientes${q}`);
   }
 
   // CU-10: Expediente completo de un trámite
@@ -56,5 +59,14 @@ export class TramiteC2Service {
       `${this.base}/expedientes/secciones/${seccionId}/transcribir-voz`,
       formData,
     );
+  }
+
+  // CU-13c: Guardar borrador de los campos llenados por el funcionario en
+  // una sección "en_curso". Cada item es { campoId, valor }.
+  guardarBorradorSeccion(
+    seccionId: string,
+    campos: Array<{ campoId: string; valor: string }>,
+  ): Observable<any> {
+    return this.http.put<any>(`${this.base}/seccion/${seccionId}`, { campos });
   }
 }
