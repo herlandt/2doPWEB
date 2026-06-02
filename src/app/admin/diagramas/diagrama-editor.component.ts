@@ -77,12 +77,26 @@ export class DiagramaEditorComponent {
    * Departamentos que son calles (swimlanes) de ESTE diagrama. El inspector solo
    * debe ofrecer las calles realmente agregadas al diagrama, no todos los
    * departamentos del sistema (bug: aparecían calles no agregadas).
+   *
+   * OJO: las calles se guardan con DOS convenciones según el origen del diagrama:
+   *   - diagramas manuales / seed  -> CÓDIGO  (p.ej. "ATC")  [DiagramaSeeder]
+   *   - diagramas generados por IA -> NOMBRE  (p.ej. "Atención al Cliente")
+   *     [PromptFlowService usa Departamento::getNombre]
+   * Por eso resolvemos por código O nombre (igual que {@link findDepartamentoFromLane});
+   * si comparáramos solo por código, en los diagramas de IA el desplegable quedaba
+   * vacío y el inspector mostraba "Sin departamento" aunque el nodo sí lo tuviera.
    */
   readonly departamentosDelDiagrama = computed(() => {
     const lanes = this.diagrama()?.swimlanes ?? [];
-    if (lanes.length === 0) return this.departamentos();
+    const deps = this.departamentos();
+    if (lanes.length === 0) return deps;
     const set = new Set(lanes.map((l) => l.trim().toLowerCase()));
-    return this.departamentos().filter((d) => set.has(d.codigo.trim().toLowerCase()));
+    const enLanes = (d: Departamento) =>
+      set.has(d.codigo.trim().toLowerCase()) || set.has(d.nombre.trim().toLowerCase());
+    // Garantiza que la calle del nodo seleccionado siempre esté en el desplegable,
+    // aunque por algún dato heredado no coincidiera con ninguna lane.
+    const selId = this.inspectorDraft()?.departamentoId;
+    return deps.filter((d) => enLanes(d) || d.id === selId);
   });
   readonly politicas = signal<Politica[]>([]);
   readonly nodos = signal<NodoDiagrama[]>([]);
@@ -671,8 +685,9 @@ export class DiagramaEditorComponent {
       return {
         ...d,
         departamentoId: id,
-        // La calle (swimlane) se sincroniza con el código del departamento
-        swimlane: depto?.codigo ?? d.swimlane,
+        // La calle (swimlane) se sincroniza con la etiqueta que el diagrama usa
+        // para ese departamento (código o nombre, según el origen del diagrama).
+        swimlane: depto ? this.laneLabelForDepartamento(depto) : d.swimlane,
         actividadId: actSigueValida ? d.actividadId : undefined,
       };
     });
@@ -969,6 +984,24 @@ export class DiagramaEditorComponent {
       this.departamentos().find((d) => d.codigo.trim().toLowerCase() === normalized)
       ?? this.departamentos().find((d) => d.nombre.trim().toLowerCase() === normalized)
       ?? null
+    );
+  }
+
+  /**
+   * Etiqueta de calle (swimlane) que ESTE diagrama usa para un departamento.
+   * Las calles pueden estar guardadas por código (diagramas manuales/seed) o por
+   * nombre (diagramas generados por IA). Elegimos la que realmente exista entre
+   * las lanes para que el nodo caiga en la calle correcta; si ninguna coincide
+   * (no debería), caemos al código.
+   */
+  private laneLabelForDepartamento(depto: Departamento): string {
+    const lanes = this.diagrama()?.swimlanes ?? [];
+    const cod = depto.codigo.trim().toLowerCase();
+    const nom = depto.nombre.trim().toLowerCase();
+    return (
+      lanes.find((l) => l.trim().toLowerCase() === cod)
+      ?? lanes.find((l) => l.trim().toLowerCase() === nom)
+      ?? depto.codigo
     );
   }
 }
