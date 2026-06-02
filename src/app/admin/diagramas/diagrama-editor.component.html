@@ -380,8 +380,14 @@
           <span>Cargando diagrama…</span>
         </div>
       } @else {
+        @if (data.estado !== 'borrador') {
+          <div style="background:#fff3cd;border:1px solid #ffe69c;color:#664d03;padding:.6rem 1rem;border-radius:6px;margin-bottom:.5rem;font-size:.9rem;">
+            🔒 Diagrama <strong>publicado</strong> — solo lectura. Para modificarlo, crea una nueva versión.
+          </div>
+        }
         <div class="diagram-stage">
           <app-diagram-canvas
+            [readonly]="data.estado !== 'borrador'"
             [nodos]="nodos()"
             [transiciones]="transiciones()"
             [swimlanes]="data.swimlanes"

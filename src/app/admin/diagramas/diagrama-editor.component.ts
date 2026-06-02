@@ -61,6 +61,17 @@ export class DiagramaEditorComponent {
   readonly politicaIdPreseleccionada = (this.route.snapshot.queryParamMap.get('politicaId') ?? '') as string;
 
   readonly diagrama = signal<DiagramaWorkflow | null>(null);
+
+  /**
+   * Solo se pueden editar diagramas en estado 'borrador'. Los publicados son de
+   * solo lectura (hay que crear una nueva versión para modificarlos). Se usa para
+   * poner el lienzo en modo lectura y bloquear las operaciones de edición con un
+   * aviso claro, en vez de dejar que el backend rechace con un error crudo.
+   */
+  readonly editable = computed(() => {
+    const d = this.diagrama();
+    return d == null || d.estado === 'borrador';
+  });
   readonly politicas = signal<Politica[]>([]);
   readonly nodos = signal<NodoDiagrama[]>([]);
   readonly transiciones = signal<FlujoTransicion[]>([]);
@@ -452,6 +463,7 @@ export class DiagramaEditorComponent {
 
   onNodoCreated(payload: NodoCreatedPayload): void {
     if (!this.diagramaId) return;
+    if (this.bloquearSiNoEditable()) return;
 
     const depto = payload.swimlane ? this.findDepartamentoFromLane(payload.swimlane) : null;
     const actividadPorDepto = depto
@@ -494,7 +506,18 @@ export class DiagramaEditorComponent {
     });
   }
 
+  /** Bloquea una operación de edición si el diagrama está publicado (no editable),
+   *  mostrando un aviso claro en vez de dejar que el backend rechace. */
+  private bloquearSiNoEditable(): boolean {
+    if (!this.editable()) {
+      this.setError('El diagrama está publicado: es de solo lectura. Crea una nueva versión para editarlo.');
+      return true;
+    }
+    return false;
+  }
+
   onNodoMoved(payload: NodoMovedPayload): void {
+    if (this.bloquearSiNoEditable()) return;
     const actual = this.nodos().find((n) => n.id === payload.backendId);
     if (!actual) return;
 
@@ -543,6 +566,7 @@ export class DiagramaEditorComponent {
 
   onEdgeCreated(payload: EdgeCreatedPayload): void {
     if (!this.diagramaId) return;
+    if (this.bloquearSiNoEditable()) return;
 
     const origen = this.nodos().find((n) => n.id === payload.origenBackendId);
     const esDecision = origen?.tipo === 'decision';
@@ -582,6 +606,7 @@ export class DiagramaEditorComponent {
   }
 
   onNodoDeleted(id: string): void {
+    if (this.bloquearSiNoEditable()) return;
     if (!confirm('Eliminar nodo y sus conexiones?')) return;
 
     this.diagramaSvc.eliminarNodo(id).subscribe({
@@ -598,6 +623,7 @@ export class DiagramaEditorComponent {
   }
 
   onEdgeDeleted(id: string): void {
+    if (this.bloquearSiNoEditable()) return;
     this.diagramaSvc.eliminarTransicion(id).subscribe({
       next: () => {
         this.transiciones.update((lista) => lista.filter((t) => t.id !== id));
@@ -646,6 +672,7 @@ export class DiagramaEditorComponent {
   }
 
   guardarInspector(): void {
+    if (this.bloquearSiNoEditable()) return;
     const draft = this.inspectorDraft();
     if (!draft) return;
 
