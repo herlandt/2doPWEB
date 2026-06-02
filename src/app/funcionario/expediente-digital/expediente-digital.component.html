@@ -376,6 +376,31 @@
           </div>
         }
 
+        <!-- Nodo decisión (if): el siguiente paso depende de la respuesta del funcionario.
+             El funcionario ve solo la pregunta (no el formulario del paso posterior). -->
+        @if (mostrarDecision() && decisionSiguiente(); as dec) {
+          <div class="mb-3 p-3 border border-primary rounded bg-primary-subtle">
+            <label class="form-label fw-bold d-block mb-1">🔀 {{ dec.pregunta }}</label>
+            <p class="small text-muted mb-2">Tu respuesta decide por qué camino continúa el trámite.</p>
+            <div class="d-flex flex-wrap gap-2">
+              @for (op of dec.opciones; track op.valor) {
+                <button
+                  type="button"
+                  class="btn"
+                  [class.btn-primary]="respuestaDecision() === op.valor"
+                  [class.btn-outline-primary]="respuestaDecision() !== op.valor"
+                  (click)="setRespuestaDecision(op.valor)"
+                >
+                  {{ op.etiqueta }}
+                  @if (op.destinoNombre) {
+                    <small class="d-block opacity-75">→ {{ op.destinoNombre }}</small>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        }
+
         <!-- Botonera principal -->
         <div class="d-flex flex-wrap gap-2 mt-3">
 
@@ -384,10 +409,10 @@
           <button
             type="button"
             class="btn btn-success"
-            [disabled]="procesando()"
+            [disabled]="procesando() || (mostrarDecision() && !respuestaDecision())"
             (click)="ejecutarAccion('APROBAR')"
           >
-            Aprobar (Avanzar)
+            {{ mostrarDecision() ? 'Continuar →' : 'Aprobar (Avanzar)' }}
           </button>
 
           <!-- CU-18: Rechazar -->
@@ -400,44 +425,48 @@
             Rechazar Definitivo
           </button>
 
-          <!-- CU-17: Devolver -->
-          <button
-            type="button"
-            class="btn btn-warning"
-            [disabled]="procesando()"
-            (click)="prepararDevolucion()"
-          >
-            Devolver a Corregir
-          </button>
-          @if (accionSeleccionada() === 'DEVOLVER') {
+          <!-- Devolver/Reasignar se ocultan mientras hay una decisión Sí/No en juego,
+               para no confundir: esa respuesta solo aplica a "Continuar →". -->
+          @if (!mostrarDecision()) {
+            <!-- CU-17: Devolver -->
             <button
               type="button"
               class="btn btn-warning"
-              [disabled]="procesando() || !nodoDestinoId()"
-              (click)="ejecutarAccion('DEVOLVER')"
+              [disabled]="procesando()"
+              (click)="prepararDevolucion()"
             >
-              Confirmar Devolución
+              Devolver a Corregir
             </button>
-          }
+            @if (accionSeleccionada() === 'DEVOLVER') {
+              <button
+                type="button"
+                class="btn btn-warning"
+                [disabled]="procesando() || !nodoDestinoId()"
+                (click)="ejecutarAccion('DEVOLVER')"
+              >
+                Confirmar Devolución
+              </button>
+            }
 
-          <!-- CU-11: Reasignar a otro funcionario del mismo nodo -->
-          <button
-            type="button"
-            class="btn btn-info text-white"
-            [disabled]="procesando()"
-            (click)="prepararDerivacion()"
-          >
-            Reasignar a Compañero
-          </button>
-          @if (accionSeleccionada() === 'DERIVAR') {
+            <!-- CU-11: Reasignar a otro funcionario del mismo nodo -->
             <button
               type="button"
               class="btn btn-info text-white"
-              [disabled]="procesando() || !funcionarioDestinoId()"
-              (click)="ejecutarAccion('REASIGNAR')"
+              [disabled]="procesando()"
+              (click)="prepararDerivacion()"
             >
-              Confirmar Reasignación
+              Reasignar a Compañero
             </button>
+            @if (accionSeleccionada() === 'DERIVAR') {
+              <button
+                type="button"
+                class="btn btn-info text-white"
+                [disabled]="procesando() || !funcionarioDestinoId()"
+                (click)="ejecutarAccion('REASIGNAR')"
+              >
+                Confirmar Reasignación
+              </button>
+            }
           }
 
         </div>

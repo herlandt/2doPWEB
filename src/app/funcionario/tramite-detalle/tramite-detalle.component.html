@@ -65,14 +65,27 @@
                     <p class="fw-semibold small mb-2">Completar este nodo:</p>
 
                     <form [formGroup]="form" (ngSubmit)="completarNodo()" novalidate>
-                      <div class="mb-2">
-                        <label class="form-label small" for="resultado">Resultado *</label>
-                        <select id="resultado" class="form-select form-select-sm" formControlName="resultado">
-                          <option value="completado">Completado</option>
-                          <option value="aprobado">Aprobado</option>
-                          <option value="rechazado">Rechazado</option>
-                        </select>
-                      </div>
+                      @if (decisionSiguiente(); as dec) {
+                        <div class="mb-2">
+                          <label class="form-label small">🔀 {{ dec.pregunta }}</label>
+                          <select class="form-select form-select-sm" formControlName="resultado">
+                            @for (op of dec.opciones; track op.valor) {
+                              <option [value]="op.valor">
+                                {{ op.etiqueta }}@if (op.destinoNombre) { → {{ op.destinoNombre }}}
+                              </option>
+                            }
+                          </select>
+                        </div>
+                      } @else {
+                        <div class="mb-2">
+                          <label class="form-label small" for="resultado">Resultado *</label>
+                          <select id="resultado" class="form-select form-select-sm" formControlName="resultado">
+                            <option value="completado">Completado</option>
+                            <option value="aprobado">Aprobado</option>
+                            <option value="rechazado">Rechazado</option>
+                          </select>
+                        </div>
+                      }
 
                       <div class="mb-3">
                         <label class="form-label small" for="observaciones">Observaciones</label>
@@ -88,7 +101,7 @@
                         @if (procesando()) {
                           <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
                         }
-                        {{ procesando() ? 'Procesando...' : 'Completar Nodo' }}
+                        {{ procesando() ? 'Procesando...' : (decisionSiguiente() ? 'Continuar →' : 'Completar Nodo') }}
                       </button>
                     </form>
                   </div>

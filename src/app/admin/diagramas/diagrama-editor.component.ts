@@ -110,6 +110,8 @@ export class DiagramaEditorComponent {
   readonly error = signal('');
   readonly errorDetalles = signal<string[]>([]);
   readonly exito = signal('');
+  // Aviso no bloqueante (p. ej. join → decisión: la pregunta no se podrá mostrar).
+  readonly advertencia = signal('');
   readonly selectedNodo = signal<NodoDiagrama | null>(null);
 
   // Borrador del inspector (lo que el usuario está editando)
@@ -599,6 +601,21 @@ export class DiagramaEditorComponent {
     if (this.bloquearSiNoEditable()) return;
 
     const origen = this.nodos().find((n) => n.id === payload.origenBackendId);
+    const destino = this.nodos().find((n) => n.id === payload.destinoBackendId);
+
+    // Reglas de topología del nodo de decisión (if): el motor no maneja la pregunta
+    // en estas posiciones, así que las bloqueamos con un mensaje claro.
+    if (destino?.tipo === 'decision') {
+      if (origen?.tipo === 'fork') {
+        this.setError('Un "fork" no puede conectar directo a una "decisión". Una rama del fork debe ir a una actividad.');
+        return;
+      }
+      if (origen?.tipo === 'decision') {
+        this.setError('No se pueden encadenar dos "decisiones" directamente. Coloca una actividad entre ellas.');
+        return;
+      }
+    }
+
     const esDecision = origen?.tipo === 'decision';
 
     let etiqueta: string | undefined;
@@ -628,6 +645,14 @@ export class DiagramaEditorComponent {
       next: (creada) => {
         this.transiciones.update((lista) => [...lista, creada]);
         this.showSuccess(esDecision ? `Conexión creada (rama "${etiqueta}")` : 'Conexión creada');
+        // join → decisión es válido pero el motor no puede mostrar la pregunta:
+        // avisamos para que el admin ponga una actividad intermedia si la quiere.
+        if (origen?.tipo === 'join' && destino?.tipo === 'decision') {
+          this.advertencia.set(
+            '⚠️ La pregunta de una decisión justo después de un "join" no se mostrará al funcionario ' +
+              '(el motor tomará "sí" por defecto). Coloca una actividad entre el join y la decisión si necesitas preguntar.',
+          );
+        }
       },
       error: (err: unknown) => {
         this.setError(this.extractErrorMessage(err, 'Error al crear conexión'), this.extractErrorDetails(err));
@@ -819,6 +844,7 @@ export class DiagramaEditorComponent {
   private clearError(): void {
     this.error.set('');
     this.errorDetalles.set([]);
+    this.advertencia.set('');
   }
 
   private setError(message: string, details: string[] = []): void {

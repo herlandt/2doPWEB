@@ -78,6 +78,18 @@ export class ExpedienteDigitalComponent {
     ),
   );
 
+  // Nodo decisión (if) que sigue a la actividad actual, si lo hay. El backend lo
+  // expone en /estado como decisionSiguiente { pregunta, opciones:[{valor,etiqueta}] }.
+  // El funcionario responde la pregunta y su avance enruta por la rama elegida.
+  readonly decisionSiguiente = computed<any>(() => this.tramiteEstado()?.decisionSiguiente ?? null);
+  readonly respuestaDecision = signal('');
+
+  // Solo ofrecemos la pregunta del if cuando la sección ya fue aceptada (no
+  // mientras está "Pendiente de recepción"): primero se recepciona, luego se avanza.
+  readonly mostrarDecision = computed<boolean>(
+    () => !!this.decisionSiguiente() && !this.hayPendienteRecepcion(),
+  );
+
   constructor() {
     this.cargarExpediente();
     this.cargarDocumentos();
@@ -86,6 +98,8 @@ export class ExpedienteDigitalComponent {
 
   private cargarEstado(): void {
     if (!this.tramiteId) return;
+    // Evita arrastrar una rama Sí/No de un estado anterior a uno recién cargado.
+    this.respuestaDecision.set('');
     this.tramiteC2Svc.getEstado(this.tramiteId).subscribe({
       next: (e) => this.tramiteEstado.set(e),
       error: () => {},
@@ -285,6 +299,23 @@ export class ExpedienteDigitalComponent {
     this.error.set('');
 
     if (tipo === 'APROBAR') {
+      // Si el siguiente paso es un nodo decisión (if), el funcionario debe haber
+      // respondido la pregunta: avanzamos con completar-nodo enviando la rama
+      // elegida ('si'/'no') para que el motor enrute por la transición correcta.
+      if (this.mostrarDecision()) {
+        const rama = this.respuestaDecision();
+        if (!rama) {
+          this.procesando.set(false);
+          this.error.set('Responde la pregunta para indicar por dónde continúa el trámite.');
+          return;
+        }
+        this.tramiteC2Svc.completarNodo(this.tramiteId, rama, this.justificacion()).subscribe({
+          next: () =>
+            this.finalizarExitosamente('Actividad completada. El trámite continuó por la respuesta seleccionada.'),
+          error: (err) => this.manejarError(err),
+        });
+        return;
+      }
       const archivo = this.archivoResolucion();
       const obs$ = archivo
         ? this.tramiteC2Svc.decisionFinalConResolucion(this.tramiteId, 'Aprobar', this.justificacion(), archivo)
@@ -317,6 +348,10 @@ export class ExpedienteDigitalComponent {
 
   setJustificacion(ev: Event): void {
     this.justificacion.set((ev.target as HTMLTextAreaElement).value);
+  }
+
+  setRespuestaDecision(valor: string): void {
+    this.respuestaDecision.set(valor);
   }
 
   setNodoDestino(ev: Event): void {

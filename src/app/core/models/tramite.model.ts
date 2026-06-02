@@ -14,9 +14,24 @@ export interface TramiteResumen {
   nodoActualNombre?: string;
 }
 
+export interface OpcionDecision {
+  valor: string; // etiqueta real de la transición ('si' | 'no') — lo que enruta el motor
+  etiqueta: string; // texto legible para el botón ('Sí' | 'No')
+  destinoNombre?: string; // nombre del nodo al que lleva esa rama
+}
+
+export interface DecisionSiguiente {
+  nodoId: string;
+  pregunta: string;
+  opciones: OpcionDecision[];
+}
+
 export interface TramiteDetalle extends TramiteResumen {
   historial: HistorialNodo[];
   nodoActual?: NodoEstado;
+  // Cuando el siguiente nodo del flujo es un 'decision' (if), el backend expone
+  // aquí su pregunta y las ramas para que el funcionario responda Sí/No al avanzar.
+  decisionSiguiente?: DecisionSiguiente;
 }
 
 export interface NodoEstado {

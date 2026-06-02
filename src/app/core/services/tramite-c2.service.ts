@@ -26,6 +26,16 @@ export class TramiteC2Service {
     return this.http.get<any>(`${this.base}/tramites/${tramiteId}/estado`);
   }
 
+  // Completar el nodo actual y avanzar. Cuando el siguiente nodo es un 'decision'
+  // (if), `decision` lleva la rama elegida por el funcionario ('si' | 'no') y el
+  // motor enruta por la transición con esa etiqueta.
+  completarNodo(tramiteId: string, decision?: string, notas?: string): Observable<any> {
+    return this.http.post<any>(`${this.base}/tramites/${tramiteId}/completar-nodo`, {
+      decision,
+      notas,
+    });
+  }
+
   // Aceptar (recepcionar) el trámite: Pendiente de recepción → En ejecución.
   aceptarTramite(tramiteId: string): Observable<any> {
     return this.http.post<any>(`${this.base}/tramites/${tramiteId}/aceptar`, {});

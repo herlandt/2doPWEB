@@ -39,6 +39,10 @@ export class TramiteDetalleComponent {
     return !!data?.nodoActual && data.nodoActual.tipo === 'actividad' && !this.finalizado();
   });
 
+  // Si el siguiente nodo es un 'decision' (if), el backend lo expone aquí con su
+  // pregunta + ramas; el funcionario responde Sí/No y se envía como decision.
+  readonly decisionSiguiente = computed(() => this.tramite()?.decisionSiguiente ?? null);
+
   constructor() {
     this.cargar();
   }
@@ -50,6 +54,10 @@ export class TramiteDetalleComponent {
     this.workflowSvc.obtenerEstado(this.tramiteId).subscribe({
       next: (tramite) => {
         this.tramite.set(tramite);
+        // Si el siguiente paso es un 'decision', preseleccionamos la primera rama
+        // ('si') para que el control tenga un valor válido; si no, avance lineal.
+        const rama = tramite?.decisionSiguiente?.opciones?.[0]?.valor;
+        this.form.patchValue({ resultado: rama ?? 'completado' });
         this.loading.set(false);
       },
       error: () => {
@@ -70,10 +78,11 @@ export class TramiteDetalleComponent {
 
     const { resultado, observaciones } = this.form.getRawValue();
     // El backend deriva funcionarioId del JWT; el payload solo lleva decision/notas.
-    // 'completado' es el avance lineal por defecto (sin decision); aprobado/rechazado
-    // se mapean a la decision del nodo.
+    // Si el siguiente nodo es un 'decision' (if), 'resultado' ya es la rama elegida
+    // ('si'/'no'). Si no, 'completado' = avance lineal sin decision.
+    const esDecision = !!this.decisionSiguiente();
     const payload: CompletarNodoRequest = {
-      decision: resultado === 'completado' ? undefined : resultado,
+      decision: esDecision ? resultado : resultado === 'completado' ? undefined : resultado,
       notas: observaciones || undefined,
     };
     this.workflowSvc.completarNodo(this.tramiteId, payload).subscribe({

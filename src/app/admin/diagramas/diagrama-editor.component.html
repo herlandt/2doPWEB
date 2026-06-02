@@ -363,6 +363,11 @@
       @if (exito()) {
         <div class="cre-alert cre-alert-success">{{ exito() }}</div>
       }
+      @if (advertencia()) {
+        <div class="cre-alert" style="background:#fff3cd;border:1px solid #ffe69c;color:#664d03;">
+          {{ advertencia() }}
+        </div>
+      }
       @if (error()) {
         <div class="cre-alert cre-alert-danger">
           <strong>{{ error() }}</strong>
@@ -430,15 +435,18 @@
 
               <div class="inspector-body">
                 <div class="inspector-row">
-                  <span class="inspector-key">Nombre</span>
-                  @if (draft.tipo === 'actividad') {
+                  <span class="inspector-key">{{ draft.tipo === 'decision' ? 'Pregunta (Sí / No)' : 'Nombre' }}</span>
+                  @if (draft.tipo === 'actividad' || draft.tipo === 'decision') {
                     <input
                       id="insp-nombre"
                       class="cre-input"
                       [value]="draft.nombre"
                       (input)="updateDraftNombre($event)"
-                      placeholder="Nombre del nodo"
+                      [placeholder]="draft.tipo === 'decision' ? '¿Pregunta a responder? Ej: ¿Inspección aprobada?' : 'Nombre del nodo'"
                     />
+                    @if (draft.tipo === 'decision') {
+                      <span class="inspector-hint">El funcionario verá esta pregunta y elegirá Sí/No al avanzar; cada rama lleva al nodo que conectes.</span>
+                    }
                   } @else {
                     <span class="inspector-val">{{ draft.nombre }}</span>
                   }
