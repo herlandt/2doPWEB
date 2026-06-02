@@ -509,17 +509,23 @@ export class DiagramaEditorComponent {
         ? this.actividades().find((a) => a.id === actual.actividadId && a.departamentoId === deptoMatch.id)?.id
         : actual.actividadId;
 
-    const req: NodoRequest = {
-      tipo: actual.tipo,
-      nombre: actual.nombre,
-      actividadId: actividadIdNueva,
-      departamentoId: departamentoIdNuevo,
-      swimlane: swimlaneNuevo,
-      orden: actual.orden,
-      posicion: payload.posicion,
-    };
+    // Movimiento dentro de la misma calle → PATCH con solo la posición (ligero,
+    // evita reenviar el nodo completo). Cambio de calle → puede mudar de
+    // departamento y limpiar la actividad: reemplazo completo con PUT para que
+    // esos campos se apliquen (incluido vaciarlos).
+    const obs = cambioDeCalle
+      ? this.diagramaSvc.actualizarNodo(payload.backendId, {
+          tipo: actual.tipo,
+          nombre: actual.nombre,
+          actividadId: actividadIdNueva,
+          departamentoId: departamentoIdNuevo,
+          swimlane: swimlaneNuevo,
+          orden: actual.orden,
+          posicion: payload.posicion,
+        })
+      : this.diagramaSvc.parchearNodo(payload.backendId, { posicion: payload.posicion });
 
-    this.diagramaSvc.actualizarNodo(payload.backendId, req).subscribe({
+    obs.subscribe({
       next: (act) => {
         this.nodos.update((lista) => lista.map((n) => (n.id === act.id ? act : n)));
         if (this.selectedNodo()?.id === act.id) {

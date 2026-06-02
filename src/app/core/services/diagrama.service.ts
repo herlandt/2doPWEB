@@ -55,6 +55,15 @@ export class DiagramaService {
     return this.http.put<NodoDiagrama>(`${this.url}/nodos/${nodoId}`, data);
   }
 
+  /**
+   * Actualización PARCIAL (PATCH): solo envía los campos que cambian. Ideal para
+   * los cambios incrementales del editor (p.ej. arrastrar un nodo → solo la
+   * posición), evitando reenviar el nodo completo. El backend hace merge.
+   */
+  parchearNodo(nodoId: string, cambios: Partial<NodoRequest>): Observable<NodoDiagrama> {
+    return this.http.patch<NodoDiagrama>(`${this.url}/nodos/${nodoId}`, cambios);
+  }
+
   eliminarNodo(nodoId: string): Observable<void> {
     return this.http.delete<void>(`${this.url}/nodos/${nodoId}`);
   }
