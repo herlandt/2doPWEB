@@ -8,6 +8,7 @@ import {
   AfterViewChecked,
   computed,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -50,7 +51,7 @@ export class AgenteFlotanteComponent implements AfterViewChecked {
   protected readonly mensajes = signal<ChatMessage[]>([]);
   protected readonly consulta = signal('');
 
-  protected readonly visible = computed(() => this.auth.isAuthenticated());
+  protected readonly visible = computed(() => !!this.auth.usuario());
 
   private currentRoute = '/';
   private autoScroll = false;
@@ -58,7 +59,10 @@ export class AgenteFlotanteComponent implements AfterViewChecked {
   constructor() {
     this.currentRoute = this.router.url || '/';
     this.router.events
-      .pipe(filter((e) => e instanceof NavigationEnd))
+      .pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
       .subscribe((e) => {
         this.currentRoute = (e as NavigationEnd).urlAfterRedirects;
       });
@@ -165,7 +169,7 @@ export class AgenteFlotanteComponent implements AfterViewChecked {
   }
 
   private extraerTramiteId(ruta: string): string | null {
-    const m = ruta.match(/\/tramite[s]?\/([a-f0-9]{8,})/i);
+    const m = ruta.match(/\/(?:tramite[s]?|expediente)\/([a-f0-9-]{8,})/i);
     return m ? m[1] : null;
   }
 }

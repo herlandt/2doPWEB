@@ -41,7 +41,7 @@ export interface HistorialNodo {
 }
 
 export interface CompletarNodoRequest {
-  resultado: string;
-  observaciones?: string;
-  datos?: Record<string, unknown>;
+  funcionarioId?: string;
+  decision?: string;
+  notas?: string;
 }

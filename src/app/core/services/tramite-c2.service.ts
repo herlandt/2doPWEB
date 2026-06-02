@@ -21,7 +21,17 @@ export class TramiteC2Service {
     return this.http.get<any>(`${this.base}/expedientes/tramite/${tramiteId}`);
   }
 
-  // CU-18: Aprobar o Rechazar — body { decision, justificacion }
+  // Estado enriquecido del trámite (incluye documentoResolucionId, progreso, etc.)
+  getEstado(tramiteId: string): Observable<any> {
+    return this.http.get<any>(`${this.base}/tramites/${tramiteId}/estado`);
+  }
+
+  // Aceptar (recepcionar) el trámite: Pendiente de recepción → En ejecución.
+  aceptarTramite(tramiteId: string): Observable<any> {
+    return this.http.post<any>(`${this.base}/tramites/${tramiteId}/aceptar`, {});
+  }
+
+  // CU-18: Aprobar o Rechazar — body JSON { decision, justificacion }.
   decisionFinal(tramiteId: string, decision: string, justificacion: string): Observable<any> {
     return this.http.post<any>(`${this.base}/tramites/${tramiteId}/decision-final`, {
       decision,
@@ -29,7 +39,26 @@ export class TramiteC2Service {
     });
   }
 
-  // CU-17: Devolver a un nodo anterior — body { nodoDestinoId, observaciones }
+  // CU-18 (Aprobar con documento de resolución entregable) — multipart.
+  decisionFinalConResolucion(
+    tramiteId: string,
+    decision: string,
+    justificacion: string,
+    archivo: File,
+  ): Observable<any> {
+    const formData = new FormData();
+    formData.append('decision', decision);
+    formData.append('justificacion', justificacion ?? '');
+    formData.append('archivo', archivo, archivo.name);
+    return this.http.post<any>(`${this.base}/tramites/${tramiteId}/decision-final`, formData);
+  }
+
+  // Descargar el documento de resolución del trámite (URL firmada).
+  descargarResolucion(tramiteId: string): Observable<any> {
+    return this.http.get<any>(`${this.base}/tramites/${tramiteId}/resolucion`);
+  }
+
+  // CU-17: Observar/Devolver a un nodo anterior — body { nodoDestinoId, observaciones }
   devolverTramite(tramiteId: string, nodoDestinoId: string, observaciones: string): Observable<any> {
     return this.http.post<any>(`${this.base}/tramites/${tramiteId}/devolver`, {
       nodoDestinoId,
@@ -37,12 +66,17 @@ export class TramiteC2Service {
     });
   }
 
-  // CU-11: Reasignar a otro funcionario — body { nuevoFuncionarioId, motivo }
-  derivarTramite(tramiteId: string, nuevoFuncionarioId: string, motivo: string): Observable<any> {
-    return this.http.post<any>(`${this.base}/tramites/${tramiteId}/derivar`, {
+  // CU-11: Reasignar a otro funcionario del mismo nodo — body { nuevoFuncionarioId, motivo }
+  reasignarTramite(tramiteId: string, nuevoFuncionarioId: string, motivo: string): Observable<any> {
+    return this.http.post<any>(`${this.base}/tramites/${tramiteId}/reasignar`, {
       nuevoFuncionarioId,
       motivo,
     });
+  }
+
+  /** @deprecated Usa {@link reasignarTramite}. Mantenido por compatibilidad. */
+  derivarTramite(tramiteId: string, nuevoFuncionarioId: string, motivo: string): Observable<any> {
+    return this.reasignarTramite(tramiteId, nuevoFuncionarioId, motivo);
   }
 
   // Auxiliar CU-11: lista de funcionarios (endpoint accesible con rol FUNCIONARIO)

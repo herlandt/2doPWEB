@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
   OnDestroy,
   PLATFORM_ID,
@@ -76,7 +75,7 @@ export class DocumentoEditorComponent implements OnDestroy {
   private subEdicion: Subscription | null = null;
   private subPresencia: Subscription | null = null;
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
-  private aplicandoRemoto = false;
+  private joinTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     if (!this.isBrowser) return;
@@ -109,7 +108,7 @@ export class DocumentoEditorComponent implements OnDestroy {
       });
 
     // 3. Anunciar JOIN tras un microtick para que las suscripciones estén activas
-    setTimeout(() => {
+    this.joinTimer = setTimeout(() => {
       this.rt.publicarJoin(this.documentoId);
       this.conectado.set(true);
       this.aviso('success', 'Conectado a la sesión colaborativa.');
@@ -164,10 +163,7 @@ export class DocumentoEditorComponent implements OnDestroy {
 
     const payload = ev.payload as { tipo?: string; contenido?: string };
     if (payload?.tipo === 'replace' && typeof payload.contenido === 'string') {
-      this.aplicandoRemoto = true;
       this.contenido.set(payload.contenido);
-      // Reset al siguiente tick
-      setTimeout(() => (this.aplicandoRemoto = false), 0);
     }
   }
 
@@ -175,7 +171,6 @@ export class DocumentoEditorComponent implements OnDestroy {
 
   onTextareaInput(ev: Event): void {
     if (this.soloLectura()) return;
-    if (this.aplicandoRemoto) return;
     const valor = (ev.target as HTMLTextAreaElement).value;
     this.contenido.set(valor);
 
@@ -219,6 +214,10 @@ export class DocumentoEditorComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.joinTimer) {
+      clearTimeout(this.joinTimer);
+      this.joinTimer = null;
+    }
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     if (this.documentoId && this.isBrowser) {
       try {

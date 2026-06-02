@@ -9,7 +9,7 @@ export const rolGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const rolesPermitidos = (route.data['roles'] as string[] | undefined) ?? [];
   const rolUsuario = auth.getRol();
 
-  if (rolesPermitidos.length === 0 || rolesPermitidos.includes(rolUsuario)) {
+  if (rolesPermitidos.length > 0 && rolesPermitidos.includes(rolUsuario)) {
     return true;
   }
 

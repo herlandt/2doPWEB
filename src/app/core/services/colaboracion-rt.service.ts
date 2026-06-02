@@ -1,4 +1,4 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { RxStomp, RxStompConfig } from '@stomp/rx-stomp';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -38,12 +38,12 @@ export class ColaboracionRtService {
 
   /** Devuelve un Observable que emite cada vez que cambia el diagrama indicado. */
   observarDiagrama(diagramaId: string): Observable<DiagramaEventoRT> {
-    this.asegurarConexion();
-    const cuenta = this.suscriptoresPorDiagrama.get(diagramaId) ?? 0;
-    this.suscriptoresPorDiagrama.set(diagramaId, cuenta + 1);
-
     const topic = `/topic/diagramas/${diagramaId}`;
     return new Observable<DiagramaEventoRT>((subscriber) => {
+      this.asegurarConexion();
+      const cuenta = this.suscriptoresPorDiagrama.get(diagramaId) ?? 0;
+      this.suscriptoresPorDiagrama.set(diagramaId, cuenta + 1);
+
       const sub = this.rx!.watch(topic)
         .pipe(map((msg) => JSON.parse(msg.body) as DiagramaEventoRT))
         .subscribe({
@@ -70,15 +70,19 @@ export class ColaboracionRtService {
   private asegurarConexion(): void {
     if (this.rx?.active) return;
 
-    const token = this.auth.getToken() ?? '';
     const wsBase = environment.apiUrl.replace(/^http/i, 'ws').replace(/\/api\/?$/, '');
-    const brokerURL = `${wsBase}/ws?token=${encodeURIComponent(token)}`;
 
     const cfg: RxStompConfig = {
-      brokerURL,
+      brokerURL: `${wsBase}/ws`,
       reconnectDelay: 3000,
       heartbeatIncoming: 10_000,
       heartbeatOutgoing: 10_000,
+      // En CADA (re)conexión leemos el token vigente y lo fijamos en la URL,
+      // de modo que tras refresh/re-login no se reutilice un token caducado.
+      beforeConnect: (client) => {
+        const token = this.auth.getToken() ?? '';
+        client.configure({ brokerURL: `${wsBase}/ws?token=${encodeURIComponent(token)}` });
+      },
     };
 
     this.rx = new RxStomp();

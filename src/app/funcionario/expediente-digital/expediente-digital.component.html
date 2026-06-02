@@ -40,10 +40,9 @@
           <div class="card mb-3 shadow-sm border-0">
             <div
               class="card-header"
-              [class.bg-success]="seccion.infoSeccion?.estado === 'completada'"
-              [class.text-white]="seccion.infoSeccion?.estado === 'completada'"
-              [class.bg-warning]="seccion.infoSeccion?.estado === 'en_curso'"
-              [class.bg-light]="seccion.infoSeccion?.estado === 'bloqueada'"
+              [class.bg-success]="esSeccionCompletada(seccion.infoSeccion?.estado)"
+              [class.text-white]="esSeccionCompletada(seccion.infoSeccion?.estado)"
+              [class.bg-warning]="esSeccionEditable(seccion.infoSeccion?.estado)"
             >
               <div class="d-flex justify-content-between align-items-center">
                 <span class="fw-semibold">
@@ -52,10 +51,10 @@
                 </span>
                 <span
                   class="badge"
-                  [class.bg-success]="seccion.infoSeccion?.estado === 'completada'"
-                  [class.bg-warning]="seccion.infoSeccion?.estado === 'en_curso'"
-                  [class.bg-secondary]="seccion.infoSeccion?.estado === 'bloqueada'"
-                  [class.text-dark]="seccion.infoSeccion?.estado === 'en_curso'"
+                  [class.bg-success]="esSeccionCompletada(seccion.infoSeccion?.estado)"
+                  [class.bg-warning]="esSeccionEditable(seccion.infoSeccion?.estado)"
+                  [class.text-dark]="esSeccionEditable(seccion.infoSeccion?.estado)"
+                  [class.bg-secondary]="!esSeccionCompletada(seccion.infoSeccion?.estado) && !esSeccionEditable(seccion.infoSeccion?.estado)"
                 >
                   {{ seccion.infoSeccion?.estado }}
                 </span>
@@ -67,7 +66,7 @@
                   Esta sección no tiene formulario asociado al nodo del workflow.
                 </p>
               } @else {
-                @let editable = mostrarAcciones() && seccion.infoSeccion?.estado === 'en_curso';
+                @let editable = mostrarAcciones() && esSeccionEditable(seccion.infoSeccion?.estado);
                 <div class="row g-3">
                   @for (campo of seccion.campos; track (campo.campoPlantillaId || campo.id || $index)) {
                     <div class="col-md-6">
@@ -159,7 +158,7 @@
                   }
                 </div>
 
-                @if (mostrarAcciones() && seccion.infoSeccion?.estado === 'en_curso') {
+                @if (mostrarAcciones() && esSeccionEditable(seccion.infoSeccion?.estado)) {
                   <div class="d-flex justify-content-end mt-3 gap-2">
                     @if (guardadoOkSeccionId() === seccion.infoSeccion.id) {
                       <span class="text-success small align-self-center">
@@ -182,7 +181,7 @@
               }
 
               <!-- CU-39 · Dictado por voz solo para secciones activas y rol funcionario -->
-              @if (mostrarAcciones() && seccion.infoSeccion?.estado === 'en_curso' && seccion.infoSeccion?.id) {
+              @if (mostrarAcciones() && esSeccionEditable(seccion.infoSeccion?.estado) && seccion.infoSeccion?.id) {
                 <div class="mt-3 pt-3 border-top">
                   <app-dictar-seccion
                     [seccionId]="seccion.infoSeccion.id"
@@ -268,7 +267,7 @@
       </div>
     </div>
 
-    @if (mostrarAcciones()) {
+    @if (mostrarAcciones() && !finalizado()) {
       <!-- ── Panel de Decisiones (G2W-C2: CU-16, CU-18, CU-17, CU-11) ── -->
       <hr class="mt-5">
       <div class="card border-primary mb-4 shadow-sm">
@@ -276,6 +275,29 @@
           <h5 class="mb-0">Informe y Resolución (Acción Actual)</h5>
         </div>
         <div class="card-body">
+
+        <!-- Aceptar (recepcionar) cuando el trámite recién llega a la bandeja -->
+        @if (hayPendienteRecepcion()) {
+          <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <span>
+              Este trámite llegó a tu bandeja y está <strong>Pendiente de recepción</strong>.
+              Acéptalo para tomarlo a tu cargo (pasa a <em>En ejecución</em>).
+            </span>
+            <button type="button" class="btn btn-primary btn-sm" [disabled]="procesando()" (click)="aceptar()">
+              Aceptar trámite
+            </button>
+          </div>
+        }
+
+        <!-- Descargar el documento de resolución cuando ya existe -->
+        @if (tieneResolucion()) {
+          <div class="alert alert-success d-flex justify-content-between align-items-center">
+            <span>Este trámite cuenta con un <strong>documento de resolución</strong> entregable.</span>
+            <button type="button" class="btn btn-outline-success btn-sm" (click)="descargarResolucion()">
+              Descargar resolución
+            </button>
+          </div>
+        }
 
         <!-- CU-16: Comentarios opcionales para la decisión.
              El dictado por voz (CU-30) ya vive dentro de cada sección activa
@@ -297,6 +319,23 @@
           <small class="text-muted">
             El formulario de la sección activa ya recoge los datos del trámite — esto es solo para notas de la decisión.
           </small>
+        </div>
+
+        <!-- Documento de resolución entregable (se adjunta al APROBAR) -->
+        <div class="mb-3">
+          <label class="form-label fw-bold" for="archivoResolucion">
+            Documento de resolución
+            <span class="text-muted fw-normal small">(se entrega al cliente al aprobar)</span>
+          </label>
+          <input
+            id="archivoResolucion"
+            type="file"
+            class="form-control"
+            (change)="setArchivoResolucion($event)"
+          />
+          @if (archivoResolucion(); as arch) {
+            <small class="text-success">Adjunto: {{ arch.name }}</small>
+          }
         </div>
 
         <!-- CU-17: Selector de nodo destino (solo al elegir DEVOLVER) -->
@@ -381,23 +420,23 @@
             </button>
           }
 
-          <!-- CU-11: Derivar -->
+          <!-- CU-11: Reasignar a otro funcionario del mismo nodo -->
           <button
             type="button"
             class="btn btn-info text-white"
             [disabled]="procesando()"
             (click)="prepararDerivacion()"
           >
-            Derivar a Compañero
+            Reasignar a Compañero
           </button>
           @if (accionSeleccionada() === 'DERIVAR') {
             <button
               type="button"
               class="btn btn-info text-white"
               [disabled]="procesando() || !funcionarioDestinoId()"
-              (click)="ejecutarAccion('DERIVAR')"
+              (click)="ejecutarAccion('REASIGNAR')"
             >
-              Confirmar Derivación
+              Confirmar Reasignación
             </button>
           }
 

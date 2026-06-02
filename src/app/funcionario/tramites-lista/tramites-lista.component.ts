@@ -17,7 +17,7 @@ export class TramitesListaComponent {
   readonly error = signal('');
   readonly filtroEstado = signal('');
 
-  readonly estados = ['activo', 'en_progreso', 'completado', 'archivado'];
+  readonly estados = ['En curso', 'Observado', 'Aprobado', 'Rechazado', 'Cancelado'];
 
   readonly tramitesFiltrados = computed(() => {
     const estado = this.filtroEstado();
@@ -63,8 +63,16 @@ export class TramitesListaComponent {
 
   getEstadoBadgeClass(estado: string): string {
     const clases: Record<string, string> = {
+      // Estados globales del trámite (nuevo modelo)
+      'En curso': 'bg-primary',
+      Observado: 'bg-warning text-dark',
+      Aprobado: 'bg-success',
+      Rechazado: 'bg-danger',
+      Cancelado: 'bg-secondary',
+      // Legacy (compatibilidad con datos antiguos)
       activo: 'bg-primary',
       en_progreso: 'bg-warning text-dark',
+      'En proceso': 'bg-primary',
       completado: 'bg-success',
       archivado: 'bg-secondary',
     };

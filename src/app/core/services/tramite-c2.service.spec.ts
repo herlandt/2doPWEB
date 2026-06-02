@@ -49,11 +49,18 @@ describe('TramiteC2Service — endpoints', () => {
     r.flush({});
   });
 
-  it('POST /tramites/:id/derivar — derivarTramite (CU-11)', () => {
-    svc.derivarTramite('t1', 'f2', 'reasignación').subscribe();
-    const r = http.expectOne(`${api}/tramites/t1/derivar`);
+  it('POST /tramites/:id/reasignar — reasignarTramite (CU-11)', () => {
+    svc.reasignarTramite('t1', 'f2', 'reasignación').subscribe();
+    const r = http.expectOne(`${api}/tramites/t1/reasignar`);
     expect(r.request.method).toBe('POST');
     expect(r.request.body).toEqual({ nuevoFuncionarioId: 'f2', motivo: 'reasignación' });
+    r.flush({});
+  });
+
+  it('POST /tramites/:id/aceptar — aceptarTramite', () => {
+    svc.aceptarTramite('t1').subscribe();
+    const r = http.expectOne(`${api}/tramites/t1/aceptar`);
+    expect(r.request.method).toBe('POST');
     r.flush({});
   });
 

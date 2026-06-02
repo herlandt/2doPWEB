@@ -22,13 +22,11 @@ export class HistorialTramitesComponent {
   readonly filtroHasta = signal('');
 
   readonly estados = [
-    { valor: 'Aprobado',                label: 'Aprobados' },
-    { valor: 'En proceso',              label: 'En proceso' },
-    { valor: 'Observado',               label: 'Observados / Devueltos' },
-    { valor: 'Cancelado por el usuario',label: 'Cancelados' },
-    { valor: 'Rechazado',               label: 'Rechazados' },
-    { valor: 'Nuevo',                   label: 'Nuevos' },
-    { valor: 'Derivado',                label: 'Derivados' },
+    { valor: 'En curso',   label: 'En curso' },
+    { valor: 'Observado',  label: 'Observados / Devueltos' },
+    { valor: 'Aprobado',   label: 'Aprobados' },
+    { valor: 'Rechazado',  label: 'Rechazados' },
+    { valor: 'Cancelado',  label: 'Cancelados' },
   ];
 
   constructor() {
@@ -110,13 +108,11 @@ export class HistorialTramitesComponent {
 
   getEstadoBadgeClass(estado: string): string {
     const mapa: Record<string, string> = {
-      'Aprobado': 'bg-success',
-      'En proceso': 'bg-warning text-dark',
+      'En curso': 'bg-warning text-dark',
       'Observado': 'bg-warning text-dark',
+      'Aprobado': 'bg-success',
       'Rechazado': 'bg-danger',
-      'Cancelado por el usuario': 'bg-danger',
-      'Nuevo': 'bg-info text-dark',
-      'Derivado': 'bg-info text-dark',
+      'Cancelado': 'bg-danger',
     };
     return mapa[estado] ?? 'bg-secondary';
   }

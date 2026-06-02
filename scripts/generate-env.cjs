@@ -52,9 +52,11 @@ const fileEnv = fs.existsSync(envPath)
   ? parseEnv(fs.readFileSync(envPath, 'utf8'))
   : {};
 
+// Precedencia: variable de entorno del build (Vercel) > archivo .env local > fallback.
+// Así en Vercel basta con definir API_URL en el panel, sin commitear URLs.
 const environment = {
-  production: toBoolean(fileEnv.PRODUCTION, fallback.production),
-  apiUrl: fileEnv.API_URL || fallback.apiUrl,
+  production: toBoolean(process.env.PRODUCTION ?? fileEnv.PRODUCTION, fallback.production),
+  apiUrl: process.env.API_URL || fileEnv.API_URL || fallback.apiUrl,
 };
 
 const output = `export const environment = ${JSON.stringify(environment, null, 2)};\n`;

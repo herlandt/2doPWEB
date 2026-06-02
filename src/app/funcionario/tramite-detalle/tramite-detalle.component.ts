@@ -29,9 +29,14 @@ export class TramiteDetalleComponent {
     observaciones: [''],
   });
 
+  readonly finalizado = computed(() => {
+    const estado = this.tramite()?.estado;
+    return estado === 'Aprobado' || estado === 'Rechazado' || estado === 'Cancelado';
+  });
+
   readonly puedeCompletar = computed(() => {
     const data = this.tramite();
-    return !!data?.nodoActual && data.nodoActual.tipo === 'actividad' && data.estado !== 'completado';
+    return !!data?.nodoActual && data.nodoActual.tipo === 'actividad' && !this.finalizado();
   });
 
   constructor() {
@@ -63,7 +68,14 @@ export class TramiteDetalleComponent {
     this.procesando.set(true);
     this.error.set('');
 
-    const payload: CompletarNodoRequest = this.form.getRawValue();
+    const { resultado, observaciones } = this.form.getRawValue();
+    // El backend deriva funcionarioId del JWT; el payload solo lleva decision/notas.
+    // 'completado' es el avance lineal por defecto (sin decision); aprobado/rechazado
+    // se mapean a la decision del nodo.
+    const payload: CompletarNodoRequest = {
+      decision: resultado === 'completado' ? undefined : resultado,
+      notas: observaciones || undefined,
+    };
     this.workflowSvc.completarNodo(this.tramiteId, payload).subscribe({
       next: (tramiteActualizado) => {
         this.tramite.set(tramiteActualizado);
@@ -81,8 +93,16 @@ export class TramiteDetalleComponent {
 
   getEstadoBadgeClass(estado: string): string {
     const clases: Record<string, string> = {
+      // Estados globales del trámite (nuevo modelo)
+      'En curso': 'bg-primary',
+      Observado: 'bg-warning text-dark',
+      Aprobado: 'bg-success',
+      Rechazado: 'bg-danger',
+      Cancelado: 'bg-secondary',
+      // Legacy
       pendiente: 'bg-secondary',
       en_progreso: 'bg-warning text-dark',
+      'En proceso': 'bg-primary',
       completado: 'bg-success',
       activo: 'bg-primary',
       archivado: 'bg-secondary',

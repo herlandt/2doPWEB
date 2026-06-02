@@ -5,7 +5,7 @@ import { AuthService } from '../services/auth.service';
 import { TramiteC2Service } from '../services/tramite-c2.service';
 
 /**
- * Verifica que el funcionario logueado es el dueño de la sección activa (en_curso)
+ * Verifica que el funcionario logueado es el dueño de la sección activa (trabajable)
  * del expediente del trámite indicado. Los administradores pasan sin verificación
  * (acceso de solo lectura desde /admin/historial).
  *
@@ -28,9 +28,12 @@ export const tramiteOwnershipGuard: CanActivateFn = (route: ActivatedRouteSnapsh
   return tramiteSvc.getExpediente(tramiteId).pipe(
     map((exp: any) => {
       const secciones: any[] = exp?.secciones ?? [];
-      const activa = secciones.find((s) => s?.infoSeccion?.estado === 'en_curso');
-      const dueño = activa?.infoSeccion?.funcionarioId as string | undefined;
-      return dueño && dueño === miUserId ? true : router.createUrlTree(['/no-autorizado']);
+      const esActiva = (e: string | undefined) =>
+        ['En ejecucion', 'Pendiente de recepcion', 'Observado', 'en_curso'].includes(e ?? '');
+      const ok = secciones.some(
+        (s) => esActiva(s?.infoSeccion?.estado) && s?.infoSeccion?.funcionarioId === miUserId,
+      );
+      return ok ? true : router.createUrlTree(['/no-autorizado']);
     }),
     catchError(() => of(router.createUrlTree(['/no-autorizado']))),
   );

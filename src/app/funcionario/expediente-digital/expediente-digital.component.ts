@@ -27,6 +27,11 @@ export class ExpedienteDigitalComponent {
 
   readonly mostrarAcciones = computed(() => !this.authSvc.isAdmin());
 
+  readonly finalizado = computed(() => {
+    const e = this.tramiteEstado()?.estadoActual ?? this.tramiteEstado()?.estado;
+    return e === 'Aprobado' || e === 'Rechazado' || e === 'Cancelado';
+  });
+
   readonly tramiteId = this.route.snapshot.params['id'] as string;
 
   // CU-10
@@ -63,9 +68,55 @@ export class ExpedienteDigitalComponent {
   readonly guardandoSeccionId = signal<string | null>(null);
   readonly guardadoOkSeccionId = signal<string | null>(null);
 
+  // Documento de resolución (lo que el trámite entrega al finalizar)
+  readonly archivoResolucion = signal<File | null>(null);
+  readonly tramiteEstado = signal<any>(null);
+  readonly tieneResolucion = computed(() => !!this.tramiteEstado()?.documentoResolucionId);
+  readonly hayPendienteRecepcion = computed(() =>
+    (this.expediente()?.secciones ?? []).some(
+      (s: any) => s.infoSeccion?.estado === 'Pendiente de recepcion',
+    ),
+  );
+
   constructor() {
     this.cargarExpediente();
     this.cargarDocumentos();
+    this.cargarEstado();
+  }
+
+  private cargarEstado(): void {
+    if (!this.tramiteId) return;
+    this.tramiteC2Svc.getEstado(this.tramiteId).subscribe({
+      next: (e) => this.tramiteEstado.set(e),
+      error: () => {},
+    });
+  }
+
+  /** Sección sobre la que el funcionario puede trabajar (recibida, en ejecución u observada). */
+  esSeccionEditable(estado: string | undefined): boolean {
+    return ['En ejecucion', 'Pendiente de recepcion', 'Observado', 'en_curso'].includes(estado ?? '');
+  }
+
+  /** Sección ya terminada (nuevo "Derivada"; tolera legacy). */
+  esSeccionCompletada(estado: string | undefined): boolean {
+    return ['Derivada', 'completada', 'completado'].includes(estado ?? '');
+  }
+
+  setArchivoResolucion(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    this.archivoResolucion.set(input.files?.[0] ?? null);
+  }
+
+  descargarResolucion(): void {
+    this.tramiteC2Svc.descargarResolucion(this.tramiteId).subscribe({
+      next: (r) => {
+        if (r?.url) window.open(r.url, '_blank', 'noopener');
+      },
+      error: () => {
+        this.error.set('No se pudo obtener la resolución del trámite.');
+        setTimeout(() => this.error.set(''), 4000);
+      },
+    });
   }
 
   // ── CU-13c: llenado del formulario de la sección activa ───────────────
@@ -101,6 +152,7 @@ export class ExpedienteDigitalComponent {
         this.guardadoOkSeccionId.set(seccionId);
         // Refrescamos para que los valores del servidor se reflejen en pantalla.
         this.cargarExpediente();
+        this.cargarEstado();
         setTimeout(() => this.guardadoOkSeccionId.set(null), 3000);
       },
       error: (err: any) => {
@@ -187,11 +239,27 @@ export class ExpedienteDigitalComponent {
 
     if (this.seccionesAnteriores().length === 0) {
       const exp = this.expediente();
-      const completadas = (exp?.secciones ?? []).filter(
-        (s: any) => s.infoSeccion?.estado === 'completada',
+      const completadas = (exp?.secciones ?? []).filter((s: any) =>
+        this.esSeccionCompletada(s.infoSeccion?.estado),
       );
       this.seccionesAnteriores.set(completadas);
     }
+  }
+
+  /** Aceptar (recepcionar) el trámite: Pendiente de recepción → En ejecución. */
+  aceptar(): void {
+    this.procesando.set(true);
+    this.error.set('');
+    this.tramiteC2Svc.aceptarTramite(this.tramiteId).subscribe({
+      next: () => {
+        this.procesando.set(false);
+        this.exito.set('Trámite aceptado. Ahora está en ejecución a tu cargo.');
+        this.cargarExpediente();
+        this.cargarEstado();
+        setTimeout(() => this.exito.set(''), 4000);
+      },
+      error: (err) => this.manejarError(err),
+    });
   }
 
   // CU-11: carga funcionarios disponibles
@@ -217,7 +285,11 @@ export class ExpedienteDigitalComponent {
     this.error.set('');
 
     if (tipo === 'APROBAR') {
-      this.tramiteC2Svc.decisionFinal(this.tramiteId, 'Aprobar', this.justificacion()).subscribe({
+      const archivo = this.archivoResolucion();
+      const obs$ = archivo
+        ? this.tramiteC2Svc.decisionFinalConResolucion(this.tramiteId, 'Aprobar', this.justificacion(), archivo)
+        : this.tramiteC2Svc.decisionFinal(this.tramiteId, 'Aprobar', this.justificacion());
+      obs$.subscribe({
         next: () => this.finalizarExitosamente('Trámite aprobado. Ha avanzado al siguiente departamento.'),
         error: (err) => this.manejarError(err),
       });
@@ -233,9 +305,9 @@ export class ExpedienteDigitalComponent {
           next: () => this.finalizarExitosamente('Trámite devuelto para corrección.'),
           error: (err) => this.manejarError(err),
         });
-    } else if (tipo === 'DERIVAR') {
+    } else if (tipo === 'DERIVAR' || tipo === 'REASIGNAR') {
       this.tramiteC2Svc
-        .derivarTramite(this.tramiteId, this.funcionarioDestinoId(), this.justificacion())
+        .reasignarTramite(this.tramiteId, this.funcionarioDestinoId(), this.justificacion())
         .subscribe({
           next: () => this.finalizarExitosamente('Trámite reasignado al compañero.'),
           error: (err) => this.manejarError(err),
