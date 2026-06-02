@@ -72,6 +72,18 @@ export class DiagramaEditorComponent {
     const d = this.diagrama();
     return d == null || d.estado === 'borrador';
   });
+
+  /**
+   * Departamentos que son calles (swimlanes) de ESTE diagrama. El inspector solo
+   * debe ofrecer las calles realmente agregadas al diagrama, no todos los
+   * departamentos del sistema (bug: aparecían calles no agregadas).
+   */
+  readonly departamentosDelDiagrama = computed(() => {
+    const lanes = this.diagrama()?.swimlanes ?? [];
+    if (lanes.length === 0) return this.departamentos();
+    const set = new Set(lanes.map((l) => l.trim().toLowerCase()));
+    return this.departamentos().filter((d) => set.has(d.codigo.trim().toLowerCase()));
+  });
   readonly politicas = signal<Politica[]>([]);
   readonly nodos = signal<NodoDiagrama[]>([]);
   readonly transiciones = signal<FlujoTransicion[]>([]);

@@ -479,7 +479,7 @@
                     (change)="updateDraftDepartamento($event)"
                   >
                     <option value="">— Sin departamento —</option>
-                    @for (depto of departamentos(); track depto.id) {
+                    @for (depto of departamentosDelDiagrama(); track depto.id) {
                       <option [value]="depto.id">{{ depto.codigo }} · {{ depto.nombre }}</option>
                     }
                   </select>
