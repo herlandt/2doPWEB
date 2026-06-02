@@ -491,24 +491,24 @@ export class DiagramaEditorComponent {
     if (!this.diagramaId) return;
     if (this.bloquearSiNoEditable()) return;
 
+    // La calle/departamento se toma SIEMPRE de donde se soltó el nodo.
     const depto = payload.swimlane ? this.findDepartamentoFromLane(payload.swimlane) : null;
+
+    // Una actividad debe caer dentro de una calle válida (su departamento).
+    if (payload.tipo === 'actividad' && !depto) {
+      this.setError(
+        `No se pudo crear el nodo: la calle "${payload.swimlane ?? 'sin calle'}" no coincide con un departamento.`,
+      );
+      return;
+    }
+
+    // Si la calle ya tiene una actividad registrada la preasignamos por comodidad;
+    // si no, el nodo se crea igual con su departamento y el usuario elige la
+    // actividad en el inspector. (Antes la falta de actividad BLOQUEABA la
+    // creación: por eso "al soltarlo por primera vez no funcionaba".)
     const actividadPorDepto = depto
       ? this.actividades().find((a) => a.departamentoId === depto.id)
       : null;
-
-    if (payload.tipo === 'actividad' && !depto) {
-      this.setError(
-        `No se pudo crear el nodo: la swimlane "${payload.swimlane ?? 'sin lane'}" no coincide con un departamento.`
-      );
-      return;
-    }
-
-    if (payload.tipo === 'actividad' && !actividadPorDepto) {
-      this.setError(
-        `No se pudo crear el nodo: no hay actividades registradas para el departamento ${depto?.codigo ?? payload.swimlane}.`,
-      );
-      return;
-    }
 
     const nodoReq: NodoRequest = {
       tipo: payload.tipo,
@@ -522,8 +522,12 @@ export class DiagramaEditorComponent {
 
     this.diagramaSvc.crearNodo(this.diagramaId, nodoReq).subscribe({
       next: (creado) => {
-        // Optimista: añadimos a la lista sin recargar (preserva zoom y posición de cámara)
+        // Optimista: añadimos a la lista sin recargar (preserva zoom y cámara)
         this.nodos.update((lista) => [...lista, creado]);
+        // Lo seleccionamos al instante para que se vea su calle/departamento sin
+        // tener que volver a hacer click ni ajustarlo a mano.
+        this.selectedNodo.set(creado);
+        this.inspectorDraft.set({ ...creado });
         this.showSuccess('Nodo creado');
       },
       error: (err: unknown) => {
