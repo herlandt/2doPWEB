@@ -483,12 +483,13 @@
                   <select
                     id="insp-depto"
                     class="cre-input"
-                    [value]="draft.departamentoId ?? ''"
                     (change)="updateDraftDepartamento($event)"
                   >
-                    <option value="">— Sin departamento —</option>
+                    <option value="" [selected]="!draft.departamentoId">— Sin departamento —</option>
                     @for (depto of departamentosDelDiagrama(); track depto.id) {
-                      <option [value]="depto.id">{{ depto.codigo }} · {{ depto.nombre }}</option>
+                      <option [value]="depto.id" [selected]="depto.id === draft.departamentoId">
+                        {{ depto.codigo }} · {{ depto.nombre }}
+                      </option>
                     }
                   </select>
                   <div class="inspector-inline">
@@ -503,13 +504,12 @@
                     <select
                       id="insp-actividad"
                       class="cre-input"
-                      [value]="draft.actividadId ?? ''"
                       (change)="updateDraftActividad($event)"
                       [disabled]="!draft.departamentoId"
                     >
-                      <option value="">— Sin actividad —</option>
+                      <option value="" [selected]="!draft.actividadId">— Sin actividad —</option>
                       @for (act of actividadesDelDraft(); track act.id) {
-                        <option [value]="act.id">{{ act.nombre }}</option>
+                        <option [value]="act.id" [selected]="act.id === draft.actividadId">{{ act.nombre }}</option>
                       }
                     </select>
                     <div class="inspector-inline">

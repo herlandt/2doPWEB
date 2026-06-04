@@ -509,13 +509,6 @@ export class DiagramaEditorComponent {
 
     // Una actividad debe caer dentro de una calle válida (su departamento).
     if (payload.tipo === 'actividad' && !depto) {
-      alert(
-        '[diag] No se asignó calle al crear:\n' +
-          `calleRecibida = "${payload.swimlane ?? 'VACIA'}"\n` +
-          `posX = ${payload.posicion?.x ?? '?'}\n` +
-          `callesDelDiagrama = [${(this.diagrama()?.swimlanes ?? []).join(', ')}]\n` +
-          `deptosCargados = ${this.departamentos().length}`,
-      );
       this.setError(
         `No se pudo crear el nodo: la calle "${payload.swimlane ?? 'sin calle'}" no coincide con un departamento.`,
       );
@@ -548,20 +541,9 @@ export class DiagramaEditorComponent {
         // tener que volver a hacer click ni ajustarlo a mano.
         this.selectedNodo.set(creado);
         this.inspectorDraft.set({ ...creado });
-        alert(
-          '[diag] Nodo creado:\n' +
-            `calleEnviada = "${nodoReq.swimlane ?? 'VACIA'}"\n` +
-            `deptoEnviado = ${depto?.codigo ?? 'NINGUNO'}\n` +
-            `deptoGuardado (respuesta backend) = ${creado.departamentoId ? this.getNombreDepto(creado.departamentoId) : 'NINGUNO'}`,
-        );
         this.showSuccess('Nodo creado');
       },
       error: (err: unknown) => {
-        alert(
-          '[diag] Error backend al crear:\n' +
-            `${this.extractErrorMessage(err, 'crear nodo')}\n` +
-            `deptoEnviado = ${depto?.codigo ?? 'NINGUNO'} · calle = "${nodoReq.swimlane ?? 'VACIA'}"`,
-        );
         this.setError(this.extractErrorMessage(err, 'Error al crear nodo'), this.extractErrorDetails(err));
       },
     });
