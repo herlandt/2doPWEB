@@ -70,7 +70,11 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  /* Solo scroll vertical: al activar overflow-y el navegador habilita también el
+     eje X, mostrando una barra horizontal indeseada. La forzamos a oculta para
+     que el menú solo crezca/scrollee hacia abajo. */
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Ítem individual (link o botón plano) */
