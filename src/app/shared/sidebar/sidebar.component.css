@@ -69,6 +69,12 @@
   padding: 0.75rem 0.6rem;
   display: flex;
   flex-direction: column;
+  /* nowrap es CLAVE: la clase .nav colisiona con la de Bootstrap, que trae
+     flex-wrap:wrap. Con flex-direction:column eso hace que, al no caber en alto,
+     los grupos se envuelvan a una 2ª COLUMNA hacia la derecha (quedando ocultos
+     tras overflow-x:hidden). Forzamos nowrap para que el menú fluya/scrollee
+     siempre en vertical. */
+  flex-wrap: nowrap;
   gap: 2px;
   /* Solo scroll vertical: al activar overflow-y el navegador habilita también el
      eje X, mostrando una barra horizontal indeseada. La forzamos a oculta para
