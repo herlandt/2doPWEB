@@ -27,6 +27,8 @@ import {
   NodoCreatedPayload,
   NodoMovedPayload,
 } from './diagram/diagram-canvas.component';
+import { swimlaneFromX } from './diagram/lane-helpers';
+import { defaultSize } from './diagram/shapes';
 import { FormularioDisenadorComponent } from './formulario-disenador.component';
 
 interface FuncionarioOption {
@@ -493,8 +495,10 @@ export class DiagramaEditorComponent {
     if (!this.diagramaId) return;
     if (this.bloquearSiNoEditable()) return;
 
-    // La calle/departamento se toma SIEMPRE de donde se soltó el nodo.
-    const depto = payload.swimlane ? this.findDepartamentoFromLane(payload.swimlane) : null;
+    // La calle/departamento se toma de donde se soltó el nodo. Primero por la
+    // etiqueta de calle que reporta el lienzo; si esa no resuelve (llegó vacía o
+    // no coincide), se deriva de la POSICIÓN real del nodo (red de seguridad).
+    const depto = this.departamentoDeCreacion(payload);
 
     // Una actividad debe caer dentro de una calle válida (su departamento).
     if (payload.tipo === 'actividad' && !depto) {
@@ -1015,6 +1019,28 @@ export class DiagramaEditorComponent {
       ?? this.departamentos().find((d) => d.nombre.trim().toLowerCase() === normalized)
       ?? null
     );
+  }
+
+  /**
+   * Departamento al CREAR un nodo desde la paleta. Primero por la etiqueta de
+   * calle que reporta el lienzo; si no resuelve (la calle llegó vacía o no
+   * coincide por datos/zoom), se deriva de la POSICIÓN del nodo mapeada a las
+   * calles del diagrama —la misma fuente con la que el lienzo dibuja las
+   * swimlanes—, para que el nodo SIEMPRE tome el departamento de la calle donde
+   * se soltó (antes, al soltar desde la paleta, a veces quedaba sin departamento).
+   */
+  private departamentoDeCreacion(payload: NodoCreatedPayload): Departamento | null {
+    if (payload.swimlane) {
+      const porCalle = this.findDepartamentoFromLane(payload.swimlane);
+      if (porCalle) return porCalle;
+    }
+    const lanes = this.diagrama()?.swimlanes ?? [];
+    if (lanes.length > 0 && payload.posicion) {
+      const half = defaultSize(payload.tipo).width / 2;
+      const lane = swimlaneFromX(payload.posicion.x + half, lanes);
+      if (lane) return this.findDepartamentoFromLane(lane);
+    }
+    return null;
   }
 
   /**

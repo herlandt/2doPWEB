@@ -732,7 +732,6 @@ export class DiagramCanvasComponent {
     }).clientToLocal(ev.clientX, ev.clientY);
 
     const size = defaultSize(tipo);
-    const swimlane = swimlaneFromX(local.x, this.swimlanes());
 
     const labelByTipo: Record<string, string> = {
       inicio: 'Inicio',
@@ -745,6 +744,10 @@ export class DiagramCanvasComponent {
 
     const x = snapToGrid(Math.max(0, local.x - size.width / 2));
     const y = snapToGrid(Math.max(LANE_HEADER_HEIGHT + 8, local.y - size.height / 2));
+    // La calle se calcula desde el CENTRO del nodo ya colocado (igual que al
+    // moverlo: pos.x + width/2), no desde la posición cruda del cursor. Así crear
+    // y mover dan la misma calle y el departamento se toma de forma consistente.
+    const swimlane = swimlaneFromX(x + size.width / 2, this.swimlanes());
 
     this.nodoCreated.emit({
       tipo,
