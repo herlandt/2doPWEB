@@ -62,6 +62,10 @@
 /* ── Nav ─────────────────────────────────────────────────── */
 .nav {
   flex: 1;
+  /* min-height: 0 es imprescindible: sin él, este flex item no se encoge por
+     debajo de su contenido y overflow-y NO hace scroll — el menú se desborda y
+     empuja los grupos de abajo fuera de vista en pantallas no muy altas. */
+  min-height: 0;
   padding: 0.75rem 0.6rem;
   display: flex;
   flex-direction: column;
