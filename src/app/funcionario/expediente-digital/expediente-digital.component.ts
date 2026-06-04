@@ -90,6 +90,32 @@ export class ExpedienteDigitalComponent {
     () => !!this.decisionSiguiente() && !this.hayPendienteRecepcion(),
   );
 
+  // Salidas configuradas por el admin para la actividad del nodo actual. El panel
+  // solo muestra los botones de estas acciones. Si la actividad no declara salidas
+  // (datos antiguos o nodo sin actividad), no restringimos (se muestran todas).
+  readonly salidasActividad = computed<string[]>(
+    () => this.tramiteEstado()?.nodoActual?.salidasPosibles ?? [],
+  );
+  readonly sinRestriccionSalidas = computed(() => this.salidasActividad().length === 0);
+  // 'derivar' es legacy = avanzar, lo tratamos como 'completar'.
+  readonly puedeAvanzar = computed(
+    () =>
+      this.sinRestriccionSalidas() ||
+      this.salidasActividad().some((s) => s === 'aprobar' || s === 'completar' || s === 'derivar'),
+  );
+  readonly puedeRechazar = computed(
+    () => this.sinRestriccionSalidas() || this.salidasActividad().includes('rechazar'),
+  );
+  readonly puedeObservar = computed(
+    () => this.sinRestriccionSalidas() || this.salidasActividad().includes('observar'),
+  );
+  // Red de seguridad para datos antiguos: si la actividad no tiene ninguna salida
+  // que avance ni rechace (y no hay decisión pendiente), el funcionario no tendría
+  // botón útil; mostramos un aviso en vez de dejarlo atascado en silencio.
+  readonly sinSalidaUtil = computed(
+    () => !this.puedeAvanzar() && !this.puedeRechazar() && !this.mostrarDecision(),
+  );
+
   constructor() {
     this.cargarExpediente();
     this.cargarDocumentos();

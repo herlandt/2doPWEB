@@ -136,7 +136,7 @@ export class DiagramaEditorComponent {
   readonly actDepartamentoId = signal('');
   readonly actFuncionarioResponsableId = signal('');
   readonly actSlaHoras = signal('24');
-  readonly actSalidasPosibles = signal<SalidaActividad[]>(['derivar']);
+  readonly actSalidasPosibles = signal<SalidaActividad[]>(['completar']);
   readonly actReutilizable = signal(true);
 
   readonly salidasInfo: readonly SalidaInfo[] = SALIDAS_INFO;
@@ -351,7 +351,7 @@ export class DiagramaEditorComponent {
     this.actDescripcion.set('');
     this.actFuncionarioResponsableId.set('');
     this.actSlaHoras.set('24');
-    this.actSalidasPosibles.set(['derivar']);
+    this.actSalidasPosibles.set(['completar']);
     this.actReutilizable.set(true);
     const draft = this.inspectorDraft();
     this.actDepartamentoId.set(draft?.departamentoId ?? '');
@@ -411,6 +411,13 @@ export class DiagramaEditorComponent {
 
     if (salidasPosibles.length === 0) {
       this.setError('Selecciona al menos una salida posible para la actividad');
+      return;
+    }
+
+    // Toda actividad debe poder AVANZAR el trámite; si solo se marca observar/
+    // rechazar, el funcionario quedaría sin botón para continuar (trámite atascado).
+    if (!salidasPosibles.some((s) => s === 'aprobar' || s === 'completar' || s === 'derivar')) {
+      this.setError('La actividad necesita al menos una salida que avance el trámite (Aprobar o Completar).');
       return;
     }
 

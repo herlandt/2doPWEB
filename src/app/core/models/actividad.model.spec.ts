@@ -1,11 +1,16 @@
 import { SALIDAS_INFO, SalidaActividad } from './actividad.model';
 
 describe('Actividad model — catálogo de salidas posibles', () => {
-  it('expone exactamente las 5 salidas válidas reconocidas por el backend', () => {
+  it('expone exactamente las 4 salidas que se ofrecen al crear actividades', () => {
     const valores = SALIDAS_INFO.map((s) => s.value).sort();
     expect(valores).toEqual(
-      (['aprobar', 'completar', 'derivar', 'observar', 'rechazar'] as SalidaActividad[]).sort(),
+      (['aprobar', 'completar', 'observar', 'rechazar'] as SalidaActividad[]).sort(),
     );
+  });
+
+  it('el valor legacy "derivar" sigue siendo un SalidaActividad válido pero ya no se ofrece', () => {
+    const legacy: SalidaActividad = 'derivar';
+    expect(SALIDAS_INFO.some((s) => s.value === legacy)).toBe(false);
   });
 
   it('cada salida tiene label, descripción, icono y color no vacíos', () => {

@@ -202,6 +202,13 @@ export class ActividadesComponent {
       return;
     }
 
+    // Toda actividad debe poder AVANZAR el trámite; si solo se marca observar/
+    // rechazar, el funcionario quedaría sin botón para continuar (trámite atascado).
+    if (!salidas.some((s) => s === 'aprobar' || s === 'completar' || s === 'derivar')) {
+      this.error.set('La actividad necesita al menos una salida que avance el trámite (Aprobar o Completar).');
+      return;
+    }
+
     this.loading.set(true);
     this.error.set('');
 

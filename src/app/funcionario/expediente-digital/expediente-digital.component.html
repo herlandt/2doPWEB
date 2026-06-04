@@ -401,54 +401,71 @@
           </div>
         }
 
-        <!-- Botonera principal -->
+        <!-- Datos antiguos sin salida de avance: avisamos en vez de dejar al
+             funcionario sin acción útil. -->
+        @if (sinSalidaUtil()) {
+          <div class="alert alert-warning small mb-3">
+            Esta actividad no tiene configurada una salida que avance el trámite.
+            Pide al administrador que añada <strong>Aprobar</strong> o <strong>Completar</strong> a la actividad.
+          </div>
+        }
+
+        <!-- Botonera principal: solo se muestran los botones de las salidas que el
+             admin configuró para esta actividad. "Reasignar" es gestión (a quién le
+             toca) y queda siempre disponible. -->
         <div class="d-flex flex-wrap gap-2 mt-3">
 
-          <!-- CU-18: Aprobar. Los comentarios son opcionales — el formulario
-               de la sección activa ya recoge los datos del trámite. -->
-          <button
-            type="button"
-            class="btn btn-success"
-            [disabled]="procesando() || (mostrarDecision() && !respuestaDecision())"
-            (click)="ejecutarAccion('APROBAR')"
-          >
-            {{ mostrarDecision() ? 'Continuar →' : 'Aprobar (Avanzar)' }}
-          </button>
+          <!-- Aprobar / Avanzar (salidas 'aprobar' o 'completar'). Con una decisión
+               (if) pendiente, este botón pasa a "Continuar →". -->
+          @if (puedeAvanzar() || mostrarDecision()) {
+            <button
+              type="button"
+              class="btn btn-success"
+              [disabled]="procesando() || (mostrarDecision() && !respuestaDecision())"
+              (click)="ejecutarAccion('APROBAR')"
+            >
+              {{ mostrarDecision() ? 'Continuar →' : 'Aprobar (Avanzar)' }}
+            </button>
+          }
 
-          <!-- CU-18: Rechazar -->
-          <button
-            type="button"
-            class="btn btn-danger"
-            [disabled]="procesando()"
-            (click)="ejecutarAccion('RECHAZAR')"
-          >
-            Rechazar Definitivo
-          </button>
+          <!-- Rechazar (salida 'rechazar') -->
+          @if (puedeRechazar()) {
+            <button
+              type="button"
+              class="btn btn-danger"
+              [disabled]="procesando()"
+              (click)="ejecutarAccion('RECHAZAR')"
+            >
+              Rechazar Definitivo
+            </button>
+          }
 
           <!-- Devolver/Reasignar se ocultan mientras hay una decisión Sí/No en juego,
                para no confundir: esa respuesta solo aplica a "Continuar →". -->
           @if (!mostrarDecision()) {
-            <!-- CU-17: Devolver -->
-            <button
-              type="button"
-              class="btn btn-warning"
-              [disabled]="procesando()"
-              (click)="prepararDevolucion()"
-            >
-              Devolver a Corregir
-            </button>
-            @if (accionSeleccionada() === 'DEVOLVER') {
+            <!-- Devolver (salida 'observar') -->
+            @if (puedeObservar()) {
               <button
                 type="button"
                 class="btn btn-warning"
-                [disabled]="procesando() || !nodoDestinoId()"
-                (click)="ejecutarAccion('DEVOLVER')"
+                [disabled]="procesando()"
+                (click)="prepararDevolucion()"
               >
-                Confirmar Devolución
+                Devolver a Corregir
               </button>
+              @if (accionSeleccionada() === 'DEVOLVER') {
+                <button
+                  type="button"
+                  class="btn btn-warning"
+                  [disabled]="procesando() || !nodoDestinoId()"
+                  (click)="ejecutarAccion('DEVOLVER')"
+                >
+                  Confirmar Devolución
+                </button>
+              }
             }
 
-            <!-- CU-11: Reasignar a otro funcionario del mismo nodo -->
+            <!-- Reasignar a otro funcionario del mismo nodo (gestión, siempre disponible) -->
             <button
               type="button"
               class="btn btn-info text-white"

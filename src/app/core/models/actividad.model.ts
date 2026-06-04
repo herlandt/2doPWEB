@@ -1,6 +1,9 @@
 export type SalidaActividad =
   | 'aprobar'
   | 'rechazar'
+  // 'derivar' es LEGACY: hacía lo mismo que 'completar' (avanzar al siguiente
+  // paso). Se mantiene en el tipo para no romper datos antiguos, pero ya no se
+  // ofrece al crear actividades (no está en SALIDAS_INFO).
   | 'derivar'
   | 'observar'
   | 'completar';
@@ -57,13 +60,6 @@ export const SALIDAS_INFO: SalidaInfo[] = [
     color: 'danger',
   },
   {
-    value: 'derivar',
-    label: 'Derivar',
-    descripcion: 'Pasa al siguiente paso del flujo (otro funcionario o área).',
-    icono: '➜',
-    color: 'info',
-  },
-  {
     value: 'observar',
     label: 'Observar / Devolver',
     descripcion: 'Devuelve al solicitante o paso previo para que corrija.',
@@ -72,8 +68,8 @@ export const SALIDAS_INFO: SalidaInfo[] = [
   },
   {
     value: 'completar',
-    label: 'Completar',
-    descripcion: 'Marca la tarea como hecha y avanza el flujo.',
+    label: 'Completar / Avanzar',
+    descripcion: 'Marca la tarea como hecha y avanza al siguiente paso del flujo.',
     icono: '◉',
     color: 'secondary',
   },

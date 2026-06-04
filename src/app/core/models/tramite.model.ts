@@ -43,6 +43,9 @@ export interface NodoEstado {
   estado: string;
   funcionarioId?: string;
   fechaInicio?: string;
+  // Salidas que el admin configuró para la actividad de este nodo; el panel del
+  // funcionario solo ofrece los botones de estas acciones.
+  salidasPosibles?: string[];
 }
 
 export interface HistorialNodo {
