@@ -1,8 +1,9 @@
 {
+  "outputDirectory": "dist/web-angular/browser",
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "http://44.213.74.152:8080/api/:path*"
+      "destination": "https://api.ficctuagrmbolivia.online/api/:path*"
     },
     {
       "source": "/(.*)",
