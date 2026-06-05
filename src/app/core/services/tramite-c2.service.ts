@@ -68,11 +68,19 @@ export class TramiteC2Service {
     return this.http.get<any>(`${this.base}/tramites/${tramiteId}/resolucion`);
   }
 
-  // CU-17: Observar/Devolver a un nodo anterior — body { nodoDestinoId, observaciones }
-  devolverTramite(tramiteId: string, nodoDestinoId: string, observaciones: string): Observable<any> {
+  // CU-17: Observar/Devolver a un nodo anterior — body { nodoDestinoId, observaciones,
+  // documentosObservados }. `documentosObservados` son los ids de DocumentoArchivo que
+  // el funcionario marcó como erróneos; el cliente solo verá esos para corregir.
+  devolverTramite(
+    tramiteId: string,
+    nodoDestinoId: string,
+    observaciones: string,
+    documentosObservados: string[] = [],
+  ): Observable<any> {
     return this.http.post<any>(`${this.base}/tramites/${tramiteId}/devolver`, {
       nodoDestinoId,
       observaciones,
+      documentosObservados,
     });
   }
 

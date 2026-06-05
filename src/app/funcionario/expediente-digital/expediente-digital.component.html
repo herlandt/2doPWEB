@@ -415,6 +415,46 @@
                 </option>
               }
             </select>
+
+            <!-- CU-17 (extensión): marcar los documentos subidos que están mal.
+                 Solo esos ids (documentosObservados) se mandan al backend para que el
+                 cliente vea únicamente los que debe corregir. -->
+            <div class="mt-3">
+              <label class="form-label fw-bold mb-1">Documentos a corregir</label>
+              <p class="small text-muted mb-2">
+                Marca los documentos que están mal (el cliente solo verá esos para corregir).
+              </p>
+              @if (cargandoDocumentos()) {
+                <div class="text-muted small">
+                  <span class="spinner-border spinner-border-sm me-1"></span>
+                  Cargando documentos...
+                </div>
+              } @else if (documentos().length === 0) {
+                <p class="text-muted small mb-0">No hay documentos subidos para marcar.</p>
+              } @else {
+                <ul class="list-group">
+                  @for (d of documentos(); track d.id) {
+                    <li class="list-group-item">
+                      <div class="form-check mb-0">
+                        <input
+                          type="checkbox"
+                          class="form-check-input"
+                          [id]="'docObs-' + d.id"
+                          [checked]="documentosObservadosIds().has(d.id)"
+                          (change)="toggleDocumentoObservado(d.id)"
+                        />
+                        <label class="form-check-label" [for]="'docObs-' + d.id">
+                          <span class="fw-semibold">{{ d.nombreLogico }}</span>
+                          <span class="text-muted small ms-1">
+                            (v{{ d.numeroVersionActual }} · {{ d.tipoDocumento }})
+                          </span>
+                        </label>
+                      </div>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
           </div>
         }
 

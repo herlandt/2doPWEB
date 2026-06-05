@@ -54,6 +54,11 @@ export class ExpedienteDigitalComponent {
   readonly nodoDestinoId = signal('');
   readonly seccionesAnteriores = signal<any[]>([]);
 
+  // CU-17 (extensión): ids de DocumentoArchivo marcados como erróneos al devolver.
+  // Solo esos documentos se mandan en `documentosObservados` para que el cliente
+  // vea únicamente los que debe corregir.
+  readonly documentosObservadosIds = signal<Set<string>>(new Set());
+
   // CU-11
   readonly funcionarioDestinoId = signal('');
   readonly listaFuncionarios = signal<any[]>([]);
@@ -381,6 +386,8 @@ export class ExpedienteDigitalComponent {
   prepararDevolucion(): void {
     this.accionSeleccionada.set('DEVOLVER');
     this.nodoDestinoId.set('');
+    // Empezamos sin documentos marcados cada vez que se abre el panel de devolución.
+    this.documentosObservadosIds.set(new Set());
 
     if (this.seccionesAnteriores().length === 0) {
       const exp = this.expediente();
@@ -389,6 +396,24 @@ export class ExpedienteDigitalComponent {
       );
       this.seccionesAnteriores.set(completadas);
     }
+
+    // Aseguramos que los documentos del trámite estén cargados para poder tildarlos.
+    if (this.documentos().length === 0 && !this.cargandoDocumentos()) {
+      this.cargarDocumentos();
+    }
+  }
+
+  /** Marca/desmarca un documento como observado (erróneo) re-emitiendo un new Set. */
+  toggleDocumentoObservado(docId: string): void {
+    this.documentosObservadosIds.update((curr) => {
+      const next = new Set(curr);
+      if (next.has(docId)) {
+        next.delete(docId);
+      } else {
+        next.add(docId);
+      }
+      return next;
+    });
   }
 
   /** Aceptar (recepcionar) el trámite: Pendiente de recepción → En ejecución. */
@@ -488,7 +513,12 @@ export class ExpedienteDigitalComponent {
       });
     } else if (tipo === 'DEVOLVER') {
       this.tramiteC2Svc
-        .devolverTramite(this.tramiteId, this.nodoDestinoId(), this.justificacion())
+        .devolverTramite(
+          this.tramiteId,
+          this.nodoDestinoId(),
+          this.justificacion(),
+          Array.from(this.documentosObservadosIds()),
+        )
         .subscribe({
           next: () => this.finalizarExitosamente('Trámite devuelto para corrección.'),
           error: (err) => this.manejarError(err),
