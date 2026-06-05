@@ -60,11 +60,6 @@ export const routes: Routes = [
 					import('./admin/politicas/politica-form.component').then((m) => m.PoliticaFormComponent),
 			},
 			{
-				path: 'politicas/:id/repositorio',
-				loadComponent: () =>
-					import('./admin/politicas/repositorio.component').then((m) => m.RepositorioComponent),
-			},
-			{
 				path: 'actividades',
 				loadComponent: () =>
 					import('./admin/actividades/actividades.component').then((m) => m.ActividadesComponent),

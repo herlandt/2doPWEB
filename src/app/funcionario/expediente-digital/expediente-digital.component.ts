@@ -4,7 +4,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { DocumentoArchivoService } from '../../core/services/documento-archivo.service';
 import { TramiteC2Service } from '../../core/services/tramite-c2.service';
-import { DocumentoArchivo } from '../../core/models/documento-archivo.model';
+import {
+  DocumentoArchivo,
+  SubirDocumentoRequest,
+  TipoDocumento,
+  TIPOS_DOCUMENTO,
+} from '../../core/models/documento-archivo.model';
 import { DictarSeccionComponent } from '../../shared/dictar-seccion/dictar-seccion.component';
 import { DictarFormularioResponse } from '../../core/models/dictado-formulario.model';
 
@@ -62,6 +67,26 @@ export class ExpedienteDigitalComponent {
   readonly cargandoDocumentos = signal(false);
   readonly errorDocumentos = signal('');
   readonly previewCargandoId = signal<string | null>(null);
+
+  // CU-33 — subida de documentos al trámite desde el expediente.
+  // El backend resuelve/crea el repositorio 1:1 a partir del tramiteId.
+  readonly archivoSubir = signal<File | null>(null);
+  readonly tipoDocumentoSubir = signal<TipoDocumento>('PDF');
+  readonly nombreLogicoSubir = signal('');
+  readonly obligatorioSubir = signal(false);
+  readonly subiendoDocumento = signal(false);
+
+  readonly tiposDocumento = TIPOS_DOCUMENTO;
+
+  // actividadId / nodoId del paso en curso (lo expone /estado en nodoActual).
+  // Son la referencia que el backend usa para validar permiso de escritura y
+  // etiquetar el documento subido contra la actividad correcta.
+  readonly actividadActualId = computed<string | null>(
+    () => this.tramiteEstado()?.nodoActual?.actividadId ?? null,
+  );
+  readonly nodoActualId = computed<string | null>(
+    () => this.tramiteEstado()?.nodoActual?.nodoId ?? null,
+  );
 
   // CU-13c — valores en edición por campoId (no persiste hasta "Guardar borrador").
   readonly valoresEnEdicion = signal<Record<string, string>>({});
@@ -241,6 +266,86 @@ export class ExpedienteDigitalComponent {
         setTimeout(() => this.errorDocumentos.set(''), 4000);
       },
     });
+  }
+
+  // ── CU-33: subir un documento al trámite desde el expediente ───────────
+
+  setArchivoSubir(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    this.archivoSubir.set(input.files?.[0] ?? null);
+  }
+
+  setTipoDocumentoSubir(ev: Event): void {
+    this.tipoDocumentoSubir.set((ev.target as HTMLSelectElement).value as TipoDocumento);
+  }
+
+  setNombreLogicoSubir(ev: Event): void {
+    this.nombreLogicoSubir.set((ev.target as HTMLInputElement).value);
+  }
+
+  setObligatorioSubir(ev: Event): void {
+    this.obligatorioSubir.set((ev.target as HTMLInputElement).checked);
+  }
+
+  subirDocumento(): void {
+    const archivo = this.archivoSubir();
+    if (!archivo) {
+      this.errorDocumentos.set('Selecciona un archivo para subir.');
+      setTimeout(() => this.errorDocumentos.set(''), 4000);
+      return;
+    }
+    const nombreLogico = this.nombreLogicoSubir().trim() || archivo.name;
+    const actividadId = this.actividadActualId();
+    if (!actividadId) {
+      this.errorDocumentos.set('No se pudo determinar la actividad actual del trámite.');
+      setTimeout(() => this.errorDocumentos.set(''), 4000);
+      return;
+    }
+
+    const req: SubirDocumentoRequest = {
+      tramiteId: this.tramiteId,
+      actividadId,
+      nodoId: this.nodoActualId() ?? undefined,
+      tipoDocumento: this.tipoDocumentoSubir(),
+      nombreLogico,
+      obligatorio: this.obligatorioSubir(),
+    };
+
+    this.subiendoDocumento.set(true);
+    this.errorDocumentos.set('');
+    this.docSvc.subir(this.tramiteId, archivo, req).subscribe({
+      next: () => {
+        this.subiendoDocumento.set(false);
+        // Limpiamos el formulario de subida y refrescamos el listado.
+        this.archivoSubir.set(null);
+        this.nombreLogicoSubir.set('');
+        this.obligatorioSubir.set(false);
+        this.tipoDocumentoSubir.set('PDF');
+        this.exito.set('Documento subido al trámite.');
+        setTimeout(() => this.exito.set(''), 4000);
+        this.cargarDocumentos();
+      },
+      error: (err: any) => {
+        this.subiendoDocumento.set(false);
+        this.errorDocumentos.set(this.mensajeErrorSubida(err));
+        setTimeout(() => this.errorDocumentos.set(''), 6000);
+      },
+    });
+  }
+
+  private mensajeErrorSubida(err: any): string {
+    switch (err?.status) {
+      case 409:
+        return 'Documento duplicado (hash)';
+      case 403:
+        return 'Sin permiso de escritura en esta actividad';
+      case 413:
+        return 'Archivo > limite';
+      case 503:
+        return 'Almacenamiento no disponible';
+      default:
+        return err?.error?.message ?? err?.error?.detail ?? 'No se pudo subir el documento.';
+    }
   }
 
   iconoTipoDoc(tipo: string): string {

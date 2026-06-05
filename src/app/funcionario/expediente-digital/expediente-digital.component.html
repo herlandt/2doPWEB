@@ -224,6 +224,66 @@
               <div class="alert alert-warning small m-2 mb-0">{{ errorDocumentos() }}</div>
             }
 
+            <!-- CU-33 · Subir documento al trámite (solo funcionario, no admin) -->
+            @if (mostrarAcciones() && !finalizado()) {
+              <div class="border-bottom p-3">
+                <p class="small fw-semibold mb-2">Subir documento</p>
+                <div class="mb-2">
+                  <input
+                    type="file"
+                    class="form-control form-control-sm"
+                    (change)="setArchivoSubir($event)"
+                  />
+                  @if (archivoSubir(); as arch) {
+                    <small class="text-success d-block mt-1">Seleccionado: {{ arch.name }}</small>
+                  }
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small mb-1">Nombre lógico</label>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm"
+                    [value]="nombreLogicoSubir()"
+                    (input)="setNombreLogicoSubir($event)"
+                    placeholder="Ej. Cédula del solicitante"
+                  />
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small mb-1">Tipo de documento</label>
+                  <select
+                    class="form-select form-select-sm"
+                    [value]="tipoDocumentoSubir()"
+                    (change)="setTipoDocumentoSubir($event)"
+                  >
+                    @for (t of tiposDocumento; track t) {
+                      <option [value]="t">{{ t }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-check mb-2">
+                  <input
+                    type="checkbox"
+                    class="form-check-input"
+                    id="obligatorioSubir"
+                    [checked]="obligatorioSubir()"
+                    (change)="setObligatorioSubir($event)"
+                  />
+                  <label class="form-check-label small" for="obligatorioSubir">Obligatorio</label>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-primary w-100"
+                  [disabled]="subiendoDocumento() || !archivoSubir()"
+                  (click)="subirDocumento()"
+                >
+                  @if (subiendoDocumento()) {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                  }
+                  Subir
+                </button>
+              </div>
+            }
+
             @if (!cargandoDocumentos() && documentos().length === 0 && !errorDocumentos()) {
               <p class="text-muted small px-3 py-3 mb-0">
                 Aún no se han cargado documentos para este trámite.

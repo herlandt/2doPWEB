@@ -11,7 +11,7 @@ import {
 import { VersionDocumento } from '../models/version-documento.model';
 
 /**
- * CU-33/34/35 — Subir, previsualizar y versionar documentos del repositorio.
+ * CU-33/34/35 — Subir, previsualizar y versionar documentos del expediente del trámite.
  */
 @Injectable({ providedIn: 'root' })
 export class DocumentoArchivoService {
@@ -21,17 +21,17 @@ export class DocumentoArchivoService {
   // ── CU-33 · Subir ───────────────────────────────────────────────────────
 
   /**
-   * Subida multipart al repositorio. Para detectar 409 (hash duplicado),
-   * 413 (>100MB) o 503 (S3 caído), el caller debe inspeccionar `error.status`.
+   * Subida multipart al trámite (el backend resuelve/crea el repositorio 1:1).
+   * Para detectar 409 (hash duplicado), 413 (>100MB) o 503 (S3 caído),
+   * el caller debe inspeccionar `error.status`.
    */
   subir(
-    repositorioId: string,
+    tramiteId: string,
     archivo: File,
     req: SubirDocumentoRequest,
   ): Observable<DocumentoArchivoResponse> {
     const fd = new FormData();
     fd.append('archivo', archivo);
-    fd.append('tramiteId', req.tramiteId);
     fd.append('actividadId', req.actividadId);
     if (req.nodoId) fd.append('nodoId', req.nodoId);
     fd.append('tipoDocumento', req.tipoDocumento);
@@ -39,18 +39,12 @@ export class DocumentoArchivoService {
     fd.append('obligatorio', String(req.obligatorio ?? false));
 
     return this.http.post<DocumentoArchivoResponse>(
-      `${this.api}/repositorios/${repositorioId}/documentos`,
+      `${this.api}/tramites/${tramiteId}/documentos`,
       fd,
     );
   }
 
   // ── Listados ─────────────────────────────────────────────────────────────
-
-  listarPorRepositorio(repositorioId: string): Observable<DocumentoArchivo[]> {
-    return this.http.get<DocumentoArchivo[]>(
-      `${this.api}/repositorios/${repositorioId}/documentos`,
-    );
-  }
 
   listarPorTramite(tramiteId: string, actividadId?: string): Observable<DocumentoArchivo[]> {
     const url = actividadId

@@ -46,14 +46,6 @@
               <a [routerLink]="['/admin/politicas', politica.id, 'editar']" class="btn btn-sm btn-outline-secondary">
                 Editar
               </a>
-              <a
-                [routerLink]="['/admin/politicas', politica.id, 'repositorio']"
-                class="btn btn-sm btn-outline-dark"
-                title="Repositorio documental (CU-32/33/34/35)"
-              >
-                Repositorio
-              </a>
-
               @for (estado of getAccionesEstado(politica.estado); track estado) {
                 <button type="button" (click)="cambiarEstado(politica, estado)" class="btn btn-sm btn-outline-primary">
                   -> {{ estado }}
