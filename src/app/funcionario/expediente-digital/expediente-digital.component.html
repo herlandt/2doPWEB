@@ -431,50 +431,47 @@
             </button>
           }
 
-          <!-- Devolver/Reasignar se ocultan mientras hay una decisión Sí/No en juego,
-               para no confundir: esa respuesta solo aplica a "Continuar →". -->
-          @if (!mostrarDecision()) {
-            <!-- Devolver (salida 'observar') -->
-            @if (puedeObservar()) {
+          <!-- Devolver (observar) y Reasignar quedan SIEMPRE disponibles: un trámite
+               puede devolverse o reasignarse en cualquier punto, incluso con un if. -->
+          @if (puedeObservar()) {
+            <button
+              type="button"
+              class="btn btn-warning"
+              [disabled]="procesando()"
+              (click)="prepararDevolucion()"
+            >
+              Devolver a Corregir
+            </button>
+            @if (accionSeleccionada() === 'DEVOLVER') {
               <button
                 type="button"
                 class="btn btn-warning"
-                [disabled]="procesando()"
-                (click)="prepararDevolucion()"
+                [disabled]="procesando() || !nodoDestinoId()"
+                (click)="ejecutarAccion('DEVOLVER')"
               >
-                Devolver a Corregir
+                Confirmar Devolución
               </button>
-              @if (accionSeleccionada() === 'DEVOLVER') {
-                <button
-                  type="button"
-                  class="btn btn-warning"
-                  [disabled]="procesando() || !nodoDestinoId()"
-                  (click)="ejecutarAccion('DEVOLVER')"
-                >
-                  Confirmar Devolución
-                </button>
-              }
             }
+          }
 
-            <!-- Reasignar a otro funcionario del mismo nodo (gestión, siempre disponible) -->
+          <!-- Reasignar a otro funcionario del mismo nodo (gestión, siempre disponible) -->
+          <button
+            type="button"
+            class="btn btn-info text-white"
+            [disabled]="procesando()"
+            (click)="prepararDerivacion()"
+          >
+            Reasignar a Compañero
+          </button>
+          @if (accionSeleccionada() === 'DERIVAR') {
             <button
               type="button"
               class="btn btn-info text-white"
-              [disabled]="procesando()"
-              (click)="prepararDerivacion()"
+              [disabled]="procesando() || !funcionarioDestinoId()"
+              (click)="ejecutarAccion('REASIGNAR')"
             >
-              Reasignar a Compañero
+              Confirmar Reasignación
             </button>
-            @if (accionSeleccionada() === 'DERIVAR') {
-              <button
-                type="button"
-                class="btn btn-info text-white"
-                [disabled]="procesando() || !funcionarioDestinoId()"
-                (click)="ejecutarAccion('REASIGNAR')"
-              >
-                Confirmar Reasignación
-              </button>
-            }
           }
 
         </div>

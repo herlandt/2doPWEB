@@ -317,9 +317,24 @@ export class ExpedienteDigitalComponent {
     }
   }
 
+  // Mensaje de confirmación contextual (no genérico): "APROBAR" confundía al
+  // responder un if (donde el botón realmente "continúa", no aprueba).
+  private mensajeConfirmacion(tipo: string): string {
+    if (tipo === 'APROBAR') {
+      if (this.mostrarDecision()) return '¿Continuar el trámite con la respuesta seleccionada?';
+      return this.salidasActividad().includes('aprobar')
+        ? '¿Aprobar y cerrar el trámite?'
+        : '¿Completar esta actividad y avanzar al siguiente paso?';
+    }
+    if (tipo === 'RECHAZAR') return '¿Rechazar el trámite definitivamente? Esto lo cierra.';
+    if (tipo === 'DEVOLVER') return '¿Devolver el trámite para corrección?';
+    if (tipo === 'REASIGNAR' || tipo === 'DERIVAR') return '¿Reasignar el trámite a otro funcionario?';
+    return `¿Proceder con: ${tipo}?`;
+  }
+
   // Llama el endpoint correcto según la acción elegida
   ejecutarAccion(tipo: string): void {
-    if (!confirm(`¿Está seguro de proceder con: ${tipo}?`)) return;
+    if (!confirm(this.mensajeConfirmacion(tipo))) return;
 
     this.procesando.set(true);
     this.error.set('');
