@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ColaboracionService } from '../../core/services/colaboracion.service';
-import { Actividad, SALIDAS_INFO, SalidaActividad, SalidaInfo } from '../../core/models/actividad.model';
+import { Actividad } from '../../core/models/actividad.model';
 import { Departamento } from '../../core/models/departamento.model';
 import {
   DiagramaRequest,
@@ -136,24 +136,7 @@ export class DiagramaEditorComponent {
   readonly actDepartamentoId = signal('');
   readonly actFuncionarioResponsableId = signal('');
   readonly actSlaHoras = signal('24');
-  readonly actSalidasPosibles = signal<SalidaActividad[]>(['completar']);
   readonly actReutilizable = signal(true);
-
-  readonly salidasInfo: readonly SalidaInfo[] = SALIDAS_INFO;
-
-  toggleActSalida(s: SalidaActividad): void {
-    this.actSalidasPosibles.update((curr) =>
-      curr.includes(s) ? curr.filter((x) => x !== s) : [...curr, s],
-    );
-  }
-
-  isActSalidaSeleccionada(s: SalidaActividad): boolean {
-    return this.actSalidasPosibles().includes(s);
-  }
-
-  getSalidaInfo(value: string): SalidaInfo | undefined {
-    return this.salidasInfo.find((s) => s.value === value);
-  }
 
   readonly funcionariosFiltrados = computed(() => {
     const deptoId = this.actDepartamentoId();
@@ -351,7 +334,6 @@ export class DiagramaEditorComponent {
     this.actDescripcion.set('');
     this.actFuncionarioResponsableId.set('');
     this.actSlaHoras.set('24');
-    this.actSalidasPosibles.set(['completar']);
     this.actReutilizable.set(true);
     const draft = this.inspectorDraft();
     this.actDepartamentoId.set(draft?.departamentoId ?? '');
@@ -401,23 +383,10 @@ export class DiagramaEditorComponent {
     const descripcion = this.actDescripcion().trim();
     const departamentoId = this.actDepartamentoId();
     const slaHoras = Number(this.actSlaHoras());
-    const salidasPosibles = this.actSalidasPosibles();
     const funcionarioResponsableId = this.actFuncionarioResponsableId().trim();
 
     if (!nombre || !departamentoId || Number.isNaN(slaHoras) || slaHoras <= 0) {
       this.setError('Completa nombre, departamento y SLA valido');
-      return;
-    }
-
-    if (salidasPosibles.length === 0) {
-      this.setError('Selecciona al menos una salida posible para la actividad');
-      return;
-    }
-
-    // Toda actividad debe poder AVANZAR el trámite; si solo se marca observar/
-    // rechazar, el funcionario quedaría sin botón para continuar (trámite atascado).
-    if (!salidasPosibles.some((s) => s === 'aprobar' || s === 'completar' || s === 'derivar')) {
-      this.setError('La actividad necesita al menos una salida que avance el trámite (Aprobar o Completar).');
       return;
     }
 
@@ -427,7 +396,8 @@ export class DiagramaEditorComponent {
       departamentoId,
       funcionarioResponsableId: funcionarioResponsableId || undefined,
       slaHoras,
-      salidasPosibles,
+      // Las salidas reales se derivan de la posición del nodo; placeholder ignorado.
+      salidasPosibles: ['completar'],
       reutilizable: this.actReutilizable(),
     }).subscribe({
       next: (creada) => {

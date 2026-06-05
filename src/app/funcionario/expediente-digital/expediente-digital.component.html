@@ -401,15 +401,6 @@
           </div>
         }
 
-        <!-- Datos antiguos sin salida de avance: avisamos en vez de dejar al
-             funcionario sin acción útil. -->
-        @if (sinSalidaUtil()) {
-          <div class="alert alert-warning small mb-3">
-            Esta actividad no tiene configurada una salida que avance el trámite.
-            Pide al administrador que añada <strong>Aprobar</strong> o <strong>Completar</strong> a la actividad.
-          </div>
-        }
-
         <!-- Botonera principal: solo se muestran los botones de las salidas que el
              admin configuró para esta actividad. "Reasignar" es gestión (a quién le
              toca) y queda siempre disponible. -->
@@ -424,7 +415,7 @@
               [disabled]="procesando() || (mostrarDecision() && !respuestaDecision())"
               (click)="ejecutarAccion('APROBAR')"
             >
-              {{ mostrarDecision() ? 'Continuar →' : 'Aprobar (Avanzar)' }}
+              {{ textoAvanzar() }}
             </button>
           }
 

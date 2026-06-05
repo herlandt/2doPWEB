@@ -109,12 +109,12 @@ export class ExpedienteDigitalComponent {
   readonly puedeObservar = computed(
     () => this.sinRestriccionSalidas() || this.salidasActividad().includes('observar'),
   );
-  // Red de seguridad para datos antiguos: si la actividad no tiene ninguna salida
-  // que avance ni rechace (y no hay decisión pendiente), el funcionario no tendría
-  // botón útil; mostramos un aviso en vez de dejarlo atascado en silencio.
-  readonly sinSalidaUtil = computed(
-    () => !this.puedeAvanzar() && !this.puedeRechazar() && !this.mostrarDecision(),
-  );
+  // Texto del botón de avance según la posición del nodo: nodo de cierre -> "Aprobar";
+  // intermedio -> "Completar / Avanzar"; con decisión (if) pendiente -> "Continuar →".
+  readonly textoAvanzar = computed(() => {
+    if (this.mostrarDecision()) return 'Continuar →';
+    return this.salidasActividad().includes('aprobar') ? 'Aprobar' : 'Completar / Avanzar';
+  });
 
   constructor() {
     this.cargarExpediente();
@@ -342,12 +342,23 @@ export class ExpedienteDigitalComponent {
         });
         return;
       }
+      // Nodo INTERMEDIO o rama en PARALELO (no es cierre): avanzar con completar-nodo,
+      // que sí maneja el paralelo y no exige documento de resolución. Solo los nodos
+      // de cierre (cuya salida incluye 'aprobar') pasan por decision-final.
+      if (!this.salidasActividad().includes('aprobar')) {
+        this.tramiteC2Svc.completarNodo(this.tramiteId, undefined, this.justificacion()).subscribe({
+          next: () => this.finalizarExitosamente('Actividad completada. El trámite avanzó al siguiente paso.'),
+          error: (err) => this.manejarError(err),
+        });
+        return;
+      }
+      // Nodo de CIERRE: aprobar (cierra el trámite y gestiona el documento de resolución).
       const archivo = this.archivoResolucion();
       const obs$ = archivo
         ? this.tramiteC2Svc.decisionFinalConResolucion(this.tramiteId, 'Aprobar', this.justificacion(), archivo)
         : this.tramiteC2Svc.decisionFinal(this.tramiteId, 'Aprobar', this.justificacion());
       obs$.subscribe({
-        next: () => this.finalizarExitosamente('Trámite aprobado. Ha avanzado al siguiente departamento.'),
+        next: () => this.finalizarExitosamente('Trámite aprobado.'),
         error: (err) => this.manejarError(err),
       });
     } else if (tipo === 'RECHAZAR') {

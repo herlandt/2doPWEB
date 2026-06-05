@@ -4,13 +4,7 @@ import { ActividadService } from '../../core/services/actividad.service';
 import { DepartamentoService } from '../../core/services/departamento.service';
 import { DocumentoService } from '../../core/services/documento.service';
 import { TramiteC2Service } from '../../core/services/tramite-c2.service';
-import {
-  Actividad,
-  ActividadRequest,
-  SALIDAS_INFO,
-  SalidaActividad,
-  SalidaInfo,
-} from '../../core/models/actividad.model';
+import { Actividad, ActividadRequest } from '../../core/models/actividad.model';
 import { Departamento } from '../../core/models/departamento.model';
 import { Documento } from '../../core/models/documento.model';
 import { PermisoDocumentalModalComponent } from '../../shared/permiso-documental-modal/permiso-documental-modal.component';
@@ -49,9 +43,6 @@ export class ActividadesComponent {
 
   /** CU-36 — actividad cuya configuración de permiso documental se está editando. */
   readonly actividadParaPermiso = signal<Actividad | null>(null);
-
-  readonly salidasInfo: readonly SalidaInfo[] = SALIDAS_INFO;
-  readonly salidasSeleccionadas = signal<SalidaActividad[]>(['completar']);
 
   readonly funcionariosFiltrados = computed(() => {
     const deptoId = this.deptoSeleccionado();
@@ -126,9 +117,6 @@ export class ActividadesComponent {
   editar(actividad: Actividad): void {
     this.modoEdicion.set(true);
     this.editandoId.set(actividad.id);
-    this.salidasSeleccionadas.set(
-      actividad.salidasPosibles?.length ? [...actividad.salidasPosibles] : ['completar'],
-    );
     this.form.patchValue({
       nombre: actividad.nombre,
       descripcion: actividad.descripcion,
@@ -143,7 +131,6 @@ export class ActividadesComponent {
   cancelar(): void {
     this.modoEdicion.set(false);
     this.editandoId.set('');
-    this.salidasSeleccionadas.set(['completar']);
     this.form.reset({
       nombre: '',
       descripcion: '',
@@ -176,36 +163,9 @@ export class ActividadesComponent {
     return this.form.controls.documentoIds.value.includes(docId);
   }
 
-  isSalidaSeleccionada(s: SalidaActividad): boolean {
-    return this.salidasSeleccionadas().includes(s);
-  }
-
-  toggleSalida(s: SalidaActividad): void {
-    this.salidasSeleccionadas.update((curr) =>
-      curr.includes(s) ? curr.filter((x) => x !== s) : [...curr, s],
-    );
-  }
-
-  getSalidaInfo(value: string): SalidaInfo | undefined {
-    return this.salidasInfo.find((s) => s.value === value);
-  }
-
   submit(): void {
     if (this.form.invalid || this.loading()) {
       this.form.markAllAsTouched();
-      return;
-    }
-
-    const salidas = this.salidasSeleccionadas();
-    if (salidas.length === 0) {
-      this.error.set('Selecciona al menos una salida posible');
-      return;
-    }
-
-    // Toda actividad debe poder AVANZAR el trámite; si solo se marca observar/
-    // rechazar, el funcionario quedaría sin botón para continuar (trámite atascado).
-    if (!salidas.some((s) => s === 'aprobar' || s === 'completar' || s === 'derivar')) {
-      this.error.set('La actividad necesita al menos una salida que avance el trámite (Aprobar o Completar).');
       return;
     }
 
@@ -213,9 +173,11 @@ export class ActividadesComponent {
     this.error.set('');
 
     const raw = this.form.getRawValue();
+    // Las salidas reales se derivan de la posición del nodo en el flujo; la
+    // actividad guarda un placeholder que el motor ignora.
     const payload: ActividadRequest = {
       ...raw,
-      salidasPosibles: salidas,
+      salidasPosibles: ['completar'],
     };
     const request$ = this.modoEdicion()
       ? this.actividadSvc.actualizar(this.editandoId(), payload)

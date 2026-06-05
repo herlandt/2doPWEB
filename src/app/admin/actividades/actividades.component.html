@@ -59,33 +59,12 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label small d-block">
-                Salidas posibles <span class="text-danger">*</span>
-                <small class="text-muted d-block fst-italic">
-                  Marca todas las acciones que el funcionario podrá ejecutar al cerrar esta actividad.
-                </small>
-              </label>
-              <div class="salidas-grid">
-                @for (s of salidasInfo; track s.value) {
-                  <button
-                    type="button"
-                    class="salida-card"
-                    [class.salida-card--active]="isSalidaSeleccionada(s.value)"
-                    [attr.data-color]="s.color"
-                    (click)="toggleSalida(s.value)"
-                  >
-                    <span class="salida-icon">{{ s.icono }}</span>
-                    <span class="salida-label">{{ s.label }}</span>
-                    <small class="salida-desc">{{ s.descripcion }}</small>
-                    @if (isSalidaSeleccionada(s.value)) {
-                      <span class="salida-check">✓</span>
-                    }
-                  </button>
-                }
+              <div class="alert alert-info py-2 px-3 small mb-0">
+                Las acciones del funcionario (<strong>Aprobar/Rechazar</strong>,
+                <strong>Completar/Avanzar</strong>, <strong>Observar</strong>) se
+                determinan <strong>automáticamente según la posición del nodo</strong>
+                en el flujo del diagrama, no aquí.
               </div>
-              @if (salidasSeleccionadas().length === 0) {
-                <small class="text-danger">Selecciona al menos una salida.</small>
-              }
             </div>
 
             <div class="mb-2">
@@ -125,7 +104,7 @@
               <button
                 type="submit"
                 class="btn btn-primary btn-sm"
-                [disabled]="loading() || form.invalid || salidasSeleccionadas().length === 0"
+                [disabled]="loading() || form.invalid"
               >
                 {{ modoEdicion() ? 'Actualizar' : 'Crear' }}
               </button>
@@ -148,7 +127,6 @@
                 <th>Dept.</th>
                 <th>Responsable</th>
                 <th>SLA</th>
-                <th>Salidas posibles</th>
                 <th>Documentos</th>
                 <th>Reutilizable</th>
                 <th>Acciones</th>
@@ -163,17 +141,6 @@
                     <small>{{ getNombreFuncionario(actividad.funcionarioResponsableId) }}</small>
                   </td>
                   <td>{{ actividad.slaHoras }}h</td>
-                  <td>
-                    <div class="d-flex flex-wrap gap-1">
-                      @for (s of actividad.salidasPosibles; track s) {
-                        @if (getSalidaInfo(s); as info) {
-                          <span class="badge salida-badge" [attr.data-color]="info.color" [title]="info.descripcion">
-                            {{ info.icono }} {{ info.label }}
-                          </span>
-                        }
-                      }
-                    </div>
-                  </td>
                   <td>
                     @if (actividad.documentoIds && actividad.documentoIds.length > 0) {
                       <div class="d-flex flex-wrap gap-1">
@@ -209,7 +176,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="8" class="text-center text-muted py-4">Sin actividades registradas</td>
+                  <td colspan="7" class="text-center text-muted py-4">Sin actividades registradas</td>
                 </tr>
               }
             </tbody>

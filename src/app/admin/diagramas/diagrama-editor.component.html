@@ -308,30 +308,11 @@
                 />
               </div>
               <div class="form-row">
-                <label class="form-label">
-                  Salidas posibles <span class="req">*</span>
-                  <small class="cre-hint">
-                    Marca todas las acciones que el funcionario podrá ejecutar al cerrar la actividad.
-                  </small>
-                </label>
-                <div class="salidas-grid">
-                  @for (s of salidasInfo; track s.value) {
-                    <button
-                      type="button"
-                      class="salida-card"
-                      [class.salida-card--active]="isActSalidaSeleccionada(s.value)"
-                      [attr.data-color]="s.color"
-                      (click)="toggleActSalida(s.value)"
-                    >
-                      <span class="salida-icon">{{ s.icono }}</span>
-                      <span class="salida-label">{{ s.label }}</span>
-                      <small class="salida-desc">{{ s.descripcion }}</small>
-                      @if (isActSalidaSeleccionada(s.value)) {
-                        <span class="salida-check">✓</span>
-                      }
-                    </button>
-                  }
-                </div>
+                <small class="cre-hint">
+                  Las acciones del funcionario (Aprobar/Rechazar, Completar/Avanzar,
+                  Observar) se determinan automáticamente según la posición del nodo
+                  en el flujo, no aquí.
+                </small>
               </div>
               <div class="form-row">
                 <label class="form-label" for="act-desc">Descripcion</label>
