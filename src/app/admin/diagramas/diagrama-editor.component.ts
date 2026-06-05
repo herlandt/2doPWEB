@@ -512,6 +512,13 @@ export class DiagramaEditorComponent {
         this.selectedNodo.set(creado);
         this.inspectorDraft.set({ ...creado });
         this.showSuccess('Nodo creado');
+        // Recordatorio inmediato: un decisión nace con el placeholder "¿Decisión?".
+        if (creado.tipo === 'decision') {
+          this.advertencia.set(
+            '⚠️ Escribe la pregunta del if (ej. "¿El cliente tiene deuda?") en el nombre de esta ' +
+              'decisión y conecta sus dos ramas (Sí y No). Sin eso no podrás activar la política.',
+          );
+        }
       },
       error: (err: unknown) => {
         this.setError(this.extractErrorMessage(err, 'Error al crear nodo'), this.extractErrorDetails(err));
@@ -744,6 +751,14 @@ export class DiagramaEditorComponent {
         this.inspectorDraft.set({ ...actualizado });
         this.guardandoNodo.set(false);
         this.showSuccess('Nodo actualizado');
+        // Si es un decisión, avisa (o limpia el aviso) según tenga pregunta real.
+        if (actualizado.tipo === 'decision') {
+          this.advertencia.set(
+            this.preguntaDecisionVacia(actualizado.nombre)
+              ? '⚠️ Esta decisión sigue sin pregunta real (quedó "¿Decisión?"). Escríbela para poder activar la política.'
+              : '',
+          );
+        }
       },
       error: (err: unknown) => {
         this.guardandoNodo.set(false);
@@ -777,6 +792,17 @@ export class DiagramaEditorComponent {
 
   getNombreNodo(nodoId: string): string {
     return this.nodos().find((n) => n.id === nodoId)?.nombre ?? '(nodo)';
+  }
+
+  /** ¿La pregunta de un decisión quedó vacía o con el placeholder "¿Decisión?"? */
+  private preguntaDecisionVacia(nombre: string | undefined): boolean {
+    const norm = (nombre ?? '')
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '') // quitar acentos
+      .replace(/[¿?]/g, '')
+      .trim()
+      .toLowerCase();
+    return norm === '' || norm === 'decision';
   }
 
   onTransEtiqueta(ev: Event, transicionId: string): void {
