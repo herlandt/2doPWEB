@@ -4,7 +4,7 @@ import { ActividadService } from '../../core/services/actividad.service';
 import { DepartamentoService } from '../../core/services/departamento.service';
 import { DocumentoService } from '../../core/services/documento.service';
 import { TramiteC2Service } from '../../core/services/tramite-c2.service';
-import { Actividad, ActividadRequest } from '../../core/models/actividad.model';
+import { Actividad, ActividadRequest, RequisitoDocumento } from '../../core/models/actividad.model';
 import { Departamento } from '../../core/models/departamento.model';
 import { Documento } from '../../core/models/documento.model';
 import { PermisoDocumentalModalComponent } from '../../shared/permiso-documental-modal/permiso-documental-modal.component';
@@ -44,6 +44,12 @@ export class ActividadesComponent {
   /** CU-36 — actividad cuya configuración de permiso documental se está editando. */
   readonly actividadParaPermiso = signal<Actividad | null>(null);
 
+  /**
+   * Espejo reactivo del control `documentosRequeridos` para poder derivar
+   * señales computadas (la tabla y el dropdown de disponibles).
+   */
+  readonly requisitosActuales = signal<RequisitoDocumento[]>([]);
+
   readonly funcionariosFiltrados = computed(() => {
     const deptoId = this.deptoSeleccionado();
     const lista = this.funcionarios();
@@ -58,8 +64,19 @@ export class ActividadesComponent {
     funcionarioResponsableId: [''],
     slaHoras: [8, [Validators.required, Validators.min(1)]],
     documentoIds: [[] as string[]],
+    documentosRequeridos: [[] as RequisitoDocumento[]],
     reutilizable: [true],
   });
+
+  /** Documentos del catálogo que aún no se agregaron como requisito. */
+  readonly documentosDisponibles = computed(() => {
+    const requeridos = this.requisitosActuales();
+    const agregados = new Set(requeridos.map((r) => r.documentoId));
+    return this.documentos().filter((d) => !agregados.has(d.id));
+  });
+
+  /** Documento seleccionado en el dropdown "Agregar documento requerido". */
+  readonly documentoAAgregar = signal('');
 
   constructor() {
     this.cargar();
@@ -117,6 +134,17 @@ export class ActividadesComponent {
   editar(actividad: Actividad): void {
     this.modoEdicion.set(true);
     this.editandoId.set(actividad.id);
+
+    // Usar documentosRequeridos si existe; si no, derivarlo del legacy documentoIds.
+    const requisitos: RequisitoDocumento[] =
+      actividad.documentosRequeridos && actividad.documentosRequeridos.length > 0
+        ? actividad.documentosRequeridos.map((r) => ({ ...r }))
+        : (actividad.documentoIds ?? []).map((documentoId) => ({
+            documentoId,
+            proveedor: 'CLIENTE' as const,
+            obligatorio: true,
+          }));
+
     this.form.patchValue({
       nombre: actividad.nombre,
       descripcion: actividad.descripcion,
@@ -124,8 +152,11 @@ export class ActividadesComponent {
       funcionarioResponsableId: actividad.funcionarioResponsableId ?? '',
       slaHoras: actividad.slaHoras,
       documentoIds: actividad.documentoIds ?? [],
+      documentosRequeridos: requisitos,
       reutilizable: actividad.reutilizable,
     });
+    this.requisitosActuales.set(requisitos);
+    this.documentoAAgregar.set('');
   }
 
   cancelar(): void {
@@ -138,8 +169,11 @@ export class ActividadesComponent {
       funcionarioResponsableId: '',
       slaHoras: 8,
       documentoIds: [],
+      documentosRequeridos: [],
       reutilizable: true,
     });
+    this.requisitosActuales.set([]);
+    this.documentoAAgregar.set('');
   }
 
   getNombreFuncionario(id?: string): string {
@@ -151,16 +185,48 @@ export class ActividadesComponent {
     return this.documentos().find((d) => d.id === id)?.nombre ?? id;
   }
 
-  toggleDocumento(docId: string): void {
-    const current = this.form.controls.documentoIds.value;
-    const updated = current.includes(docId)
-      ? current.filter((id) => id !== docId)
-      : [...current, docId];
-    this.form.controls.documentoIds.setValue(updated);
+  /** Alias usado por la tabla de requisitos en la plantilla. */
+  nombreDocumento(documentoId: string): string {
+    return this.getNombreDocumento(documentoId);
   }
 
-  isDocumentoSeleccionado(docId: string): boolean {
-    return this.form.controls.documentoIds.value.includes(docId);
+  // ── Requisitos documentales (proveedor + obligatorio por documento) ───────
+
+  /** Reemplaza la lista de requisitos en el control y en el espejo reactivo. */
+  private setRequisitos(requisitos: RequisitoDocumento[]): void {
+    this.form.controls.documentosRequeridos.setValue(requisitos);
+    this.requisitosActuales.set(requisitos);
+  }
+
+  agregarRequisito(documentoId: string): void {
+    if (!documentoId) return;
+    const actuales = this.requisitosActuales();
+    if (actuales.some((r) => r.documentoId === documentoId)) return;
+    this.setRequisitos([
+      ...actuales,
+      { documentoId, proveedor: 'CLIENTE', obligatorio: true },
+    ]);
+    this.documentoAAgregar.set('');
+  }
+
+  quitarRequisito(documentoId: string): void {
+    this.setRequisitos(this.requisitosActuales().filter((r) => r.documentoId !== documentoId));
+  }
+
+  setProveedor(documentoId: string, valor: 'CLIENTE' | 'FUNCIONARIO'): void {
+    this.setRequisitos(
+      this.requisitosActuales().map((r) =>
+        r.documentoId === documentoId ? { ...r, proveedor: valor } : r,
+      ),
+    );
+  }
+
+  setObligatorio(documentoId: string, valor: boolean): void {
+    this.setRequisitos(
+      this.requisitosActuales().map((r) =>
+        r.documentoId === documentoId ? { ...r, obligatorio: valor } : r,
+      ),
+    );
   }
 
   submit(): void {
@@ -173,10 +239,14 @@ export class ActividadesComponent {
     this.error.set('');
 
     const raw = this.form.getRawValue();
+    const documentosRequeridos = raw.documentosRequeridos;
     // Las salidas reales se derivan de la posición del nodo en el flujo; la
     // actividad guarda un placeholder que el motor ignora.
     const payload: ActividadRequest = {
       ...raw,
+      // Mantener documentoIds derivado de los requisitos por compatibilidad.
+      documentoIds: documentosRequeridos.map((r) => r.documentoId),
+      documentosRequeridos,
       salidasPosibles: ['completar'],
     };
     const request$ = this.modoEdicion()

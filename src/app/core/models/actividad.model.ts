@@ -8,6 +8,17 @@ export type SalidaActividad =
   | 'observar'
   | 'completar';
 
+/**
+ * Requisito documental de una actividad. Cada documento requerido especifica
+ * quién lo aporta (`proveedor`) y si es `obligatorio`. Reemplaza al legacy
+ * `documentoIds: string[]` (que se mantiene por compatibilidad).
+ */
+export interface RequisitoDocumento {
+  documentoId: string;
+  proveedor: 'CLIENTE' | 'FUNCIONARIO';
+  obligatorio: boolean;
+}
+
 export interface Actividad {
   id: string;
   nombre: string;
@@ -22,6 +33,7 @@ export interface Actividad {
   salidasPosibles: SalidaActividad[];
   reutilizable: boolean;
   documentoIds?: string[];
+  documentosRequeridos?: RequisitoDocumento[];
   fechaCreacion?: string;
 }
 
@@ -34,6 +46,7 @@ export interface ActividadRequest {
   salidasPosibles: SalidaActividad[];
   reutilizable: boolean;
   documentoIds?: string[];
+  documentosRequeridos?: RequisitoDocumento[];
 }
 
 export interface SalidaInfo {

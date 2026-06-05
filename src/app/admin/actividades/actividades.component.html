@@ -67,31 +67,90 @@
               </div>
             </div>
 
-            <div class="mb-2">
+            <div class="mb-3">
               <label class="form-label small">Documentos requeridos</label>
-              @if (documentos().length > 0) {
-                <div class="border rounded p-3 bg-light" style="max-height: 250px; overflow-y: auto;">
-                  @for (doc of documentos(); track doc.id) {
-                    <div class="form-check mb-2">
-                      <input
-                        type="checkbox"
-                        class="form-check-input"
-                        [id]="'doc_' + doc.id"
-                        [checked]="isDocumentoSeleccionado(doc.id)"
-                        (change)="toggleDocumento(doc.id)"
-                      />
-                      <label class="form-check-label" [for]="'doc_' + doc.id">
-                        <strong>{{ doc.nombre }}</strong>
-                        <small class="text-muted d-block">{{ doc.descripcion }}</small>
-                      </label>
-                    </div>
-                  }
-                </div>
-                <small class="text-muted d-block mt-2">
-                  Seleccionados: <strong>{{ form.controls.documentoIds.value.length }}</strong> documento(s)
-                </small>
-              } @else {
+
+              @if (documentos().length === 0) {
                 <div class="alert alert-warning mb-0" role="alert">No hay documentos disponibles</div>
+              } @else {
+                <!-- Selector para agregar un documento requerido -->
+                <div class="input-group input-group-sm mb-2">
+                  <select
+                    class="form-select form-select-sm"
+                    [value]="documentoAAgregar()"
+                    (change)="documentoAAgregar.set($any($event.target).value)"
+                    [disabled]="documentosDisponibles().length === 0"
+                  >
+                    <option value="">-- Agregar documento requerido --</option>
+                    @for (doc of documentosDisponibles(); track doc.id) {
+                      <option [value]="doc.id">{{ doc.nombre }}</option>
+                    }
+                  </select>
+                  <button
+                    type="button"
+                    class="btn btn-outline-primary"
+                    (click)="agregarRequisito(documentoAAgregar())"
+                    [disabled]="!documentoAAgregar()"
+                    title="Agregar documento requerido"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <!-- Tabla de requisitos agregados -->
+                @if (requisitosActuales().length > 0) {
+                  <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Documento</th>
+                          <th style="width: 9rem;">Proveedor</th>
+                          <th class="text-center" style="width: 5.5rem;">Obligatorio</th>
+                          <th style="width: 2.5rem;"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (req of requisitosActuales(); track req.documentoId) {
+                          <tr>
+                            <td><small>{{ nombreDocumento(req.documentoId) }}</small></td>
+                            <td>
+                              <select
+                                class="form-select form-select-sm"
+                                [value]="req.proveedor"
+                                (change)="setProveedor(req.documentoId, $any($event.target).value)"
+                              >
+                                <option value="CLIENTE">Cliente</option>
+                                <option value="FUNCIONARIO">Funcionario</option>
+                              </select>
+                            </td>
+                            <td class="text-center">
+                              <div class="form-check d-inline-block m-0">
+                                <input
+                                  type="checkbox"
+                                  class="form-check-input"
+                                  [checked]="req.obligatorio"
+                                  (change)="setObligatorio(req.documentoId, $any($event.target).checked)"
+                                />
+                              </div>
+                            </td>
+                            <td class="text-center">
+                              <button
+                                type="button"
+                                class="btn btn-sm btn-outline-danger py-0 px-1"
+                                (click)="quitarRequisito(req.documentoId)"
+                                title="Quitar"
+                              >
+                                ✕
+                              </button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <small class="text-muted d-block">Ningún documento requerido todavía.</small>
+                }
               }
             </div>
 
