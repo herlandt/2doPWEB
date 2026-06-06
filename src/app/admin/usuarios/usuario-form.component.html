@@ -29,23 +29,14 @@
         </div>
       }
 
-      <div class="col-md-6">
+      <div class="col-12">
         <label class="form-label" for="tipo">Tipo *</label>
         <select id="tipo" class="form-select" formControlName="tipo">
           @for (tipo of tiposDisponibles; track tipo) {
             <option [value]="tipo">{{ tipo }}</option>
           }
         </select>
-      </div>
-
-      <div class="col-md-6">
-        <label class="form-label" for="rolId">Rol *</label>
-        <select id="rolId" class="form-select" formControlName="rolId">
-          <option value="">-- Seleccionar --</option>
-          @for (rol of roles(); track rol.id) {
-            <option [value]="rol.id">{{ rol.nombre }}</option>
-          }
-        </select>
+        <small class="text-muted">El rol y los permisos se asignan automáticamente según el tipo. Los clientes se registran desde la app móvil.</small>
       </div>
 
       @if (esFuncionario()) {

@@ -2,9 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { UsuarioService } from '../../core/services/usuario.service';
-import { RolService } from '../../core/services/rol.service';
 import { DepartamentoService } from '../../core/services/departamento.service';
-import { Rol } from '../../core/models/rol.model';
 import { Departamento } from '../../core/models/departamento.model';
 import { UsuarioCreateRequest, UsuarioUpdateRequest } from '../../core/models/usuario.model';
 
@@ -17,12 +15,10 @@ import { UsuarioCreateRequest, UsuarioUpdateRequest } from '../../core/models/us
 export class UsuarioFormComponent {
   private readonly fb = inject(FormBuilder);
   private readonly usuarioSvc = inject(UsuarioService);
-  private readonly rolSvc = inject(RolService);
   private readonly deptoSvc = inject(DepartamentoService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  readonly roles = signal<Rol[]>([]);
   readonly departamentos = signal<Departamento[]>([]);
   readonly loading = signal(false);
   readonly error = signal('');
@@ -53,7 +49,6 @@ export class UsuarioFormComponent {
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
     tipo: ['funcionario', [Validators.required]],
-    rolId: [''],
     departamentosIds: [[] as string[]],
     activo: [true],
   });
@@ -66,11 +61,6 @@ export class UsuarioFormComponent {
       if (!esFunc) {
         this.form.controls.departamentosIds.setValue([]);
       }
-    });
-
-    this.rolSvc.listar().subscribe({
-      next: (roles) => this.roles.set(roles),
-      error: () => this.error.set('Error al cargar roles'),
     });
 
     this.deptoSvc.listar().subscribe({
@@ -86,7 +76,6 @@ export class UsuarioFormComponent {
             apellido: usuario.apellido,
             email: usuario.email,
             tipo: usuario.tipo,
-            rolId: usuario.rolId,
             departamentosIds: usuario.departamentosIds ?? [],
             activo: usuario.activo,
           });
@@ -121,7 +110,6 @@ export class UsuarioFormComponent {
         nombre: value.nombre,
         apellido: value.apellido,
         tipo: value.tipo,
-        rolId: value.rolId,
         departamentosIds,
         activo: value.activo,
       };
