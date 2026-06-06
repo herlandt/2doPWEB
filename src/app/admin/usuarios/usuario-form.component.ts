@@ -26,6 +26,9 @@ export class UsuarioFormComponent {
   readonly departamentos = signal<Departamento[]>([]);
   readonly loading = signal(false);
   readonly error = signal('');
+  // Solo los funcionarios pertenecen a un departamento (calle/swimlane). Para
+  // administrador/cliente el campo Departamentos no aplica → se oculta.
+  readonly esFuncionario = signal(true);
 
   readonly usuarioId = this.route.snapshot.params['id'] as string | undefined;
   readonly esEdicion = !!this.usuarioId;
@@ -56,6 +59,15 @@ export class UsuarioFormComponent {
   });
 
   constructor() {
+    // Mostrar/ocultar Departamentos según el tipo; al dejar de ser funcionario, limpiar.
+    this.form.controls.tipo.valueChanges.subscribe((tipo) => {
+      const esFunc = tipo === 'funcionario';
+      this.esFuncionario.set(esFunc);
+      if (!esFunc) {
+        this.form.controls.departamentosIds.setValue([]);
+      }
+    });
+
     this.rolSvc.listar().subscribe({
       next: (roles) => this.roles.set(roles),
       error: () => this.error.set('Error al cargar roles'),
@@ -78,6 +90,7 @@ export class UsuarioFormComponent {
             departamentosIds: usuario.departamentosIds ?? [],
             activo: usuario.activo,
           });
+          this.esFuncionario.set(usuario.tipo === 'funcionario');
           this.form.controls.password.clearValidators();
           this.form.controls.password.updateValueAndValidity();
         },
@@ -92,10 +105,16 @@ export class UsuarioFormComponent {
       return;
     }
 
+    const value = this.form.getRawValue();
+    // Solo el funcionario lleva departamentos; para admin/cliente se manda vacío.
+    const departamentosIds = this.esFuncionario() ? value.departamentosIds : [];
+    if (this.esFuncionario() && departamentosIds.length === 0) {
+      this.error.set('Un funcionario debe pertenecer a al menos un departamento.');
+      return;
+    }
+
     this.loading.set(true);
     this.error.set('');
-
-    const value = this.form.getRawValue();
 
     if (this.esEdicion && this.usuarioId) {
       const payload: UsuarioUpdateRequest = {
@@ -103,7 +122,7 @@ export class UsuarioFormComponent {
         apellido: value.apellido,
         tipo: value.tipo,
         rolId: value.rolId,
-        departamentosIds: value.departamentosIds,
+        departamentosIds,
         activo: value.activo,
       };
 
@@ -123,7 +142,7 @@ export class UsuarioFormComponent {
       email: value.email,
       password: value.password,
       tipo: value.tipo,
-      departamentosIds: value.departamentosIds,
+      departamentosIds,
     };
 
     this.usuarioSvc.crear(payload).subscribe({

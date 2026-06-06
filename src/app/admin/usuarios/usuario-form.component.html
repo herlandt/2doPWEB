@@ -48,14 +48,17 @@
         </select>
       </div>
 
-      <div class="col-12">
-        <label class="form-label" for="departamentos">Departamentos</label>
-        <select id="departamentos" class="form-select" formControlName="departamentosIds" multiple>
-          @for (depto of departamentos(); track depto.id) {
-            <option [value]="depto.id">{{ depto.codigo }} - {{ depto.nombre }}</option>
-          }
-        </select>
-      </div>
+      @if (esFuncionario()) {
+        <div class="col-12">
+          <label class="form-label" for="departamentos">Departamentos *</label>
+          <select id="departamentos" class="form-select" formControlName="departamentosIds" multiple>
+            @for (depto of departamentos(); track depto.id) {
+              <option [value]="depto.id">{{ depto.codigo }} - {{ depto.nombre }}</option>
+            }
+          </select>
+          <small class="text-muted">El funcionario recibe los trámites de su(s) departamento(s).</small>
+        </div>
+      }
 
       @if (esEdicion) {
         <div class="col-12">
