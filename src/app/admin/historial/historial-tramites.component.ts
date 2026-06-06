@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ReportesService } from '../../core/services/reportes.service';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-historial-tramites',
@@ -44,8 +45,8 @@ export class HistorialTramitesComponent {
           this.tramites.set(data);
           this.loading.set(false);
         },
-        error: () => {
-          this.error.set('Error al cargar el historial de trámites.');
+        error: (err) => {
+          this.error.set(mensajeAmigable(err));
           this.loading.set(false);
         },
       });
@@ -81,14 +82,14 @@ export class HistorialTramitesComponent {
             this.triggerDownload(blob, `Reporte_Tramites.${ext}`);
             this.descargando.set(false);
           },
-          error: () => {
-            this.error.set('Error al descargar el reporte.');
+          error: (err) => {
+            this.error.set(mensajeAmigable(err));
             this.descargando.set(false);
           },
         });
       },
-      error: () => {
-        this.error.set('Error al generar el reporte.');
+      error: (err) => {
+        this.error.set(mensajeAmigable(err));
         this.descargando.set(false);
       },
     });

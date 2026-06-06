@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { ReporteNaturalResponse } from '../../core/models/reporte-natural.model';
 import { ReporteNaturalService } from '../../core/services/reporte-natural.service';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 /**
  * CU-41 — Reportes ad-hoc por consulta natural.
@@ -65,7 +66,7 @@ export class ReportesNaturalesComponent {
         } else if (msg.includes('RPT_PIPELINE_INVALIDO')) {
           this.error.set('La IA generó un pipeline inválido (operadores prohibidos).');
         } else {
-          this.error.set('Error al generar el reporte: ' + (msg || code));
+          this.error.set(mensajeAmigable(err));
         }
         this.loading.set(false);
       },

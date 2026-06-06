@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-login',
@@ -59,8 +60,8 @@ export class LoginComponent {
         this.redirigirSegunRol();
         this.loading.set(false);
       },
-      error: (err: { error?: { message?: string } }) => {
-        this.error.set(err.error?.message ?? 'Credenciales incorrectas');
+      error: (err: unknown) => {
+        this.error.set(mensajeAmigable(err, 'Credenciales incorrectas'));
         this.loading.set(false);
       },
     });

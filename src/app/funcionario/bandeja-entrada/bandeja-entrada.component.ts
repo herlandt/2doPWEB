@@ -5,6 +5,7 @@ import { ChipRiesgoComponent } from '../../shared/chip-riesgo/chip-riesgo.compon
 import { PrediccionService } from '../../core/services/prediccion.service';
 import { TramiteC2Service } from '../../core/services/tramite-c2.service';
 import { NivelRiesgo, TramiteRiesgo } from '../../core/models/tramite-riesgo.model';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 type Orden = 'fecha' | 'ia';
 
@@ -95,8 +96,8 @@ export class BandejaEntradaComponent {
           );
         }
       },
-      error: () => {
-        this.error.set('Error al cargar la bandeja de entrada.');
+      error: (err) => {
+        this.error.set(mensajeAmigable(err));
         this.loading.set(false);
       },
     });

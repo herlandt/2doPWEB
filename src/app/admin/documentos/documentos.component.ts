@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DocumentoService } from '../../core/services/documento.service';
 import { Documento } from '../../core/models/documento.model';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-documentos',
@@ -33,7 +34,7 @@ export class DocumentosComponent {
   cargar(): void {
     this.docSvc.listar().subscribe({
       next: (documentos) => this.documentos.set(documentos),
-      error: () => this.error.set('Error al cargar documentos'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
   }
 
@@ -79,8 +80,8 @@ export class DocumentosComponent {
         this.loading.set(false);
         setTimeout(() => this.exito.set(''), 3000);
       },
-      error: (err: any) => {
-        this.error.set(err.error?.message ?? 'Error al guardar');
+      error: (err: unknown) => {
+        this.error.set(mensajeAmigable(err));
         this.loading.set(false);
       },
     });
@@ -93,7 +94,7 @@ export class DocumentosComponent {
       next: () => {
         this.documentos.update((lista) => lista.filter((doc) => doc.id !== id));
       },
-      error: () => this.error.set('Error al eliminar documento'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
   }
 }

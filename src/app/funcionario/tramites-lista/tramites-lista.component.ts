@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { RouterLink } from '@angular/router';
 import { WorkflowService } from '../../core/services/workflow.service';
 import { TramiteResumen } from '../../core/models/tramite.model';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-tramites-lista',
@@ -39,8 +40,8 @@ export class TramitesListaComponent {
         this.tramites.set(tramites);
         this.loading.set(false);
       },
-      error: () => {
-        this.error.set('Error al cargar tramites');
+      error: (err) => {
+        this.error.set(mensajeAmigable(err));
         this.loading.set(false);
       },
     });

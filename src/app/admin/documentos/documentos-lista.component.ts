@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { DocumentoService } from '../../core/services/documento.service';
 import { Documento, DocumentoRequest } from '../../core/models/documento.model';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-documentos-lista',
@@ -34,7 +35,7 @@ export class DocumentosListaComponent {
   cargar(): void {
     this.docSvc.listar().subscribe({
       next: (documentos) => this.documentos.set(documentos),
-      error: () => this.error.set('Error al cargar documentos'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
   }
 
@@ -80,8 +81,8 @@ export class DocumentosListaComponent {
         this.loading.set(false);
         setTimeout(() => this.exito.set(''), 3000);
       },
-      error: (err: { error?: { message?: string } }) => {
-        this.error.set(err.error?.message ?? 'Error al guardar');
+      error: (err: unknown) => {
+        this.error.set(mensajeAmigable(err));
         this.loading.set(false);
       },
     });
@@ -96,7 +97,7 @@ export class DocumentosListaComponent {
         this.exito.set('Documento eliminado');
         setTimeout(() => this.exito.set(''), 3000);
       },
-      error: () => this.error.set('Error al eliminar documento'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
   }
 }

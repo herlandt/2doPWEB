@@ -9,6 +9,7 @@ import {
   PageAuditoria,
 } from '../../core/models/auditoria-documento.model';
 import { AuditoriaDocumentoService } from '../../core/services/auditoria-documento.service';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 /**
  * CU-37 — Timeline de auditoría de un documento.
@@ -87,7 +88,7 @@ export class AuditoriaDocumentoComponent {
           if (err?.status === 403) {
             this.error.set('Solo administradores pueden ver la auditoría.');
           } else {
-            this.error.set('Error al cargar la auditoría.');
+            this.error.set(mensajeAmigable(err));
           }
           this.loading.set(false);
         },

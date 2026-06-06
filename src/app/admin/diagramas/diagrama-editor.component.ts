@@ -30,6 +30,7 @@ import {
 import { swimlaneFromX } from './diagram/lane-helpers';
 import { defaultSize } from './diagram/shapes';
 import { FormularioDisenadorComponent } from './formulario-disenador.component';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 interface FuncionarioOption {
   id: string;
@@ -212,12 +213,12 @@ export class DiagramaEditorComponent {
   constructor() {
     this.politicaSvc.listar().subscribe({
       next: (politicas) => this.politicas.set(politicas),
-      error: () => this.error.set('Error al cargar politicas'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
 
     this.actSvc.listar().subscribe({
       next: (actividades) => this.actividades.set(actividades),
-      error: () => this.error.set('Error al cargar actividades'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
 
     // Carga el catálogo de documentos para resolver los IDs guardados en
@@ -230,7 +231,7 @@ export class DiagramaEditorComponent {
 
     this.deptoSvc.listar().subscribe({
       next: (departamentos) => this.departamentos.set(departamentos),
-      error: () => this.error.set('Error al cargar departamentos'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
 
     this.funcSvc.getUsuarios().subscribe({
@@ -419,12 +420,12 @@ export class DiagramaEditorComponent {
 
     this.diagramaSvc.obtenerDiagrama(this.diagramaId).subscribe({
       next: (diagrama) => this.diagrama.set(diagrama),
-      error: () => this.error.set('Error al cargar diagrama'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
 
     this.diagramaSvc.listarNodos(this.diagramaId).subscribe({
       next: (nodos) => this.nodos.set([...nodos].sort((a, b) => a.orden - b.orden)),
-      error: () => this.error.set('Error al cargar nodos'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
 
     this.diagramaSvc.listarTransiciones(this.diagramaId).subscribe({
@@ -432,8 +433,8 @@ export class DiagramaEditorComponent {
         this.transiciones.set(transiciones);
         this.loading.set(false);
       },
-      error: () => {
-        this.error.set('Error al cargar transiciones');
+      error: (err) => {
+        this.error.set(mensajeAmigable(err));
         this.loading.set(false);
       },
     });

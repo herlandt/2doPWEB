@@ -5,6 +5,7 @@ import { PoliticaService } from '../../core/services/politica.service';
 import { DiagramaService } from '../../core/services/diagrama.service';
 import { PoliticaRequest } from '../../core/models/politica.model';
 import { DiagramaWorkflow } from '../../core/models/diagrama.model';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-politica-form',
@@ -39,19 +40,6 @@ export class PoliticaFormComponent {
     return yaIncluido ? huerfanos : [actual, ...huerfanos];
   });
 
-  private getApiErrorMessage(err: unknown, fallback: string): string {
-    const apiError = err as {
-      error?: {
-        message?: string;
-        error?: string;
-        details?: string[];
-      };
-    };
-
-    const detail = apiError.error?.details?.[0];
-    return apiError.error?.message ?? apiError.error?.error ?? detail ?? fallback;
-  }
-
   readonly form = this.fb.nonNullable.group({
     nombre: ['', [Validators.required]],
     descripcion: ['', [Validators.required]],
@@ -85,7 +73,7 @@ export class PoliticaFormComponent {
             });
           }
         },
-        error: () => this.error.set('Error al cargar politica'),
+        error: (err) => this.error.set(mensajeAmigable(err)),
       });
     }
   }
@@ -118,7 +106,7 @@ export class PoliticaFormComponent {
             this.politicaSvc.cambiarEstado(this.politicaId!, estadoObjetivo).subscribe({
               next: () => this.router.navigateByUrl('/admin/politicas'),
               error: (err: unknown) => {
-                this.error.set(this.getApiErrorMessage(err, 'Error al cambiar estado'));
+                this.error.set(mensajeAmigable(err));
                 this.loading.set(false);
               },
             });
@@ -128,7 +116,7 @@ export class PoliticaFormComponent {
           this.router.navigateByUrl('/admin/politicas');
         },
         error: (err: unknown) => {
-          this.error.set(this.getApiErrorMessage(err, 'Error al guardar'));
+          this.error.set(mensajeAmigable(err));
           this.loading.set(false);
         },
       });
@@ -138,7 +126,7 @@ export class PoliticaFormComponent {
     this.politicaSvc.crear(payload).subscribe({
       next: () => this.router.navigateByUrl('/admin/politicas'),
       error: (err: unknown) => {
-        this.error.set(this.getApiErrorMessage(err, 'Error al guardar'));
+        this.error.set(mensajeAmigable(err));
         this.loading.set(false);
       },
     });

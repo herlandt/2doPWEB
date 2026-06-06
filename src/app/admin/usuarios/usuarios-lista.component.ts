@@ -4,6 +4,7 @@ import { UsuarioService } from '../../core/services/usuario.service';
 import { RolService } from '../../core/services/rol.service';
 import { Usuario } from '../../core/models/usuario.model';
 import { Rol } from '../../core/models/rol.model';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-usuarios-lista',
@@ -34,15 +35,15 @@ export class UsuariosListaComponent {
         this.usuarios.set(usuarios);
         this.loading.set(false);
       },
-      error: () => {
-        this.error.set('Error al cargar usuarios');
+      error: (err) => {
+        this.error.set(mensajeAmigable(err));
         this.loading.set(false);
       },
     });
 
     this.rolSvc.listar().subscribe({
       next: (roles) => this.roles.set(roles),
-      error: () => this.error.set('Error al cargar roles'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
   }
 
@@ -59,7 +60,7 @@ export class UsuariosListaComponent {
         this.exito.set(`Usuario ${actualizado.activo ? 'activado' : 'desactivado'}`);
         setTimeout(() => this.exito.set(''), 3000);
       },
-      error: () => this.error.set('Error al cambiar estado'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
   }
 
@@ -72,7 +73,7 @@ export class UsuariosListaComponent {
         this.exito.set('Usuario eliminado');
         setTimeout(() => this.exito.set(''), 3000);
       },
-      error: () => this.error.set('Error al eliminar'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
   }
 }

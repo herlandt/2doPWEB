@@ -2,6 +2,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AlertaAnomalia } from '../../core/models/alerta-anomalia.model';
 import { AlertaAnomaliaService } from '../../core/services/alerta-anomalia.service';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 /**
  * CU-45 — Panel administrador para revisar las anomalías detectadas por IA.
@@ -93,7 +94,7 @@ export class AnomaliasComponent {
             'El microservicio IA no está disponible. Intenta más tarde o espera al scheduler diario.',
           );
         } else {
-          this.error.set('Error al disparar la detección.');
+          this.error.set(mensajeAmigable(err));
         }
       },
     });

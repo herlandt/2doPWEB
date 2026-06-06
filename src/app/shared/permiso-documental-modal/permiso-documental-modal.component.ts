@@ -19,6 +19,7 @@ import {
 import { Politica } from '../../core/models/politica.model';
 import { PermisoDocumentalService } from '../../core/services/permiso-documental.service';
 import { PoliticaService } from '../../core/services/politica.service';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 /**
  * CU-36 — Modal para configurar el permiso documental de una actividad
@@ -135,8 +136,8 @@ export class PermisoDocumentalModalComponent {
         this.guardando.set(false);
         setTimeout(() => this.exito.set(''), 3000);
       },
-      error: (err: any) => {
-        this.error.set(err?.error?.message ?? 'No se pudo guardar el permiso');
+      error: (err: unknown) => {
+        this.error.set(mensajeAmigable(err, 'No se pudo guardar el permiso'));
         this.guardando.set(false);
       },
     });

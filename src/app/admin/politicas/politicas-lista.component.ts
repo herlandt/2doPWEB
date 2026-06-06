@@ -4,6 +4,7 @@ import { DiagramaService } from '../../core/services/diagrama.service';
 import { PoliticaService } from '../../core/services/politica.service';
 import { DiagramaWorkflow } from '../../core/models/diagrama.model';
 import { Politica } from '../../core/models/politica.model';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-politicas-lista',
@@ -31,19 +32,6 @@ export class PoliticasListaComponent {
     this.cargar();
   }
 
-  private getApiErrorMessage(err: unknown, fallback: string): string {
-    const apiError = err as {
-      error?: {
-        message?: string;
-        error?: string;
-        details?: string[];
-      };
-    };
-
-    const detail = apiError.error?.details?.[0];
-    return apiError.error?.message ?? apiError.error?.error ?? detail ?? fallback;
-  }
-
   cargar(): void {
     this.loading.set(true);
     this.error.set('');
@@ -53,8 +41,8 @@ export class PoliticasListaComponent {
         this.politicas.set(politicas);
         this.loading.set(false);
       },
-      error: () => {
-        this.error.set('Error al cargar politicas');
+      error: (err) => {
+        this.error.set(mensajeAmigable(err));
         this.loading.set(false);
       },
     });
@@ -70,7 +58,7 @@ export class PoliticasListaComponent {
         setTimeout(() => this.exito.set(''), 3000);
       },
       error: (err: unknown) => {
-        this.error.set(this.getApiErrorMessage(err, 'Error al cambiar estado'));
+        this.error.set(mensajeAmigable(err));
       },
     });
   }
@@ -85,7 +73,7 @@ export class PoliticasListaComponent {
         setTimeout(() => this.exito.set(''), 3000);
       },
       error: (err: unknown) => {
-        this.error.set(this.getApiErrorMessage(err, 'Error al eliminar'));
+        this.error.set(mensajeAmigable(err));
       },
     });
   }
@@ -115,9 +103,9 @@ export class PoliticasListaComponent {
         this.diagramasHuerfanos.set(diagramas);
         this.cargandoHuerfanos.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.cargandoHuerfanos.set(false);
-        this.error.set('Error al cargar diagramas disponibles');
+        this.error.set(mensajeAmigable(err));
       },
     });
   }
@@ -158,7 +146,7 @@ export class PoliticasListaComponent {
         },
         error: (err: unknown) => {
           this.asignando.set(false);
-          this.error.set(this.getApiErrorMessage(err, 'Error al asignar diagrama'));
+          this.error.set(mensajeAmigable(err));
         },
       });
   }

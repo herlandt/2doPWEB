@@ -8,6 +8,7 @@ import { Actividad, ActividadRequest, RequisitoDocumento } from '../../core/mode
 import { Departamento } from '../../core/models/departamento.model';
 import { Documento } from '../../core/models/documento.model';
 import { PermisoDocumentalModalComponent } from '../../shared/permiso-documental-modal/permiso-documental-modal.component';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 interface FuncionarioOption {
   id: string;
@@ -98,7 +99,7 @@ export class ActividadesComponent {
       next: (actividades) => this.actividades.set(actividades),
       error: (err) => {
         console.error('Error al cargar actividades:', err);
-        this.error.set('Error al cargar actividades');
+        this.error.set(mensajeAmigable(err));
       },
     });
 
@@ -106,7 +107,7 @@ export class ActividadesComponent {
       next: (departamentos) => this.departamentos.set(departamentos),
       error: (err) => {
         console.error('Error al cargar departamentos:', err);
-        this.error.set('Error al cargar departamentos');
+        this.error.set(mensajeAmigable(err));
       },
     });
 
@@ -114,7 +115,7 @@ export class ActividadesComponent {
       next: (documentos) => this.documentos.set(documentos),
       error: (err) => {
         console.error('Error al cargar documentos:', err);
-        this.error.set('Error al cargar documentos');
+        this.error.set(mensajeAmigable(err));
       },
     });
 
@@ -261,8 +262,8 @@ export class ActividadesComponent {
         this.loading.set(false);
         setTimeout(() => this.exito.set(''), 3000);
       },
-      error: (err: { error?: { message?: string } }) => {
-        this.error.set(err.error?.message ?? 'Error al guardar');
+      error: (err: unknown) => {
+        this.error.set(mensajeAmigable(err));
         this.loading.set(false);
       },
     });
@@ -275,7 +276,7 @@ export class ActividadesComponent {
       next: () => {
         this.actividades.update((lista) => lista.filter((actividad) => actividad.id !== id));
       },
-      error: () => this.error.set('Error al eliminar actividad'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
   }
 

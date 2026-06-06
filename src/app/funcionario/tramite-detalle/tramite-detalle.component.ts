@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { WorkflowService } from '../../core/services/workflow.service';
 import { CompletarNodoRequest, TramiteDetalle } from '../../core/models/tramite.model';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-tramite-detalle',
@@ -60,8 +61,8 @@ export class TramiteDetalleComponent {
         this.form.patchValue({ resultado: rama ?? 'completado' });
         this.loading.set(false);
       },
-      error: () => {
-        this.error.set('Error al cargar el tramite');
+      error: (err) => {
+        this.error.set(mensajeAmigable(err));
         this.loading.set(false);
       },
     });
@@ -93,8 +94,8 @@ export class TramiteDetalleComponent {
         this.procesando.set(false);
         setTimeout(() => this.exito.set(''), 4000);
       },
-      error: (err: { error?: { message?: string } }) => {
-        this.error.set(err.error?.message ?? 'Error al completar el nodo');
+      error: (err) => {
+        this.error.set(mensajeAmigable(err));
         this.procesando.set(false);
       },
     });

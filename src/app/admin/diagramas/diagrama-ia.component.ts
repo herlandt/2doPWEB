@@ -5,6 +5,7 @@ import { DiagramaService } from '../../core/services/diagrama.service';
 import { PoliticaService } from '../../core/services/politica.service';
 import { Politica } from '../../core/models/politica.model';
 import { PromptFlowResponse } from '../../core/models/diagrama.model';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-diagrama-ia',
@@ -31,7 +32,7 @@ export class DiagramaIaComponent {
   constructor() {
     this.politicaSvc.listar().subscribe({
       next: (politicas) => this.politicas.set(politicas),
-      error: () => this.error.set('Error al cargar politicas'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
   }
 
@@ -55,7 +56,7 @@ export class DiagramaIaComponent {
         },
         error: (err: { error?: { error?: string; details?: string[] } }) => {
           const detalle = err.error?.details?.join(', ');
-          this.error.set(detalle ?? err.error?.error ?? 'Error al generar');
+          this.error.set(detalle ?? err.error?.error ?? mensajeAmigable(err));
           this.loading.set(false);
         },
       });

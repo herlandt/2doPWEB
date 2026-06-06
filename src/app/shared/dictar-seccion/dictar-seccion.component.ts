@@ -2,6 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { DictarFormularioResponse } from '../../core/models/dictado-formulario.model';
 import { DictadoService } from '../../core/services/dictado.service';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 import { GrabadorVozComponent } from '../grabador-voz/grabador-voz.component';
 
 /**
@@ -48,7 +49,7 @@ export class DictarSeccionComponent {
         if (code === 503) {
           this.error.set('El microservicio IA no está disponible. Intenta más tarde.');
         } else {
-          this.error.set(err?.error?.message ?? 'No se pudo procesar el dictado.');
+          this.error.set(mensajeAmigable(err, 'No se pudo procesar el dictado.'));
         }
       },
     });

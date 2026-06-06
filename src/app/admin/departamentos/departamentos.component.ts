@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DepartamentoService } from '../../core/services/departamento.service';
 import { Departamento, DepartamentoRequest } from '../../core/models/departamento.model';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-departamentos',
@@ -33,7 +34,7 @@ export class DepartamentosComponent {
   cargar(): void {
     this.deptoSvc.listar().subscribe({
       next: (departamentos) => this.departamentos.set(departamentos),
-      error: () => this.error.set('Error al cargar departamentos'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
   }
 
@@ -81,8 +82,8 @@ export class DepartamentosComponent {
         this.loading.set(false);
         setTimeout(() => this.exito.set(''), 3000);
       },
-      error: (err: { error?: { message?: string } }) => {
-        this.error.set(err.error?.message ?? 'Error al guardar');
+      error: (err: unknown) => {
+        this.error.set(mensajeAmigable(err));
         this.loading.set(false);
       },
     });
@@ -97,7 +98,7 @@ export class DepartamentosComponent {
         this.exito.set('Departamento eliminado');
         setTimeout(() => this.exito.set(''), 3000);
       },
-      error: () => this.error.set('Error al eliminar'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
   }
 }

@@ -4,6 +4,7 @@ import { DiagramaService } from '../../core/services/diagrama.service';
 import { PoliticaService } from '../../core/services/politica.service';
 import { DiagramaWorkflow } from '../../core/models/diagrama.model';
 import { Politica } from '../../core/models/politica.model';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-diagramas-lista',
@@ -25,7 +26,7 @@ export class DiagramasListaComponent {
     this.cargar();
     this.politicaSvc.listar().subscribe({
       next: (politicas) => this.politicas.set(politicas),
-      error: () => this.error.set('Error al cargar politicas'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
   }
 
@@ -38,8 +39,8 @@ export class DiagramasListaComponent {
         this.diagramas.set(diagramas);
         this.loading.set(false);
       },
-      error: () => {
-        this.error.set('Error al cargar diagramas');
+      error: (err) => {
+        this.error.set(mensajeAmigable(err));
         this.loading.set(false);
       },
     });
@@ -59,8 +60,8 @@ export class DiagramasListaComponent {
         this.exito.set('Diagrama eliminado');
         setTimeout(() => this.exito.set(''), 3000);
       },
-      error: (err: { error?: { message?: string } }) => {
-        this.error.set(err.error?.message ?? 'Error al eliminar');
+      error: (err: unknown) => {
+        this.error.set(mensajeAmigable(err));
       },
     });
   }

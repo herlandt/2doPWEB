@@ -5,6 +5,7 @@ import { DepartamentoService } from '../../core/services/departamento.service';
 import { ActividadService } from '../../core/services/actividad.service';
 import { Departamento } from '../../core/models/departamento.model';
 import { Actividad } from '../../core/models/actividad.model';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-dashboard-metricas',
@@ -57,8 +58,8 @@ export class DashboardMetricasComponent {
         this.cuellosDeBotella.set(data);
         this.loading.set(false);
       },
-      error: () => {
-        this.error.set('Error al cargar los cuellos de botella.');
+      error: (err) => {
+        this.error.set(mensajeAmigable(err));
         this.loading.set(false);
       },
     });

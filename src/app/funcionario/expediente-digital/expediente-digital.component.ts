@@ -12,6 +12,7 @@ import {
 } from '../../core/models/documento-archivo.model';
 import { DictarSeccionComponent } from '../../shared/dictar-seccion/dictar-seccion.component';
 import { DictarFormularioResponse } from '../../core/models/dictado-formulario.model';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-expediente-digital',
@@ -227,8 +228,7 @@ export class ExpedienteDigitalComponent {
       },
       error: (err: any) => {
         this.guardandoSeccionId.set(null);
-        const msg = err?.error?.message ?? err?.error?.detail ?? 'No se pudo guardar el borrador';
-        this.error.set(msg);
+        this.error.set(mensajeAmigable(err, 'No se pudo guardar el borrador'));
       },
     });
   }
@@ -349,7 +349,7 @@ export class ExpedienteDigitalComponent {
       case 503:
         return 'Almacenamiento no disponible';
       default:
-        return err?.error?.message ?? err?.error?.detail ?? 'No se pudo subir el documento.';
+        return mensajeAmigable(err, 'No se pudo subir el documento.');
     }
   }
 
@@ -375,8 +375,8 @@ export class ExpedienteDigitalComponent {
         this.expediente.set(data);
         this.loading.set(false);
       },
-      error: () => {
-        this.error.set('Error al cargar el expediente.');
+      error: (err) => {
+        this.error.set(mensajeAmigable(err, 'Error al cargar el expediente.'));
         this.loading.set(false);
       },
     });
@@ -563,9 +563,7 @@ export class ExpedienteDigitalComponent {
 
   private manejarError(err: any): void {
     this.procesando.set(false);
-    const msg =
-      err?.error?.message ?? err?.error?.detail ?? err?.message ?? 'Error desconocido';
-    this.error.set(`Error al procesar la acción: ${msg}`);
+    this.error.set(`Error al procesar la acción: ${mensajeAmigable(err)}`);
   }
 
   formatearFecha(iso: string | undefined): string {

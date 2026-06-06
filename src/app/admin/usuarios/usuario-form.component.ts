@@ -5,6 +5,7 @@ import { UsuarioService } from '../../core/services/usuario.service';
 import { DepartamentoService } from '../../core/services/departamento.service';
 import { Departamento } from '../../core/models/departamento.model';
 import { UsuarioCreateRequest, UsuarioUpdateRequest } from '../../core/models/usuario.model';
+import { mensajeAmigable } from '../../core/utils/error-messages';
 
 @Component({
   selector: 'app-usuario-form',
@@ -30,19 +31,6 @@ export class UsuarioFormComponent {
   readonly esEdicion = !!this.usuarioId;
   readonly tiposDisponibles = ['administrador', 'funcionario'];
 
-  private getApiErrorMessage(err: unknown, fallback: string): string {
-    const apiError = err as {
-      error?: {
-        message?: string;
-        error?: string;
-        details?: string[];
-      };
-    };
-
-    const detail = apiError.error?.details?.[0];
-    return apiError.error?.message ?? apiError.error?.error ?? detail ?? fallback;
-  }
-
   readonly form = this.fb.nonNullable.group({
     nombre: ['', [Validators.required]],
     apellido: ['', [Validators.required]],
@@ -65,7 +53,7 @@ export class UsuarioFormComponent {
 
     this.deptoSvc.listar().subscribe({
       next: (departamentos) => this.departamentos.set(departamentos),
-      error: () => this.error.set('Error al cargar departamentos'),
+      error: (err) => this.error.set(mensajeAmigable(err)),
     });
 
     if (this.esEdicion && this.usuarioId) {
@@ -83,7 +71,7 @@ export class UsuarioFormComponent {
           this.form.controls.password.clearValidators();
           this.form.controls.password.updateValueAndValidity();
         },
-        error: () => this.error.set('Error al cargar usuario'),
+        error: (err) => this.error.set(mensajeAmigable(err)),
       });
     }
   }
@@ -117,7 +105,7 @@ export class UsuarioFormComponent {
       this.usuarioSvc.actualizar(this.usuarioId, payload).subscribe({
         next: () => this.router.navigateByUrl('/admin/usuarios'),
         error: (err: unknown) => {
-          this.error.set(this.getApiErrorMessage(err, 'Error al guardar usuario'));
+          this.error.set(mensajeAmigable(err));
           this.loading.set(false);
         },
       });
@@ -136,7 +124,7 @@ export class UsuarioFormComponent {
     this.usuarioSvc.crear(payload).subscribe({
       next: () => this.router.navigateByUrl('/admin/usuarios'),
       error: (err: unknown) => {
-        this.error.set(this.getApiErrorMessage(err, 'Error al guardar usuario'));
+        this.error.set(mensajeAmigable(err));
         this.loading.set(false);
       },
     });
