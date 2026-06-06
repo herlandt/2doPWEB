@@ -464,6 +464,12 @@ export class ExpedienteDigitalComponent {
 
   // Llama el endpoint correcto según la acción elegida
   ejecutarAccion(tipo: string): void {
+    // Regla CU-17: para devolver hay que marcar al menos un documento a corregir.
+    if (tipo === 'DEVOLVER' && this.documentosObservadosIds().size === 0) {
+      this.error.set('Selecciona al menos un documento a corregir para devolver el trámite.');
+      return;
+    }
+
     if (!confirm(this.mensajeConfirmacion(tipo))) return;
 
     this.procesando.set(true);

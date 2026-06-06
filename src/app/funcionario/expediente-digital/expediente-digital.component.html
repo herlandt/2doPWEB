@@ -546,11 +546,16 @@
               <button
                 type="button"
                 class="btn btn-warning"
-                [disabled]="procesando() || !nodoDestinoId()"
+                [disabled]="procesando() || !nodoDestinoId() || documentosObservadosIds().size === 0"
                 (click)="ejecutarAccion('DEVOLVER')"
               >
                 Confirmar Devolución
               </button>
+              @if (documentosObservadosIds().size === 0) {
+                <small class="text-danger align-self-center">
+                  Selecciona al menos un documento a corregir.
+                </small>
+              }
             }
           }
 
