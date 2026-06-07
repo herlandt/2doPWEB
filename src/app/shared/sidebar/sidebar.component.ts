@@ -33,6 +33,7 @@ import {
   BarChart2,
   BookOpen,
   FileText,
+  Share2,
 } from 'lucide-angular';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
@@ -86,6 +87,7 @@ export class SidebarComponent {
     bandeja:      Inbox           as LucideIconData,
     metricas:     BarChart2       as LucideIconData,
     historial:    BookOpen        as LucideIconData,
+    compartidos:  Share2          as LucideIconData,
   };
 
   private readonly storageKey = 'cre.sidebar.collapsed';
@@ -116,8 +118,9 @@ export class SidebarComponent {
     icon: this.icons.flows,
     expanded: signal(true),
     items: [
-      { label: 'Diagramas',     icon: this.icons.workflows,  link: '/admin/diagramas',     roles: ['admin'] },
-      { label: 'Diseño con IA', icon: this.icons.aiSparkles, link: '/admin/diagramas/ia',  roles: ['admin'] },
+      { label: 'Diagramas',           icon: this.icons.workflows,   link: '/admin/diagramas',             roles: ['admin'] },
+      { label: 'Compartidos conmigo', icon: this.icons.compartidos, link: '/admin/diagramas/compartidos', roles: ['admin'] },
+      { label: 'Diseño con IA',       icon: this.icons.aiSparkles,  link: '/admin/diagramas/ia',          roles: ['admin'] },
     ],
   };
 
@@ -146,8 +149,9 @@ export class SidebarComponent {
     { label: 'Políticas',     icon: this.icons.policies,    link: '/admin/politicas',     roles: ['admin'] },
     { label: 'Actividades',   icon: this.icons.activities,  link: '/admin/actividades',   roles: ['admin'] },
     { label: 'Documentos',    icon: this.icons.documents,   link: '/admin/documentos',    roles: ['admin'] },
-    { label: 'Diagramas',     icon: this.icons.workflows,   link: '/admin/diagramas',     roles: ['admin'] },
-    { label: 'Diseño con IA', icon: this.icons.aiSparkles,  link: '/admin/diagramas/ia',  roles: ['admin'] },
+    { label: 'Diagramas',           icon: this.icons.workflows,   link: '/admin/diagramas',             roles: ['admin'] },
+    { label: 'Compartidos conmigo', icon: this.icons.compartidos, link: '/admin/diagramas/compartidos', roles: ['admin'] },
+    { label: 'Diseño con IA',       icon: this.icons.aiSparkles,  link: '/admin/diagramas/ia',          roles: ['admin'] },
     { label: 'Métricas',      icon: this.icons.metricas,    link: '/admin/metricas',           roles: ['admin'] },
     { label: 'Historial',     icon: this.icons.historial,   link: '/admin/historial',          roles: ['admin'] },
     { label: 'Anomalías IA',  icon: this.icons.aiSparkles,  link: '/admin/anomalias',          roles: ['admin'] },

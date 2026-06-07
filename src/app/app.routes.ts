@@ -80,6 +80,11 @@ export const routes: Routes = [
 					import('./admin/diagramas/diagrama-ia.component').then((m) => m.DiagramaIaComponent),
 			},
 			{
+				path: 'diagramas/compartidos',
+				loadComponent: () =>
+					import('./admin/diagramas/diagramas-compartidos.component').then((m) => m.DiagramasCompartidosComponent),
+			},
+			{
 				path: 'diagramas/:id',
 				loadComponent: () =>
 					import('./admin/diagramas/diagrama-editor.component').then((m) => m.DiagramaEditorComponent),
