@@ -173,11 +173,15 @@ export class DiagramasCompartidosComponent {
     });
   }
 
+  private esSoloLectura(p: string): boolean {
+    return p === 'visualizador' || p === 'visor';
+  }
+
   permisoBadge(p: string): string {
-    return p === 'visualizador' ? 'bg-secondary' : 'bg-primary';
+    return this.esSoloLectura(p) ? 'bg-secondary' : 'bg-primary';
   }
 
   permisoLabel(p: string): string {
-    return p === 'visualizador' ? 'Solo lectura' : 'Editor';
+    return this.esSoloLectura(p) ? 'Solo lectura' : 'Editor';
   }
 }

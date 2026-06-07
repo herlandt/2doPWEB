@@ -27,6 +27,7 @@ export class LoginComponent {
   /** Credenciales reales del seed (UsuarioSeeder.java). Las usa el panel demo. */
   readonly cuentasDemo = [
     { label: 'Administrador', email: 'admin@cre.bo',       password: 'admin12345',   variant: 'primary' },
+    { label: 'Admin 2 (Ana)', email: 'admin2@cre.bo',      password: 'admin12345',   variant: 'primary' },
     { label: 'Func. TEC',     email: 'funcionario@cre.bo', password: 'func12345',    variant: 'success' },
     { label: 'Func. ATC',     email: 'func_atc@cre.bo',    password: 'func12345',    variant: 'success' },
     { label: 'Func. LEG',     email: 'func_leg@cre.bo',    password: 'func12345',    variant: 'success' },
