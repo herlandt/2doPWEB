@@ -3,11 +3,11 @@ import { RouterOutlet } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { SidebarComponent } from './shared/sidebar/sidebar.component';
 import { ToastContainerComponent } from './shared/toast/toast-container.component';
-import { AgenteFlotanteComponent } from './shared/agente/agente-flotante.component';
+import { AsistenteChatComponent } from './shared/asistente-chat/asistente-chat.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, SidebarComponent, ToastContainerComponent, AgenteFlotanteComponent],
+  imports: [RouterOutlet, SidebarComponent, ToastContainerComponent, AsistenteChatComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

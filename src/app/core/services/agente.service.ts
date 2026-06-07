@@ -4,9 +4,10 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface AgenteAccion {
-  label: string;
-  ruta: string;
-  tipo: string;
+  label?: string;
+  ruta?: string;
+  tipo?: string;
+  dato?: string;
 }
 
 export interface AgenteRespuesta {
@@ -27,7 +28,33 @@ export class AgenteService {
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiUrl}/agente/consultar`;
 
-  consultar(payload: AgenteConsulta): Observable<AgenteRespuesta> {
+  /**
+   * Consulta al agente IA.
+   *
+   * Acepta dos formas de invocación:
+   *  - consultar(payload)                  → payload completo (compatibilidad).
+   *  - consultar(consulta, modulo, tramiteId?) → forma simple usada por el chat web.
+   */
+  consultar(payload: AgenteConsulta): Observable<AgenteRespuesta>;
+  consultar(
+    consulta: string,
+    modulo: string,
+    tramiteIdOpcional?: string | null,
+  ): Observable<AgenteRespuesta>;
+  consultar(
+    consultaOrPayload: string | AgenteConsulta,
+    modulo?: string,
+    tramiteIdOpcional?: string | null,
+  ): Observable<AgenteRespuesta> {
+    const payload: AgenteConsulta =
+      typeof consultaOrPayload === 'string'
+        ? {
+            consulta: consultaOrPayload,
+            moduloActivo: modulo ?? '',
+            tramiteIdOpcional: tramiteIdOpcional ?? null,
+          }
+        : consultaOrPayload;
+
     return this.http.post<AgenteRespuesta>(this.url, payload);
   }
 }
