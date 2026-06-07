@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ReporteNaturalResponse } from '../../core/models/reporte-natural.model';
 import { ReporteNaturalService } from '../../core/services/reporte-natural.service';
+import { TranscripcionService } from '../../core/services/transcripcion.service';
+import { GrabadorVozComponent } from '../../shared/grabador-voz/grabador-voz.component';
 import { mensajeAmigable } from '../../core/utils/error-messages';
 
 /**
@@ -15,18 +17,21 @@ import { mensajeAmigable } from '../../core/utils/error-messages';
  */
 @Component({
   selector: 'app-reportes-naturales',
-  imports: [FormsModule],
+  imports: [FormsModule, GrabadorVozComponent],
   templateUrl: './reportes-naturales.component.html',
   styleUrl: './reportes-naturales.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReportesNaturalesComponent {
   private readonly svc = inject(ReporteNaturalService);
+  private readonly transcripcionSvc = inject(TranscripcionService);
+  private readonly grabador = viewChild(GrabadorVozComponent);
 
   readonly consulta = signal('');
   readonly resultado = signal<ReporteNaturalResponse | null>(null);
   readonly loading = signal(false);
   readonly error = signal('');
+  readonly transcribiendo = signal(false);
 
   readonly ejemplos = [
     'conteo de tramites por estado',
@@ -75,6 +80,33 @@ export class ReportesNaturalesComponent {
 
   usarEjemplo(ej: string): void {
     this.consulta.set(ej);
+  }
+
+  /** Voz → texto: el admin dicta la consulta y se coloca en el campo para revisarla. */
+  onAudioReporte(audio: Blob): void {
+    this.transcribiendo.set(true);
+    this.error.set('');
+    this.transcripcionSvc.transcribir(audio).subscribe({
+      next: (resp) => {
+        const texto = (resp.textoTranscrito ?? '').trim();
+        if (texto) {
+          this.consulta.set(texto);
+        } else {
+          this.error.set('No se entendió el audio. Intenta de nuevo o escribe la consulta.');
+        }
+        this.transcribiendo.set(false);
+        this.grabador()?.liberar();
+      },
+      error: (err: any) => {
+        this.error.set(
+          err?.status === 503
+            ? 'El microservicio IA no está disponible para transcribir la voz.'
+            : mensajeAmigable(err),
+        );
+        this.transcribiendo.set(false);
+        this.grabador()?.liberar();
+      },
+    });
   }
 
   limpiar(): void {

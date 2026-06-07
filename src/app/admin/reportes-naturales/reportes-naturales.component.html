@@ -41,6 +41,17 @@
         }
       </div>
 
+      <!-- Dictar la consulta por voz (la transcripción cae en el campo de arriba) -->
+      <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+        <span class="small text-muted">o díctala:</span>
+        <app-grabador-voz (audioGrabado)="onAudioReporte($event)" />
+        @if (transcribiendo()) {
+          <span class="small text-muted">
+            <span class="spinner-border spinner-border-sm me-1"></span>Transcribiendo…
+          </span>
+        }
+      </div>
+
       <div class="mt-2 small text-muted">
         Ejemplos:
         @for (ej of ejemplos; track ej) {
