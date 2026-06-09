@@ -117,12 +117,65 @@
               Archivar
             </button>
           }
+          <!-- Agregar calle (swimlane) — permitido también en diagramas activos -->
+          <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="abrirAgregarCalle()">
+            + Agregar calle
+          </button>
           <!-- CU-15: botón de colaboración -->
           <button type="button" class="cre-btn cre-btn-primary cre-btn-sm" (click)="abrirModalColab()">
             + Invitar Colaborador
           </button>
         </div>
       </header>
+
+      <!-- ── Modal: Agregar calle (swimlane) ── -->
+      @if (mostrarAgregarCalle()) {
+        <div class="modal-backdrop" (click)="cerrarAgregarCalle()">
+          <div class="modal-card" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <strong>Agregar calle al diagrama</strong>
+              <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="cerrarAgregarCalle()">×</button>
+            </div>
+            <div class="modal-body">
+              <p class="small text-muted" style="margin:0">
+                Elige el departamento que participará como nueva calle. Se agrega aunque el
+                diagrama esté publicado o activo.
+              </p>
+              @if (departamentosSinCalle().length === 0) {
+                <div class="cre-alert" style="background:#fff3cd;border:1px solid #ffe69c;color:#664d03;">
+                  Todos los departamentos ya son calles de este diagrama.
+                </div>
+              } @else {
+                <div class="form-row">
+                  <label class="form-label" for="nueva-calle-depto">Departamento <span class="req">*</span></label>
+                  <select
+                    id="nueva-calle-depto"
+                    class="cre-input"
+                    [value]="deptoNuevaCalle()"
+                    (change)="setDeptoNuevaCalle($event)"
+                  >
+                    <option value="">-- Seleccione --</option>
+                    @for (depto of departamentosSinCalle(); track depto.id) {
+                      <option [value]="depto.id">{{ depto.codigo }} · {{ depto.nombre }}</option>
+                    }
+                  </select>
+                </div>
+              }
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="cerrarAgregarCalle()">Cancelar</button>
+              <button
+                type="button"
+                class="cre-btn cre-btn-primary cre-btn-sm"
+                [disabled]="!deptoNuevaCalle() || agregandoCalle()"
+                (click)="agregarCalle()"
+              >
+                @if (agregandoCalle()) { Agregando… } @else { Agregar calle }
+              </button>
+            </div>
+          </div>
+        </div>
+      }
 
       <!-- ── Modal CU-15: Invitar Colaborador ── -->
       @if (mostrarModalColab()) {
@@ -376,7 +429,7 @@
             [readonly]="data.estado !== 'borrador'"
             [nodos]="nodos()"
             [transiciones]="transiciones()"
-            [swimlanes]="data.swimlanes"
+            [swimlanes]="swimlanesActivas()"
             [actividades]="actividades()"
             [departamentos]="departamentos()"
             [highlightNodoId]="selectedNodo()?.id ?? null"
@@ -516,28 +569,95 @@
                     </span>
                   </div>
 
-                  <!-- Documentos requeridos por la actividad asociada -->
+                  <!-- Documentos requeridos por la actividad asociada (EDITABLE) -->
                   <div class="inspector-row">
                     <span class="inspector-key">Documentos requeridos</span>
                     @if (!draft.actividadId) {
                       <span class="inspector-hint">
-                        Asigna una actividad primero para ver los documentos que el cliente debe presentar.
-                      </span>
-                    } @else if (documentosRequeridosDelDraft().length === 0) {
-                      <span class="inspector-hint">
-                        Esta actividad no tiene documentos asociados. Edítala desde la pantalla "Actividades".
+                        Asigna una actividad primero para configurar los documentos que se exigen.
                       </span>
                     } @else {
-                      <ul class="inspector-doclist">
-                        @for (doc of documentosRequeridosDelDraft(); track doc.id) {
-                          <li class="inspector-docitem" [title]="doc.descripcion">
-                            <span class="inspector-docname">{{ doc.nombre }}</span>
-                          </li>
-                        }
-                      </ul>
                       <span class="inspector-hint">
-                        Configurados en la actividad — para cambiarlos, edita la actividad.
+                        Editan la actividad compartida. Disponible aunque el diagrama esté publicado.
                       </span>
+
+                      @if (requisitosNodo().length === 0) {
+                        <span class="inspector-hint warn">Esta actividad aún no exige documentos.</span>
+                      } @else {
+                        <table class="req-table">
+                          <thead>
+                            <tr>
+                              <th>Documento</th>
+                              <th>Aporta</th>
+                              <th title="Obligatorio">Obl.</th>
+                              <th></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (req of requisitosNodo(); track req.documentoId) {
+                              <tr>
+                                <td class="req-doc">{{ nombreDocumento(req.documentoId) }}</td>
+                                <td>
+                                  <select
+                                    class="cre-input req-input"
+                                    [value]="req.proveedor"
+                                    (change)="setProveedorNodo(req.documentoId, $any($event.target).value)"
+                                  >
+                                    <option value="CLIENTE">Cliente</option>
+                                    <option value="FUNCIONARIO">Funcionario</option>
+                                  </select>
+                                </td>
+                                <td class="req-check">
+                                  <input
+                                    type="checkbox"
+                                    [checked]="req.obligatorio"
+                                    (change)="setObligatorioNodo(req.documentoId, $any($event.target).checked)"
+                                  />
+                                </td>
+                                <td>
+                                  <button
+                                    type="button"
+                                    class="req-remove"
+                                    title="Quitar documento"
+                                    (click)="quitarRequisitoNodo(req.documentoId)"
+                                  >×</button>
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+
+                      <!-- Fila para agregar un documento del catálogo -->
+                      @if (documentosDisponiblesNodo().length > 0) {
+                        <div class="req-add">
+                          <select
+                            class="cre-input req-input"
+                            [value]="documentoAAgregar()"
+                            (change)="documentoAAgregar.set($any($event.target).value)"
+                          >
+                            <option value="">— Agregar documento —</option>
+                            @for (doc of documentosDisponiblesNodo(); track doc.id) {
+                              <option [value]="doc.id">{{ doc.nombre }}</option>
+                            }
+                          </select>
+                          <button
+                            type="button"
+                            class="cre-btn cre-btn-secondary cre-btn-sm"
+                            [disabled]="!documentoAAgregar()"
+                            (click)="agregarRequisitoNodo(documentoAAgregar())"
+                          >Agregar</button>
+                        </div>
+                      }
+
+                      <button
+                        type="button"
+                        class="cre-btn cre-btn-primary cre-btn-sm req-save"
+                        [disabled]="guardandoRequisitos()"
+                        (click)="guardarRequisitosNodo()"
+                      >
+                        @if (guardandoRequisitos()) { Guardando… } @else { Guardar requisitos }
+                      </button>
                     }
                   </div>
                 }

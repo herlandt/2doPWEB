@@ -177,6 +177,17 @@ export class DiagramCanvasComponent {
       }
     });
 
+    // Redibuja las calles cuando cambia el input de swimlanes (p. ej. al agregar
+    // una calle a un diagrama existente). Hay que volver a colocar los nodos
+    // porque su X/calle se calcula a partir del índice de la swimlane.
+    effect(() => {
+      const _lanes = this.swimlanes();
+      if (this.ready()) {
+        this.drawSwimlanes();
+        this.syncFromInputs();
+      }
+    });
+
     // Sincroniza el modo del cursor con la configuración de panning de X6
     effect(() => {
       const mode = this.cursorMode();
@@ -499,6 +510,10 @@ export class DiagramCanvasComponent {
     if (!this.graph) return;
     const lanes = this.swimlanes();
 
+    // Idempotente: al redibujar (p. ej. tras agregar una calle) quitamos primero
+    // las decoraciones existentes para no apilar marcos/calles superpuestos.
+    this.removeDecorationCells();
+
     // Atributos comunes de bloqueo para decoraciones
     const lockedAttrs = {
       magnet: false,
@@ -670,6 +685,28 @@ export class DiagramCanvasComponent {
       }
     } finally {
       this.suppressEvents = false;
+    }
+  }
+
+  /** Quita las celdas de decoración (marco + calles + headers) para poder
+   *  redibujar las swimlanes desde cero cuando cambia el input. */
+  private removeDecorationCells(): void {
+    if (!this.graph) return;
+    const internal = this.graph as unknown as {
+      getCells(): { id: string; getData(): { _decoration?: boolean } | null }[];
+      removeCell(id: string): void;
+    };
+    const prev = this.suppressEvents;
+    this.suppressEvents = true;
+    try {
+      for (const c of internal.getCells()) {
+        const d = c.getData?.() ?? {};
+        if (d && (d as { _decoration?: boolean })._decoration) {
+          internal.removeCell(c.id);
+        }
+      }
+    } finally {
+      this.suppressEvents = prev;
     }
   }
 

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ColaboracionService } from '../../core/services/colaboracion.service';
-import { Actividad } from '../../core/models/actividad.model';
+import { Actividad, ActividadRequest, RequisitoDocumento } from '../../core/models/actividad.model';
 import { Departamento } from '../../core/models/departamento.model';
 import {
   DiagramaRequest,
@@ -154,18 +154,20 @@ export class DiagramaEditorComponent {
     return acts.filter((a) => a.departamentoId === draft.departamentoId);
   });
 
-  // Documentos requeridos por la actividad del nodo seleccionado.
-  // Visible solo cuando el nodo es de tipo "actividad" y tiene actividadId.
-  readonly documentosRequeridosDelDraft = computed<Documento[]>(() => {
-    const draft = this.inspectorDraft();
-    if (!draft || draft.tipo !== 'actividad' || !draft.actividadId) return [];
-    const act = this.actividades().find((a) => a.id === draft.actividadId);
-    const ids = act?.documentoIds ?? [];
-    if (ids.length === 0) return [];
-    const mapa = new Map(this.documentos().map((d) => [d.id, d]));
-    return ids
-      .map((id) => mapa.get(id))
-      .filter((d): d is Documento => !!d);
+  // ── Requisitos documentales del nodo (editable; edita la ACTIVIDAD compartida) ─
+  // Espejo editable de los documentosRequeridos de la actividad del nodo
+  // seleccionado. Se rellena al seleccionar un nodo de tipo "actividad" con
+  // actividadId. Disponible aunque el diagrama esté publicado (se edita la
+  // actividad, no el diagrama).
+  readonly requisitosNodo = signal<RequisitoDocumento[]>([]);
+  readonly guardandoRequisitos = signal(false);
+  // Documento elegido en el desplegable "Agregar documento requerido".
+  readonly documentoAAgregar = signal('');
+
+  /** Catálogo de documentos que aún no están como requisito del nodo. */
+  readonly documentosDisponiblesNodo = computed<Documento[]>(() => {
+    const agregados = new Set(this.requisitosNodo().map((r) => r.documentoId));
+    return this.documentos().filter((d) => !agregados.has(d.id));
   });
 
   // Transiciones salientes del nodo decisión seleccionado
@@ -187,6 +189,112 @@ export class DiagramaEditorComponent {
       d.swimlane !== o.swimlane
     );
   });
+
+  // ── Agregar calle (swimlane) a un diagrama existente ──────────────────────
+  // Las calles del diagrama en edición. Se inicializa al cargar el diagrama y es
+  // la fuente que se pasa al lienzo, para poder redibujar las calles al agregar
+  // una sin recargar. (El canvas lee este input y redibuja.)
+  readonly swimlanesActivas = signal<string[]>([]);
+  readonly mostrarAgregarCalle = signal(false);
+  readonly deptoNuevaCalle = signal('');
+  readonly agregandoCalle = signal(false);
+
+  /** Departamentos que aún NO son calles de este diagrama (candidatos a agregar). */
+  readonly departamentosSinCalle = computed<Departamento[]>(() => {
+    const lanes = this.swimlanesActivas();
+    const set = new Set(lanes.map((l) => l.trim().toLowerCase()));
+    const enLanes = (d: Departamento) =>
+      set.has(d.codigo.trim().toLowerCase()) || set.has(d.nombre.trim().toLowerCase());
+    return this.departamentos().filter((d) => !enLanes(d));
+  });
+
+  abrirAgregarCalle(): void {
+    this.deptoNuevaCalle.set('');
+    this.mostrarAgregarCalle.set(true);
+  }
+
+  cerrarAgregarCalle(): void {
+    this.mostrarAgregarCalle.set(false);
+  }
+
+  setDeptoNuevaCalle(ev: Event): void {
+    this.deptoNuevaCalle.set((ev.target as HTMLSelectElement).value);
+  }
+
+  /**
+   * Agrega una calle (departamento) al diagrama y la persiste con PUT
+   * /api/diagramas/{id}. Funciona aunque el diagrama esté activo/publicado (el
+   * backend solo bloquea 'archivado'). Respeta el formato de las calles
+   * existentes (código vs nombre) y refresca el signal local para que el lienzo
+   * redibuje las calles con el nuevo ancho.
+   */
+  agregarCalle(): void {
+    const diagrama = this.diagrama();
+    const deptoId = this.deptoNuevaCalle();
+    if (!diagrama || !deptoId) return;
+
+    const depto = this.departamentos().find((d) => d.id === deptoId);
+    if (!depto) {
+      this.setError('Selecciona un departamento válido para la calle.');
+      return;
+    }
+
+    const lanesActuales = this.swimlanesActivas();
+    const etiqueta = this.etiquetaCalleParaDepartamento(depto, lanesActuales);
+
+    // Evita duplicados si por algún dato heredado ya estuviera.
+    if (lanesActuales.some((l) => l.trim().toLowerCase() === etiqueta.trim().toLowerCase())) {
+      this.setError('Ese departamento ya es una calle del diagrama.');
+      return;
+    }
+
+    const nuevasLanes = [...lanesActuales, etiqueta];
+
+    this.agregandoCalle.set(true);
+    this.diagramaSvc
+      .actualizarDiagrama(diagrama.id, {
+        nombre: diagrama.nombre,
+        politicaId: diagrama.politicaId,
+        swimlanes: nuevasLanes,
+      })
+      .subscribe({
+        next: (actualizado) => {
+          this.diagrama.set(actualizado);
+          // Usa las lanes que devuelve el backend (fuente de verdad); si no las
+          // trae, cae a las que enviamos. Esto dispara el redibujado del lienzo.
+          this.swimlanesActivas.set(
+            actualizado.swimlanes && actualizado.swimlanes.length > 0
+              ? [...actualizado.swimlanes]
+              : nuevasLanes,
+          );
+          this.agregandoCalle.set(false);
+          this.cerrarAgregarCalle();
+          this.showSuccess(`Calle "${etiqueta}" agregada`);
+        },
+        error: (err: unknown) => {
+          this.agregandoCalle.set(false);
+          this.setError(
+            this.extractErrorMessage(err, 'Error al agregar la calle'),
+            this.extractErrorDetails(err),
+          );
+        },
+      });
+  }
+
+  /**
+   * Etiqueta a usar para una NUEVA calle, respetando la convención de las calles
+   * existentes: si la primera calle coincide con un CÓDIGO de departamento, usa
+   * el código; si coincide con un NOMBRE, usa el nombre. Si el diagrama no tiene
+   * calles aún, usa el nombre del departamento.
+   */
+  private etiquetaCalleParaDepartamento(depto: Departamento, lanesActuales: string[]): string {
+    if (lanesActuales.length === 0) return depto.nombre;
+    const primera = lanesActuales[0].trim().toLowerCase();
+    const coincideCodigo = this.departamentos().some(
+      (d) => d.codigo.trim().toLowerCase() === primera,
+    );
+    return coincideCodigo ? depto.codigo : depto.nombre;
+  }
 
   // Departamentos seleccionados (códigos) que serán swimlanes del nuevo diagrama
   readonly swimlanesSeleccionadas = signal<string[]>([]);
@@ -279,6 +387,7 @@ export class DiagramaEditorComponent {
         if (this.selectedNodo()?.id === actualizado.id) {
           this.selectedNodo.set(actualizado);
           this.inspectorDraft.set({ ...actualizado });
+          this.cargarRequisitosNodo(actualizado);
         }
         break;
       }
@@ -419,7 +528,11 @@ export class DiagramaEditorComponent {
     this.clearError();
 
     this.diagramaSvc.obtenerDiagrama(this.diagramaId).subscribe({
-      next: (diagrama) => this.diagrama.set(diagrama),
+      next: (diagrama) => {
+        this.diagrama.set(diagrama);
+        // Fuente local de calles para poder agregar y redibujar sin recargar.
+        this.swimlanesActivas.set([...(diagrama.swimlanes ?? [])]);
+      },
       error: (err) => this.error.set(mensajeAmigable(err)),
     });
 
@@ -681,7 +794,139 @@ export class DiagramaEditorComponent {
   onNodoSelected(nodo: NodoDiagrama | null): void {
     this.selectedNodo.set(nodo);
     this.inspectorDraft.set(nodo ? { ...nodo } : null);
+    this.cargarRequisitosNodo(nodo);
     this.clearError();
+  }
+
+  /**
+   * Carga en {@link requisitosNodo} los documentos requeridos de la actividad
+   * asociada al nodo seleccionado, para poder editarlos en el inspector. Resuelve
+   * la actividad desde el signal ya cargado; si por algún motivo no estuviera,
+   * la pide al backend. Para actividades legacy (solo `documentoIds`) deriva los
+   * requisitos con proveedor CLIENTE/obligatorio (igual que actividades.component).
+   */
+  private cargarRequisitosNodo(nodo: NodoDiagrama | null): void {
+    this.documentoAAgregar.set('');
+    if (!nodo || nodo.tipo !== 'actividad' || !nodo.actividadId) {
+      this.requisitosNodo.set([]);
+      return;
+    }
+    const act = this.actividades().find((a) => a.id === nodo.actividadId);
+    if (act) {
+      this.requisitosNodo.set(this.requisitosDesdeActividad(act));
+      return;
+    }
+    // Actividad no presente en el signal: la pedimos al backend.
+    this.actSvc.buscarPorId(nodo.actividadId).subscribe({
+      next: (cargada) => {
+        // Cacheamos para resolver nombre/departamento en el resto del inspector.
+        this.actividades.update((lista) =>
+          lista.some((a) => a.id === cargada.id) ? lista : [...lista, cargada],
+        );
+        // Solo aplica si el nodo seleccionado sigue siendo el mismo.
+        if (this.selectedNodo()?.actividadId === cargada.id) {
+          this.requisitosNodo.set(this.requisitosDesdeActividad(cargada));
+        }
+      },
+      error: () => this.requisitosNodo.set([]),
+    });
+  }
+
+  private requisitosDesdeActividad(act: Actividad): RequisitoDocumento[] {
+    return act.documentosRequeridos && act.documentosRequeridos.length > 0
+      ? act.documentosRequeridos.map((r) => ({ ...r }))
+      : (act.documentoIds ?? []).map((documentoId) => ({
+          documentoId,
+          proveedor: 'CLIENTE' as const,
+          obligatorio: true,
+        }));
+  }
+
+  nombreDocumento(documentoId: string): string {
+    return this.documentos().find((d) => d.id === documentoId)?.nombre ?? documentoId;
+  }
+
+  agregarRequisitoNodo(documentoId: string): void {
+    if (!documentoId) return;
+    const actuales = this.requisitosNodo();
+    if (actuales.some((r) => r.documentoId === documentoId)) return;
+    this.requisitosNodo.set([
+      ...actuales,
+      { documentoId, proveedor: 'CLIENTE', obligatorio: true },
+    ]);
+    this.documentoAAgregar.set('');
+  }
+
+  quitarRequisitoNodo(documentoId: string): void {
+    this.requisitosNodo.set(this.requisitosNodo().filter((r) => r.documentoId !== documentoId));
+  }
+
+  setProveedorNodo(documentoId: string, valor: 'CLIENTE' | 'FUNCIONARIO'): void {
+    this.requisitosNodo.set(
+      this.requisitosNodo().map((r) =>
+        r.documentoId === documentoId ? { ...r, proveedor: valor } : r,
+      ),
+    );
+  }
+
+  setObligatorioNodo(documentoId: string, valor: boolean): void {
+    this.requisitosNodo.set(
+      this.requisitosNodo().map((r) =>
+        r.documentoId === documentoId ? { ...r, obligatorio: valor } : r,
+      ),
+    );
+  }
+
+  /**
+   * Guarda los requisitos editados en la ACTIVIDAD compartida del nodo. Envía el
+   * ActividadRequest COMPLETO (a partir de la actividad ya cargada) para no borrar
+   * sus otros campos. Disponible aunque el diagrama esté publicado: editamos la
+   * actividad, no el diagrama.
+   */
+  guardarRequisitosNodo(): void {
+    const draft = this.inspectorDraft();
+    if (!draft || draft.tipo !== 'actividad' || !draft.actividadId) return;
+    const actividadId = draft.actividadId;
+    const act = this.actividades().find((a) => a.id === actividadId);
+    if (!act) {
+      this.setError('No se encontró la actividad del nodo para guardar los requisitos.');
+      return;
+    }
+
+    const requisitos = this.requisitosNodo();
+    const payload: ActividadRequest = {
+      nombre: act.nombre,
+      descripcion: act.descripcion,
+      departamentoId: act.departamentoId,
+      funcionarioResponsableId: act.funcionarioResponsableId || undefined,
+      slaHoras: act.slaHoras,
+      salidasPosibles: act.salidasPosibles?.length ? act.salidasPosibles : ['completar'],
+      reutilizable: act.reutilizable,
+      // Mantener documentoIds derivado de los requisitos por compatibilidad legacy.
+      documentoIds: requisitos.map((r) => r.documentoId),
+      documentosRequeridos: requisitos,
+    };
+
+    this.guardandoRequisitos.set(true);
+    this.actSvc.actualizar(actividadId, payload).subscribe({
+      next: (actualizada) => {
+        // Refresca el catálogo de actividades para que el resto del inspector
+        // (sublabel, etc.) y la lista reflejen los nuevos requisitos.
+        this.actividades.update((lista) =>
+          lista.map((a) => (a.id === actualizada.id ? actualizada : a)),
+        );
+        this.requisitosNodo.set(this.requisitosDesdeActividad(actualizada));
+        this.guardandoRequisitos.set(false);
+        this.showSuccess('Requisitos de la actividad guardados');
+      },
+      error: (err: unknown) => {
+        this.guardandoRequisitos.set(false);
+        this.setError(
+          this.extractErrorMessage(err, 'Error al guardar los requisitos'),
+          this.extractErrorDetails(err),
+        );
+      },
+    });
   }
 
   // ─── Inspector editable ──────────────────────────────────
@@ -714,6 +959,10 @@ export class DiagramaEditorComponent {
   updateDraftActividad(ev: Event): void {
     const id = (ev.target as HTMLSelectElement).value || undefined;
     this.inspectorDraft.update((d) => (d ? { ...d, actividadId: id } : d));
+    // Recargar los requisitos editables para la nueva actividad seleccionada.
+    const act = id ? this.actividades().find((a) => a.id === id) : null;
+    this.requisitosNodo.set(act ? this.requisitosDesdeActividad(act) : []);
+    this.documentoAAgregar.set('');
   }
 
   guardarInspector(): void {
