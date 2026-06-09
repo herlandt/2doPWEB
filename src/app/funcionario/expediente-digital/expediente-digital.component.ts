@@ -168,6 +168,18 @@ export class ExpedienteDigitalComponent {
     return ['En ejecucion', 'Pendiente de recepcion', 'Observado', 'en_curso'].includes(estado ?? '');
   }
 
+  /**
+   * True si la sección corresponde al NODO ACTUAL del trámite. Solo la sección
+   * del nodo en curso debe ser editable (botones Guardar/Completar). Si aún no
+   * conocemos el nodo actual (p. ej. /estado no respondió), no restringimos para
+   * no romper el comportamiento previo basado solo en el estado de la sección.
+   */
+  esSeccionDelNodoActual(seccion: any): boolean {
+    const actual = this.nodoActualId();
+    if (!actual) return true;
+    return seccion?.infoSeccion?.nodoId === actual;
+  }
+
   /** Sección ya terminada (nuevo "Derivada"; tolera legacy). */
   esSeccionCompletada(estado: string | undefined): boolean {
     return ['Derivada', 'completada', 'completado'].includes(estado ?? '');

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
-import { catchError, forkJoin, of, OperatorFunction } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router } from '@angular/router';
+import { catchError, filter, forkJoin, of, OperatorFunction } from 'rxjs';
 import { ChipRiesgoComponent } from '../../shared/chip-riesgo/chip-riesgo.component';
 import { PrediccionService } from '../../core/services/prediccion.service';
 import { TramiteC2Service } from '../../core/services/tramite-c2.service';
@@ -58,6 +59,22 @@ export class BandejaEntradaComponent {
 
   constructor() {
     this.cargar();
+
+    // Recarga la bandeja cada vez que se navega de vuelta a ella (p. ej. tras
+    // completar un nodo y volver). Sin esto, si Angular reutiliza la instancia
+    // del componente, la lista mostraría el trámite ya avanzado y abrirlo daría
+    // "no autorizado". takeUntilDestroyed evita suscripciones duplicadas/fugas.
+    this.router.events
+      .pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe((e) => {
+        const url = e.urlAfterRedirects.split('?')[0].split('#')[0];
+        if (url === '/funcionario/bandeja') {
+          this.cargar();
+        }
+      });
   }
 
   /** Carga bandeja + riesgo en paralelo. Si la IA cae, bandeja sigue sin chips. */
