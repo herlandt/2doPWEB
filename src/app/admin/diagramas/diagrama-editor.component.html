@@ -662,6 +662,28 @@
                   </div>
                 }
 
+                <!-- Nivel de acceso documental del punto (CU-36, P2 §3.1.2):
+                     se configura EN el diagramador, con la política del diagrama. -->
+                @if (draft.tipo === 'actividad' && draft.actividadId) {
+                  <div class="inspector-row">
+                    <span class="inspector-key">Acceso documental</span>
+                    @if (diagrama()?.politicaId) {
+                      <button
+                        type="button"
+                        class="cre-btn cre-btn-secondary cre-btn-sm"
+                        (click)="abrirPermisosNodo()"
+                      >Configurar nivel de acceso</button>
+                      <span class="inspector-hint">
+                        Lectura / edición / ambos sobre el repositorio para este punto de atención.
+                      </span>
+                    } @else {
+                      <span class="inspector-hint warn">
+                        Vincula el diagrama a una política para configurar el acceso documental.
+                      </span>
+                    }
+                  </div>
+                }
+
                 <div class="inspector-row inspector-meta">
                   <span class="inspector-key">Posición</span>
                   <span class="inspector-val">({{ draft.posicion?.x ?? '—' }}, {{ draft.posicion?.y ?? '—' }})</span>
@@ -691,3 +713,10 @@
     </section>
   }
 }
+
+<!-- Modal de permiso documental con la política del diagrama FIJA (P2 §3.1.2) -->
+<app-permiso-documental-modal
+  [actividad]="actividadParaPermisoNodo()"
+  [politicaFijaId]="diagrama()?.politicaId ?? null"
+  (cerrado)="actividadParaPermisoNodo.set(null)"
+/>

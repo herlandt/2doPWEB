@@ -30,6 +30,7 @@ import {
 import { swimlaneFromX } from './diagram/lane-helpers';
 import { defaultSize } from './diagram/shapes';
 import { FormularioDisenadorComponent } from './formulario-disenador.component';
+import { PermisoDocumentalModalComponent } from '../../shared/permiso-documental-modal/permiso-documental-modal.component';
 import { mensajeAmigable } from '../../core/utils/error-messages';
 
 interface FuncionarioOption {
@@ -41,7 +42,7 @@ interface FuncionarioOption {
 
 @Component({
   selector: 'app-diagrama-editor',
-  imports: [RouterLink, DiagramCanvasComponent, FormularioDisenadorComponent],
+  imports: [RouterLink, DiagramCanvasComponent, FormularioDisenadorComponent, PermisoDocumentalModalComponent],
   templateUrl: './diagrama-editor.component.html',
   styleUrl: './diagrama-editor.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -116,6 +117,21 @@ export class DiagramaEditorComponent {
   // Aviso no bloqueante (p. ej. join → decisión: la pregunta no se podrá mostrar).
   readonly advertencia = signal('');
   readonly selectedNodo = signal<NodoDiagrama | null>(null);
+
+  /**
+   * CU-36 (P2 §3.1.2) — Actividad cuyo nivel de acceso documental se está
+   * configurando desde el inspector del nodo (modal con la política del
+   * diagrama fija). Null = modal cerrado.
+   */
+  readonly actividadParaPermisoNodo = signal<Actividad | null>(null);
+
+  /** Abre el modal de permisos documentales para la actividad del nodo en edición. */
+  abrirPermisosNodo(): void {
+    const draft = this.inspectorDraft();
+    if (!draft?.actividadId) return;
+    const act = this.actividades().find((a) => a.id === draft.actividadId) ?? null;
+    this.actividadParaPermisoNodo.set(act);
+  }
 
   // Borrador del inspector (lo que el usuario está editando)
   readonly inspectorDraft = signal<NodoDiagrama | null>(null);

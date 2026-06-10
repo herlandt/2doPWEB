@@ -20,24 +20,31 @@
             <div class="alert alert-success py-2">{{ exito() }}</div>
           }
 
-          <!-- 1. Política -->
+          <!-- 1. Política (fija cuando se abre desde el diagramador) -->
           <div class="mb-3">
             <label class="form-label fw-semibold">Política *</label>
             <select
               class="form-select"
               [value]="politicaSeleccionadaId()"
               (change)="cambiarPolitica($event)"
+              [disabled]="!!politicaFijaId()"
             >
-              <option value="">— Seleccionar política —</option>
+              <option value="" [selected]="!politicaSeleccionadaId()">— Seleccionar política —</option>
               @for (p of politicas(); track p.id) {
-                <option [value]="p.id">
+                <!-- [selected] por opción: el [value] del select se aplica antes de
+                     que el @for cree las opciones (quedaría el placeholder). -->
+                <option [value]="p.id" [selected]="p.id === politicaSeleccionadaId()">
                   {{ p.nombre }}
                   @if (p.estado !== 'activa') { · ({{ p.estado }}) }
                 </option>
               }
             </select>
             <small class="text-muted">
-              El permiso se aplica a la combinación (política × actividad).
+              @if (politicaFijaId()) {
+                Política del diagrama en edición — el permiso se configura en su contexto.
+              } @else {
+                El permiso se aplica a la combinación (política × actividad).
+              }
             </small>
           </div>
 

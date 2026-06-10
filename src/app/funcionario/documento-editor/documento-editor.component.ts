@@ -117,16 +117,16 @@ export class DocumentoEditorComponent implements OnDestroy {
 
   private cargarDocumentoInfo(): void {
     // Para informativo: nombre del documento, versión actual.
-    // Si falla, no es crítico — la sesión sigue.
+    // Si falla, no es crítico — la sesión sigue. OJO: un 403 del preview ya NO
+    // implica "sin permiso de edición": con nivel SOLO_EDICION el funcionario
+    // puede editar pero no leer (CU-36). El permiso de edición lo decide el
+    // servidor en el JOIN (evento 'kick' si no puede editar).
     this.docSvc.preview(this.documentoId).subscribe({
       next: () => {
         // OK — documento existe
       },
-      error: (err) => {
-        if (err?.status === 403) {
-          this.soloLectura.set(true);
-          this.aviso('warning', 'Sin permiso de edición. Modo solo-lectura.');
-        }
+      error: () => {
+        // No crítico: la autorización de edición la resuelve el kick del server.
       },
     });
   }

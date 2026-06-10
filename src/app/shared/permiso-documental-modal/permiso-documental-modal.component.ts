@@ -44,6 +44,14 @@ export class PermisoDocumentalModalComponent {
 
   /** Si se setea con una actividad, el modal está abierto. */
   readonly actividad = input<Actividad | null>(null);
+  /**
+   * Política FIJA (P2 §3.1.2): cuando el modal se abre desde el DIAGRAMADOR, la
+   * política es la del diagrama en edición — se preselecciona y el dropdown se
+   * bloquea, para que el nivel de acceso se configure en contexto y no haya
+   * riesgo de elegir la política equivocada. Null = comportamiento clásico
+   * (catálogo de actividades, el admin elige la política).
+   */
+  readonly politicaFijaId = input<string | null>(null);
   readonly cerrado = output<void>();
 
   readonly niveles = NIVELES_ACCESO;
@@ -70,6 +78,14 @@ export class PermisoDocumentalModalComponent {
     // Cargar políticas y, al abrir el modal, recargar el permiso vigente.
     this.politicaSvc.listar().subscribe({
       next: (p) => this.politicas.set(p ?? []),
+    });
+
+    // Política fija (diagramador): al abrir, preseleccionarla.
+    effect(() => {
+      const fija = this.politicaFijaId();
+      if (fija && this.actividad()) {
+        this.politicaSeleccionadaId.set(fija);
+      }
     });
 
     // Cada vez que cambia actividad o política seleccionada → recargar
