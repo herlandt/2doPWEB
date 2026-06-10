@@ -22,4 +22,12 @@ export class MetricasService {
   getCuellosDeBotella(): Observable<any[]> {
     return this.http.get<any[]>(`${this.base}/metricas/cuellos-botella`);
   }
+
+  // P1 §7: Dashboard de monitoreo en tiempo real.
+  // Respuesta: { totalTramites, activos, cerrados, porEstado: [{nombre,total}],
+  //              promedioPorDepartamento/promedioPorPolitica: [{nombre,promedioHoras,muestras}],
+  //              cargaPorDepartamento: [{nombre,total}] }
+  getDashboard(): Observable<any> {
+    return this.http.get<any>(`${this.base}/metricas/dashboard`);
+  }
 }

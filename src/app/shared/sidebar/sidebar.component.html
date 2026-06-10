@@ -26,6 +26,15 @@
           <span class="nav-label">Dashboard</span>
         </a>
 
+        <!-- Notificaciones (P1 §7) -->
+        <a routerLink="/notificaciones" routerLinkActive="active" class="nav-item" aria-label="Notificaciones">
+          <span class="nav-icon"><lucide-icon [img]="icons.campana" [size]="18"></lucide-icon></span>
+          <span class="nav-label">Notificaciones</span>
+          @if (notif.noLeidas() > 0) {
+            <span class="badge rounded-pill text-bg-danger ms-auto">{{ notif.noLeidas() }}</span>
+          }
+        </a>
+
         <!-- Grupo Gestión -->
         <div class="nav-group">
           <button
@@ -119,6 +128,15 @@
         <a routerLink="/funcionario/bandeja" routerLinkActive="active" class="nav-item" aria-label="Bandeja de Entrada">
           <span class="nav-icon"><lucide-icon [img]="icons.bandeja" [size]="18"></lucide-icon></span>
           <span class="nav-label">Bandeja de Entrada</span>
+        </a>
+
+        <!-- Notificaciones (P1 §7: aviso cuando un trámite llega a su área, SLA, riesgo) -->
+        <a routerLink="/notificaciones" routerLinkActive="active" class="nav-item" aria-label="Notificaciones">
+          <span class="nav-icon"><lucide-icon [img]="icons.campana" [size]="18"></lucide-icon></span>
+          <span class="nav-label">Notificaciones</span>
+          @if (notif.noLeidas() > 0) {
+            <span class="badge rounded-pill text-bg-danger ms-auto">{{ notif.noLeidas() }}</span>
+          }
         </a>
       }
 

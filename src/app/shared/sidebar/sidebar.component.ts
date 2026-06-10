@@ -34,8 +34,10 @@ import {
   BookOpen,
   FileText,
   Share2,
+  Bell,
 } from 'lucide-angular';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificacionesService } from '../../core/services/notificaciones.service';
 import { ThemeService } from '../../core/services/theme.service';
 
 interface NavItem {
@@ -62,8 +64,14 @@ interface NavGroup {
 export class SidebarComponent {
   readonly auth = inject(AuthService);
   readonly theme = inject(ThemeService);
+  readonly notif = inject(NotificacionesService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
+
+  constructor() {
+    // Badge de notificaciones (P1 §7): el sidebar solo se renderiza logueado.
+    if (this.isBrowser) this.notif.iniciarPolling();
+  }
 
   protected readonly icons = {
     dashboard:    LayoutDashboard as LucideIconData,
@@ -88,6 +96,7 @@ export class SidebarComponent {
     metricas:     BarChart2       as LucideIconData,
     historial:    BookOpen        as LucideIconData,
     compartidos:  Share2          as LucideIconData,
+    campana:      Bell            as LucideIconData,
   };
 
   private readonly storageKey = 'cre.sidebar.collapsed';
@@ -158,6 +167,7 @@ export class SidebarComponent {
     { label: 'Reportes IA',   icon: this.icons.aiSparkles,  link: '/admin/reportes-naturales', roles: ['admin'] },
     // "Mis Trámites" se quitó por duplicar la Bandeja de Entrada (mismo endpoint).
     { label: 'Bandeja',       icon: this.icons.bandeja,     link: '/funcionario/bandeja',      roles: ['funcionario'] },
+    { label: 'Notificaciones', icon: this.icons.campana,    link: '/notificaciones',           roles: ['admin', 'funcionario'] },
   ];
 
   readonly visibleFlatItems = computed(() => {

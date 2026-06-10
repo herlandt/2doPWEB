@@ -160,6 +160,12 @@ export const routes: Routes = [
 		],
 	},
 	{
+		path: 'notificaciones',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./shared/notificaciones/notificaciones.component').then((m) => m.NotificacionesComponent),
+	},
+	{
 		path: 'no-autorizado',
 		loadComponent: () =>
 			import('./shared/pages/no-autorizado.component').then((m) => m.NoAutorizadoComponent),

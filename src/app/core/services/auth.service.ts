@@ -8,6 +8,7 @@ import { LoginRequest, LoginResponse } from '../models/auth.model';
 import { Usuario } from '../models/usuario.model';
 import { ColaboracionRtService } from './colaboracion-rt.service';
 import { ColaboracionDocumentoRtService } from './colaboracion-documento-rt.service';
+import { NotificacionesService } from './notificaciones.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -55,6 +56,13 @@ export class AuthService {
     // (ambos servicios RT inyectan AuthService).
     this.injector.get(ColaboracionRtService).forzarCierre();
     this.injector.get(ColaboracionDocumentoRtService).forzarCierre();
+
+    // Detener el polling de notificaciones y limpiar la lista: sin esto seguirían
+    // saliendo GETs sin token cada 30s tras el logout, y un segundo usuario en la
+    // misma sesión SPA vería el badge/lista del usuario anterior hasta 30s.
+    const notif = this.injector.get(NotificacionesService);
+    notif.detenerPolling();
+    notif.lista.set([]);
 
     if (this.isBrowser) {
       localStorage.removeItem('auth');
