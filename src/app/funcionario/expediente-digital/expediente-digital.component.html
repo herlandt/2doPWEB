@@ -144,6 +144,69 @@
                             }
                           </select>
                         }
+                        @case ('radio') {
+                          <div>
+                            @for (op of (campo.opciones || []); track op) {
+                              <div class="form-check form-check-inline">
+                                <input
+                                  type="radio"
+                                  class="form-check-input"
+                                  name="radio-{{ campo.id }}"
+                                  [checked]="valorActual(campo) === op"
+                                  [disabled]="!editable"
+                                  (change)="setCampoRadio(campo.id, op)"
+                                />
+                                <label class="form-check-label small">{{ op }}</label>
+                              </div>
+                            }
+                          </div>
+                        }
+                        @case ('archivo') {
+                          @if (valorActual(campo)) {
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                              <span class="small text-truncate">
+                                📎 {{ docDeCampo(campo)?.nombreLogico || 'Documento adjunto' }}
+                              </span>
+                              <button type="button" class="btn btn-sm btn-outline-primary"
+                                      (click)="verArchivoCampo(campo)">Ver</button>
+                              @if (editable) {
+                                <!-- Reemplazar = nueva VERSIÓN del mismo documento (CU-35) -->
+                                <label class="btn btn-sm btn-outline-secondary mb-0">
+                                  Reemplazar
+                                  <input type="file" hidden
+                                         (change)="reemplazarCampoArchivo(campo, $event)" />
+                                </label>
+                              }
+                            </div>
+                          } @else if (editable) {
+                            <input
+                              type="file"
+                              class="form-control form-control-sm"
+                              [disabled]="subiendoCampoId() === campo.id"
+                              (change)="subirCampoArchivo(seccion, campo, $event)"
+                            />
+                            @if (subiendoCampoId() === campo.id) {
+                              <small class="text-muted">
+                                <span class="spinner-border spinner-border-sm me-1"></span>Subiendo…
+                              </small>
+                            }
+                          } @else {
+                            <span class="small text-muted">— Sin archivo —</span>
+                          }
+                        }
+                        @case ('calculado') {
+                          <!-- Editable: se recalcula en vivo. Cerrada/histórica: se muestra
+                               el valor PERSISTIDO (no recalcular con una fórmula que el
+                               admin pudo cambiar después). -->
+                          <input
+                            type="text"
+                            class="form-control form-control-sm bg-body-tertiary"
+                            [value]="editable ? valorCalculado(seccion, campo) : (campo.valor || valorCalculado(seccion, campo))"
+                            readonly
+                            [title]="'Calculado: ' + (campo.formula || '')"
+                            placeholder="ƒ se calcula de otros campos"
+                          />
+                        }
                         @default {
                           <input
                             type="text"

@@ -29,6 +29,7 @@ const TIPOS_VISUAL: TipoCampoVisual[] = [
   { value: 'radio',    label: 'Opción única',      icono: '◉',  descripcion: 'Botones de opción (radio)',       necesitaOpciones: true,  etiquetaDefault: 'Elija una opción' },
   { value: 'checkbox', label: 'Casilla (sí/no)',   icono: '☑',  descripcion: 'Una casilla marcable',            necesitaOpciones: false, etiquetaDefault: 'Acepto' },
   { value: 'archivo',  label: 'Adjuntar archivo',  icono: '📎', descripcion: 'Subir un documento o imagen',     necesitaOpciones: false, etiquetaDefault: 'Adjuntar archivo' },
+  { value: 'calculado', label: 'Calculado',        icono: 'ƒ',  descripcion: 'Derivado de otros campos (fórmula)', necesitaOpciones: false, etiquetaDefault: 'Campo calculado' },
 ];
 
 function slugify(input: string): string {
@@ -297,6 +298,8 @@ export class FormularioDisenadorComponent {
       obligatorio: false,
       opciones: meta.necesitaOpciones ? ['Opción 1', 'Opción 2'] : undefined,
       validacionRegex: undefined,
+      // El backend exige fórmula en los calculados; '0' como placeholder editable.
+      formula: tipo === 'calculado' ? '0' : undefined,
       orden: ordenTemp,
     };
 
@@ -406,6 +409,7 @@ export class FormularioDisenadorComponent {
       obligatorio: sel.obligatorio,
       opciones: this.necesitaOpciones() ? opciones : undefined,
       validacionRegex: sel.validacionRegex?.trim() || undefined,
+      formula: sel.tipo === 'calculado' ? (sel.formula?.trim() || '0') : undefined,
       orden: sel.orden,
     };
 
@@ -457,6 +461,7 @@ export class FormularioDisenadorComponent {
       obligatorio: c.obligatorio,
       opciones: c.opciones ? [...c.opciones] : undefined,
       validacionRegex: c.validacionRegex,
+      formula: c.tipo === 'calculado' ? (c.formula || '0') : undefined,
       orden: this.campos().length + 1,
     };
 

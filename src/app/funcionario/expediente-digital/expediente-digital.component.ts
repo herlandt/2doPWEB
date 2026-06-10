@@ -214,6 +214,215 @@ export class ExpedienteDigitalComponent {
     this.valoresEnEdicion.update((curr) => ({ ...curr, [campoId]: target.checked ? 'true' : 'false' }));
   }
 
+  /** Campo tipo 'radio': fija directamente la opción elegida. */
+  setCampoRadio(campoId: string, opcion: string): void {
+    this.valoresEnEdicion.update((curr) => ({ ...curr, [campoId]: opcion }));
+  }
+
+  /** Valor vigente de un campo (lo editado, o lo persistido). */
+  valorActual(campo: any): string {
+    const editado = this.valoresEnEdicion()[campo.id];
+    return editado !== undefined ? editado : (campo.valor ?? '');
+  }
+
+  // ── Campo tipo 'calculado': evaluación segura de la fórmula ─────────────
+
+  /**
+   * Evalúa la fórmula del campo sobre los valores vigentes de su sección
+   * (otros campos referenciados por su nombre técnico). Devuelve '' si la
+   * fórmula no es evaluable (referencias vacías o sintaxis inválida).
+   */
+  valorCalculado(seccion: any, campo: any, visitados?: Set<string>): string {
+    const formula = campo?.formula;
+    if (!formula) return '';
+    // Guard de ciclos para fórmulas encadenadas (calculado que referencia calculado).
+    const vistos = visitados ?? new Set<string>();
+    if (vistos.has(campo.id)) return '';
+    vistos.add(campo.id);
+
+    const valores = new Map<string, number>();
+    for (const c of seccion?.campos ?? []) {
+      if (!c?.nombre || c.id === campo.id) continue;
+      // Encadenado: un calculado referenciado se evalúa EN VIVO (no su valor
+      // persistido, que puede estar desfasado hasta el próximo guardado).
+      const crudo = c.tipo === 'calculado'
+        ? this.valorCalculado(seccion, c, vistos)
+        : this.valorActual(c);
+      const n = parseFloat(crudo);
+      if (!isNaN(n)) valores.set(String(c.nombre), n);
+    }
+    const r = this.evaluarExpresion(formula, valores);
+    if (r === null || !isFinite(r)) return '';
+    return String(Math.round(r * 100) / 100);
+  }
+
+  /**
+   * Mini-evaluador aritmético SEGURO (sin eval): números, identificadores de
+   * campo, + - * / y paréntesis. Gramática por descenso recursivo.
+   */
+  private evaluarExpresion(expr: string, vars: Map<string, number>): number | null {
+    const tokens = expr.match(/\d+(?:\.\d+)?|[A-Za-z_][A-Za-z0-9_]*|[()+\-*/]/g);
+    if (!tokens || tokens.join('') !== expr.replace(/\s+/g, '')) return null;
+    let pos = 0;
+    const peek = () => tokens[pos];
+    const next = () => tokens[pos++];
+
+    const factor = (): number | null => {
+      const t = peek();
+      if (t === undefined) return null;
+      if (t === '-') { next(); const f = factor(); return f === null ? null : -f; }
+      if (t === '(') {
+        next();
+        const e = suma();
+        if (peek() !== ')') return null;
+        next();
+        return e;
+      }
+      if (/^\d/.test(t)) { next(); return parseFloat(t); }
+      if (/^[A-Za-z_]/.test(t)) {
+        next();
+        return vars.has(t) ? (vars.get(t) as number) : null;
+      }
+      return null;
+    };
+    const producto = (): number | null => {
+      let v = factor();
+      if (v === null) return null;
+      while (peek() === '*' || peek() === '/') {
+        const op = next();
+        const f = factor();
+        if (f === null) return null;
+        v = op === '*' ? v * f : v / f;
+      }
+      return v;
+    };
+    const suma = (): number | null => {
+      let v = producto();
+      if (v === null) return null;
+      while (peek() === '+' || peek() === '-') {
+        const op = next();
+        const p = producto();
+        if (p === null) return null;
+        v = op === '+' ? v + p : v - p;
+      }
+      return v;
+    };
+
+    const resultado = suma();
+    return pos === tokens.length ? resultado : null;
+  }
+
+  // ── Campo tipo 'archivo': subir/ver el adjunto de la sección ────────────
+
+  readonly subiendoCampoId = signal<string | null>(null);
+
+  /** DocumentoArchivo referenciado por un campo adjunto (su valor = documentoId). */
+  docDeCampo(campo: any): DocumentoArchivo | null {
+    const id = this.valorActual(campo);
+    if (!id) return null;
+    return this.documentos().find((d) => d.id === id) ?? null;
+  }
+
+  /** Sube el archivo elegido y enlaza su documentoId como valor del campo. */
+  subirCampoArchivo(seccion: any, campo: any, ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    if (!archivo) return;
+    // En PARALELO el trámite no tiene nodo único (actividadActualId null): se
+    // manda el nodoId de la SECCIÓN de esta rama y el backend resuelve la
+    // actividad de ese nodo.
+    const actividadId = this.actividadActualId() ?? '';
+    const nodoId = this.nodoActualId() ?? seccion?.infoSeccion?.nodoId ?? undefined;
+    if (!actividadId && !nodoId) {
+      this.error.set('No se pudo determinar la actividad actual del trámite.');
+      setTimeout(() => this.error.set(''), 4000);
+      return;
+    }
+    this.subiendoCampoId.set(campo.id);
+    this.docSvc
+      .subir(this.tramiteId, archivo, {
+        tramiteId: this.tramiteId,
+        actividadId,
+        nodoId,
+        tipoDocumento: this.tipoDesdeArchivo(archivo),
+        nombreLogico: `${campo.etiqueta || campo.nombre} — ${archivo.name}`,
+        obligatorio: !!campo.obligatorio,
+      })
+      .subscribe({
+        next: (resp) => {
+          this.subiendoCampoId.set(null);
+          // El valor del campo es el id del documento del repositorio.
+          this.valoresEnEdicion.update((curr) => ({
+            ...curr,
+            [campo.id]: resp.documentoArchivoId,
+          }));
+          this.cargarDocumentos(); // para mostrar nombre/Ver en el render
+          input.value = '';
+        },
+        error: (err: any) => {
+          this.subiendoCampoId.set(null);
+          this.error.set(this.mensajeErrorSubida(err));
+          setTimeout(() => this.error.set(''), 6000);
+          input.value = '';
+        },
+      });
+  }
+
+  /**
+   * "Reemplazar" = NUEVA VERSIÓN del mismo documento (CU-35): conserva el
+   * documentoId del campo (no requiere re-guardar el borrador), mantiene el
+   * historial y no deja duplicados activos en el repositorio.
+   */
+  reemplazarCampoArchivo(campo: any, ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    const documentoId = this.valorActual(campo);
+    if (!archivo || !documentoId) return;
+    this.subiendoCampoId.set(campo.id);
+    this.docSvc
+      .nuevaVersion(documentoId, archivo, `Reemplazo desde el campo "${campo.etiqueta || campo.nombre}"`)
+      .subscribe({
+        next: () => {
+          this.subiendoCampoId.set(null);
+          this.cargarDocumentos();
+          input.value = '';
+        },
+        error: (err: any) => {
+          this.subiendoCampoId.set(null);
+          this.error.set(this.mensajeErrorSubida(err));
+          setTimeout(() => this.error.set(''), 6000);
+          input.value = '';
+        },
+      });
+  }
+
+  /** Abre el adjunto de un campo aunque aún no esté en la lista de documentos. */
+  verArchivoCampo(campo: any): void {
+    const id = this.valorActual(campo);
+    if (!id) return;
+    this.docSvc.preview(id).subscribe({
+      next: (p) => {
+        if (p?.urlPreview) window.open(p.urlPreview, '_blank', 'noopener');
+      },
+      error: () => {
+        this.error.set('No se pudo abrir el adjunto.');
+        setTimeout(() => this.error.set(''), 4000);
+      },
+    });
+  }
+
+  /** Deriva el tipo del catálogo a partir de la extensión del archivo. */
+  private tipoDesdeArchivo(archivo: File): TipoDocumento {
+    const ext = (archivo.name.split('.').pop() ?? '').toLowerCase();
+    if (ext === 'pdf') return 'PDF';
+    if (['doc', 'docx'].includes(ext)) return 'WORD';
+    if (['xls', 'xlsx'].includes(ext)) return 'EXCEL';
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return 'IMAGEN';
+    if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) return 'AUDIO';
+    if (['mp4', 'mov', 'avi', 'webm'].includes(ext)) return 'VIDEO';
+    return 'OTRO';
+  }
+
   guardarBorradorSeccion(seccion: any): void {
     const seccionId = seccion?.infoSeccion?.id;
     if (!seccionId) return;
@@ -222,8 +431,11 @@ export class ExpedienteDigitalComponent {
     const campos = (seccion.campos ?? [])
       .map((c: any) => ({
         campoId: c.id,
-        // Si el usuario tocó el campo usamos lo editado; si no, dejamos el valor que ya venía.
-        valor: editados[c.id] !== undefined ? editados[c.id] : (c.valor ?? ''),
+        // Calculados: se persiste el valor DERIVADO de su fórmula (el usuario no
+        // los edita). Resto: lo editado o, si no se tocó, el valor que ya venía.
+        valor: c.tipo === 'calculado'
+          ? this.valorCalculado(seccion, c)
+          : (editados[c.id] !== undefined ? editados[c.id] : (c.valor ?? '')),
       }))
       .filter((c: any) => c.campoId);
 
@@ -647,7 +859,9 @@ export class ExpedienteDigitalComponent {
     switch (campo?.tipo) {
       case 'checkbox':
         return /^(true|s[ií]|1|ok|x)$/i.test(valor) ? 'true' : 'false';
-      case 'select': {
+      case 'select':
+      case 'radio': {
+        // Dominio cerrado: solo se aplica si coincide con una opción definida.
         const opciones: string[] = campo.opciones ?? [];
         const match = opciones.find((o) => o.toLowerCase() === valor.toLowerCase());
         return match ?? null; // si no coincide con una opción válida, no se aplica

@@ -201,6 +201,11 @@
                         </label>
                       }
                       @case ('archivo')  { <input type="file" class="cre-input" disabled /> }
+                      @case ('calculado') {
+                        <input class="cre-input fd-input-mono" disabled
+                               [value]="'ƒ ' + (c.formula || '…')"
+                               title="Solo lectura: se calcula con la fórmula" />
+                      }
                     }
                   </div>
                 </div>
@@ -254,6 +259,24 @@
                     @if (opcionesPreview().length > 0) {
                       <small class="fd-hint">{{ opcionesPreview().length }} opciones detectadas.</small>
                     }
+                  </div>
+                }
+
+                @if (sel.tipo === 'calculado') {
+                  <div class="form-row">
+                    <label class="form-label">
+                      Fórmula <span class="req">*</span>
+                      <small class="fd-hint">
+                        Aritmética sobre otros campos de la sección, por su ID interno.
+                        Ej: monto * 0.13 + tarifa
+                      </small>
+                    </label>
+                    <input
+                      class="cre-input fd-input-mono"
+                      [value]="sel.formula ?? ''"
+                      (input)="updateCampoProperty('formula', $any($event.target).value)"
+                      placeholder="Ej. monto * 0.13"
+                    />
                   </div>
                 }
 

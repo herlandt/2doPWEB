@@ -6,7 +6,8 @@ export type TipoCampo =
   | 'select'
   | 'checkbox'
   | 'radio'
-  | 'archivo';
+  | 'archivo'
+  | 'calculado';
 
 export interface FormularioPlantilla {
   id: string;
@@ -32,6 +33,8 @@ export interface CampoPlantilla {
   obligatorio: boolean;
   opciones?: string[];
   validacionRegex?: string;
+  /** Solo tipo 'calculado': expresión aritmética sobre otros campos (por nombre). */
+  formula?: string;
   orden: number;
 }
 
@@ -42,6 +45,8 @@ export interface CampoPlantillaRequest {
   obligatorio: boolean;
   opciones?: string[];
   validacionRegex?: string;
+  /** Solo tipo 'calculado'. */
+  formula?: string;
   orden: number;
 }
 
@@ -54,4 +59,5 @@ export const TIPOS_CAMPO: { value: TipoCampo; label: string; necesitaOpciones: b
   { value: 'radio', label: 'Opción única (radio)', necesitaOpciones: true },
   { value: 'checkbox', label: 'Casilla (check)', necesitaOpciones: false },
   { value: 'archivo', label: 'Adjunto', necesitaOpciones: false },
+  { value: 'calculado', label: 'Calculado (fórmula)', necesitaOpciones: false },
 ];
