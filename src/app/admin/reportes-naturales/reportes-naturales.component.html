@@ -85,15 +85,31 @@
             }
           </span>
         </div>
-        <button
-          class="btn btn-sm btn-outline-success"
-          type="button"
-          (click)="exportarCsv()"
-          [disabled]="!r.filasMuestra.length"
-        >
-          Descargar CSV
-        </button>
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-outline-success" type="button"
+            (click)="exportarCsv()" [disabled]="!r.filasMuestra.length">CSV</button>
+          <button class="btn btn-outline-success" type="button"
+            (click)="exportarArchivo('xlsx')" [disabled]="!r.totalFilas">Excel</button>
+          <button class="btn btn-outline-danger" type="button"
+            (click)="exportarArchivo('pdf')" [disabled]="!r.totalFilas">PDF</button>
+        </div>
       </div>
+
+      <!-- Gráfico (reportes de conteo/agrupación) -->
+      @if (esConteo() && chart().length) {
+        <div class="card-body border-bottom">
+          <h2 class="h6 text-muted mb-3">Gráfico</h2>
+          @for (b of chart(); track b.label) {
+            <div class="d-flex align-items-center mb-2">
+              <div class="text-truncate me-2" style="width: 30%;" [title]="b.label">{{ b.label }}</div>
+              <div class="flex-grow-1 bg-light rounded" style="height: 1.25rem;">
+                <div class="bg-primary rounded" [style.width.%]="b.pct" style="height: 100%;"></div>
+              </div>
+              <div class="ms-2 small fw-semibold" style="width: 3rem; text-align: right;">{{ b.value }}</div>
+            </div>
+          }
+        </div>
+      }
 
       @if (r.filasMuestra.length === 0) {
         <div class="card-body text-center text-muted py-4">

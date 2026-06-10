@@ -25,4 +25,13 @@ export class ReporteNaturalService {
       req,
     );
   }
+
+  /** Exporta el reporte de la consulta a Excel (xlsx) o PDF — devuelve el archivo. */
+  exportar(consulta: string, formato: 'xlsx' | 'pdf'): Observable<Blob> {
+    return this.http.post(
+      `${this.api}/reportes/consulta-natural/exportar?formato=${formato}`,
+      { consulta },
+      { responseType: 'blob' },
+    );
+  }
 }

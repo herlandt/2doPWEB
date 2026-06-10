@@ -46,6 +46,25 @@ export class ReportesNaturalesComponent {
     return Object.keys(r.filasMuestra[0]);
   });
 
+  /** Es un reporte de CONTEO/agrupación (2 columnas y una es 'total') → graficable. */
+  readonly esConteo = computed<boolean>(() => {
+    const cols = this.columnas();
+    return cols.length === 2 && cols.includes('total');
+  });
+
+  /** Datos del gráfico de barras (etiqueta, valor, % relativo al máximo). */
+  readonly chart = computed<{ label: string; value: number; pct: number }[]>(() => {
+    const r = this.resultado();
+    if (!r || !this.esConteo()) return [];
+    const labelCol = this.columnas().find((c) => c !== 'total')!;
+    const rows = r.filasMuestra.map((f) => ({
+      label: this.formatear((f as any)[labelCol]),
+      value: Number((f as any)['total']) || 0,
+    }));
+    const max = Math.max(1, ...rows.map((x) => x.value));
+    return rows.map((x) => ({ ...x, pct: Math.round((x.value / max) * 100) }));
+  });
+
   ejecutar(): void {
     const consulta = this.consulta().trim();
     if (!consulta || this.loading()) return;
@@ -120,6 +139,23 @@ export class ReportesNaturalesComponent {
     if (valor == null) return '—';
     if (typeof valor === 'object') return JSON.stringify(valor);
     return String(valor);
+  }
+
+  /** Descarga el reporte como Excel o PDF (lo genera el backend reusando POI/iText). */
+  exportarArchivo(formato: 'xlsx' | 'pdf'): void {
+    const consulta = this.consulta().trim();
+    if (!consulta) return;
+    this.svc.exportar(consulta, formato).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reporte.${formato}`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err: any) => this.error.set(mensajeAmigable(err)),
+    });
   }
 
   exportarCsv(): void {
