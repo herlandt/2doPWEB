@@ -93,7 +93,7 @@
     <section class="diagram-page">
       <header class="diagram-head">
         <div class="diagram-head-left">
-          <a routerLink="/admin/diagramas" class="cre-btn cre-btn-secondary cre-btn-sm">← Volver</a>
+          <a [routerLink]="volverDiagramasUrl()" class="cre-btn cre-btn-secondary cre-btn-sm">← Volver</a>
           <div class="diagram-titles">
             <h1 class="diagram-title">{{ data.nombre }}</h1>
             <p class="diagram-meta">
@@ -107,24 +107,30 @@
           </div>
         </div>
         <div class="d-flex gap-2 align-items-center">
-          @if (data.estado === 'borrador') {
-            <button type="button" class="cre-btn cre-btn-success cre-btn-sm" (click)="cambiarEstado('publicado')">
-              Publicar
+          <!-- Gobierno del diagrama: SOLO admin (el colaborador edita el lienzo,
+               no publica/archiva ni gestiona calles o invitaciones). -->
+          @if (esAdminUsuario()) {
+            @if (data.estado === 'borrador') {
+              <button type="button" class="cre-btn cre-btn-success cre-btn-sm" (click)="cambiarEstado('publicado')">
+                Publicar
+              </button>
+            }
+            @if (data.estado === 'publicado') {
+              <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="cambiarEstado('archivado')">
+                Archivar
+              </button>
+            }
+            <!-- Agregar calle (swimlane) — permitido también en diagramas activos -->
+            <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="abrirAgregarCalle()">
+              + Agregar calle
             </button>
-          }
-          @if (data.estado === 'publicado') {
-            <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="cambiarEstado('archivado')">
-              Archivar
+            <!-- CU-15: botón de colaboración -->
+            <button type="button" class="cre-btn cre-btn-primary cre-btn-sm" (click)="abrirModalColab()">
+              + Invitar Colaborador
             </button>
+          } @else {
+            <span class="cre-badge cre-badge-brand" title="Editas como colaborador invitado">Colaborador</span>
           }
-          <!-- Agregar calle (swimlane) — permitido también en diagramas activos -->
-          <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="abrirAgregarCalle()">
-            + Agregar calle
-          </button>
-          <!-- CU-15: botón de colaboración -->
-          <button type="button" class="cre-btn cre-btn-primary cre-btn-sm" (click)="abrirModalColab()">
-            + Invitar Colaborador
-          </button>
         </div>
       </header>
 
@@ -548,7 +554,9 @@
                     </select>
                     <div class="inspector-inline">
                       <span class="inspector-hint">La actividad depende del departamento.</span>
-                      <button type="button" class="inspector-link" (click)="abrirModalActividad()">+ Crear</button>
+                      @if (esAdminUsuario()) {
+                        <button type="button" class="inspector-link" (click)="abrirModalActividad()">+ Crear</button>
+                      }
                     </div>
                     @if (!draft.departamentoId) {
                       <span class="inspector-hint warn">Asigna un departamento primero.</span>
@@ -578,7 +586,11 @@
                       </span>
                     } @else {
                       <span class="inspector-hint">
-                        Editan la actividad compartida. Disponible aunque el diagrama esté publicado.
+                        @if (esAdminUsuario()) {
+                          Editan la actividad compartida. Disponible aunque el diagrama esté publicado.
+                        } @else {
+                          Solo lectura: los documentos requeridos editan la actividad compartida (solo admin).
+                        }
                       </span>
 
                       @if (requisitosNodo().length === 0) {
@@ -601,6 +613,7 @@
                                   <select
                                     class="cre-input req-input"
                                     [value]="req.proveedor"
+                                    [disabled]="!esAdminUsuario()"
                                     (change)="setProveedorNodo(req.documentoId, $any($event.target).value)"
                                   >
                                     <option value="CLIENTE">Cliente</option>
@@ -611,16 +624,19 @@
                                   <input
                                     type="checkbox"
                                     [checked]="req.obligatorio"
+                                    [disabled]="!esAdminUsuario()"
                                     (change)="setObligatorioNodo(req.documentoId, $any($event.target).checked)"
                                   />
                                 </td>
                                 <td>
-                                  <button
-                                    type="button"
-                                    class="req-remove"
-                                    title="Quitar documento"
-                                    (click)="quitarRequisitoNodo(req.documentoId)"
-                                  >×</button>
+                                  @if (esAdminUsuario()) {
+                                    <button
+                                      type="button"
+                                      class="req-remove"
+                                      title="Quitar documento"
+                                      (click)="quitarRequisitoNodo(req.documentoId)"
+                                    >×</button>
+                                  }
                                 </td>
                               </tr>
                             }
@@ -628,8 +644,9 @@
                         </table>
                       }
 
-                      <!-- Fila para agregar un documento del catálogo -->
-                      @if (documentosDisponiblesNodo().length > 0) {
+                      <!-- Fila para agregar un documento del catálogo (solo admin:
+                           muta la Actividad compartida, PUT /api/actividades) -->
+                      @if (esAdminUsuario() && documentosDisponiblesNodo().length > 0) {
                         <div class="req-add">
                           <select
                             class="cre-input req-input"
@@ -650,21 +667,24 @@
                         </div>
                       }
 
-                      <button
-                        type="button"
-                        class="cre-btn cre-btn-primary cre-btn-sm req-save"
-                        [disabled]="guardandoRequisitos()"
-                        (click)="guardarRequisitosNodo()"
-                      >
-                        @if (guardandoRequisitos()) { Guardando… } @else { Guardar requisitos }
-                      </button>
+                      @if (esAdminUsuario()) {
+                        <button
+                          type="button"
+                          class="cre-btn cre-btn-primary cre-btn-sm req-save"
+                          [disabled]="guardandoRequisitos()"
+                          (click)="guardarRequisitosNodo()"
+                        >
+                          @if (guardandoRequisitos()) { Guardando… } @else { Guardar requisitos }
+                        </button>
+                      }
                     }
                   </div>
                 }
 
                 <!-- Nivel de acceso documental del punto (CU-36, P2 §3.1.2):
-                     se configura EN el diagramador, con la política del diagrama. -->
-                @if (draft.tipo === 'actividad' && draft.actividadId) {
+                     se configura EN el diagramador, con la política del diagrama.
+                     Solo admin: el upsert del permiso es admin-only (RN-P03). -->
+                @if (esAdminUsuario() && draft.tipo === 'actividad' && draft.actividadId) {
                   <div class="inspector-row">
                     <span class="inspector-key">Acceso documental</span>
                     @if (diagrama()?.politicaId) {

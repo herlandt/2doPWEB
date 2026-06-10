@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 import {
   ColaboracionService,
   CompartidoConmigo,
@@ -106,7 +107,7 @@ import { mensajeAmigable } from '../../core/utils/error-messages';
                       {{ c.fechaRespuesta ? (c.fechaRespuesta | date: 'short') : '—' }}
                     </td>
                     <td class="text-end">
-                      <a class="btn btn-sm btn-primary" [routerLink]="['/admin/diagramas', c.diagramaId]">
+                      <a class="btn btn-sm btn-primary" [routerLink]="[baseDiagramas(), c.diagramaId]">
                         Abrir diagrama
                       </a>
                     </td>
@@ -122,6 +123,12 @@ import { mensajeAmigable } from '../../core/utils/error-messages';
 })
 export class DiagramasCompartidosComponent {
   private readonly svc = inject(ColaboracionService);
+  private readonly auth = inject(AuthService);
+
+  /** Ruta base del editor según el rol (la vista la usan admin Y funcionario). */
+  readonly baseDiagramas = computed(() =>
+    this.auth.isAdmin() ? '/admin/diagramas' : '/funcionario/diagramas',
+  );
 
   readonly items = signal<CompartidoConmigo[]>([]);
   readonly loading = signal(false);

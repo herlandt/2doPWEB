@@ -64,6 +64,14 @@ export class DiagramaEditorComponent {
   readonly diagramaId = this.route.snapshot.params['id'] as string | undefined;
   readonly politicaIdPreseleccionada = (this.route.snapshot.queryParamMap.get('politicaId') ?? '') as string;
 
+  // P1 §7 — el editor también lo abre el FUNCIONARIO colaborador (ruta
+  // /funcionario/diagramas/:id). Las acciones de gobierno del diagrama
+  // (publicar/archivar/calles/invitar) siguen siendo solo del admin.
+  readonly esAdminUsuario = computed(() => this.auth.isAdmin());
+  readonly volverDiagramasUrl = computed(() =>
+    this.auth.isAdmin() ? '/admin/diagramas' : '/funcionario/diagramas/compartidos',
+  );
+
   readonly diagrama = signal<DiagramaWorkflow | null>(null);
 
   /**
@@ -445,6 +453,7 @@ export class DiagramaEditorComponent {
   }
 
   abrirModalDepto(): void {
+    if (!this.esAdminUsuario()) return; // crear departamentos es solo del admin
     this.deptoCodigo.set('');
     this.deptoNombre.set('');
     this.deptoDescripcion.set('');
@@ -456,6 +465,7 @@ export class DiagramaEditorComponent {
   }
 
   abrirModalActividad(): void {
+    if (!this.esAdminUsuario()) return; // crear actividades es solo del admin
     this.actNombre.set('');
     this.actDescripcion.set('');
     this.actFuncionarioResponsableId.set('');

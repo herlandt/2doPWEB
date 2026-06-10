@@ -138,6 +138,12 @@
             <span class="badge rounded-pill text-bg-danger ms-auto">{{ notif.noLeidas() }}</span>
           }
         </a>
+
+        <!-- P1 §7 — diagramas que le compartieron para colaborar (editor) -->
+        <a routerLink="/funcionario/diagramas/compartidos" routerLinkActive="active" class="nav-item" aria-label="Compartidos conmigo">
+          <span class="nav-icon"><lucide-icon [img]="icons.compartidos" [size]="18"></lucide-icon></span>
+          <span class="nav-label">Compartidos conmigo</span>
+        </a>
       }
 
     } @else {

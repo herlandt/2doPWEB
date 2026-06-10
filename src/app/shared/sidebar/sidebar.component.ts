@@ -168,6 +168,7 @@ export class SidebarComponent {
     // "Mis Trámites" se quitó por duplicar la Bandeja de Entrada (mismo endpoint).
     { label: 'Bandeja',       icon: this.icons.bandeja,     link: '/funcionario/bandeja',      roles: ['funcionario'] },
     { label: 'Notificaciones', icon: this.icons.campana,    link: '/notificaciones',           roles: ['admin', 'funcionario'] },
+    { label: 'Compartidos conmigo', icon: this.icons.compartidos, link: '/funcionario/diagramas/compartidos', roles: ['funcionario'] },
   ];
 
   readonly visibleFlatItems = computed(() => {

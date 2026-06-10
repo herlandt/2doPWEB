@@ -157,6 +157,19 @@ export const routes: Routes = [
 				loadComponent: () =>
 					import('./funcionario/documento-editor/documento-editor.component').then((m) => m.DocumentoEditorComponent),
 			},
+			// P1 §7 — colaboración: el funcionario invitado como editor abre y
+			// edita los diagramas que le compartieron (mismos componentes que admin;
+			// el backend valida creador/colaborador-editor en cada mutación).
+			{
+				path: 'diagramas/compartidos',
+				loadComponent: () =>
+					import('./admin/diagramas/diagramas-compartidos.component').then((m) => m.DiagramasCompartidosComponent),
+			},
+			{
+				path: 'diagramas/:id',
+				loadComponent: () =>
+					import('./admin/diagramas/diagrama-editor.component').then((m) => m.DiagramaEditorComponent),
+			},
 		],
 	},
 	{
