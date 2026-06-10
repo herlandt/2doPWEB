@@ -155,6 +155,19 @@ export class DocumentoEditorComponent implements OnDestroy {
   }
 
   private onEventoEdicion(ev: DocumentoEventoRT): void {
+    // SNAPSHOT (al unirse alguien): el servidor manda el contenido vivo de la
+    // sesión. Se procesa ANTES del echo-suppression porque el autor del snapshot
+    // es el que se une (yo mismo, en mi join). Solo se aplica sobre un editor
+    // VACÍO: el componente siempre arranca vacío (el join snapshot entra), y así
+    // nunca pisa texto ya tecleado (ni en la ventana pre-join ni en otra pestaña).
+    if (ev.tipo === 'snapshot') {
+      const payload = ev.payload as { contenido?: string };
+      if (typeof payload?.contenido === 'string' && payload.contenido && !this.contenido()) {
+        this.contenido.set(payload.contenido);
+      }
+      return;
+    }
+
     // Echo-suppression: ignoro mis propias ops
     if (ev.autorId === this.miUserId) return;
     if (ev.tipo !== 'op') return;
@@ -185,6 +198,29 @@ export class DocumentoEditorComponent implements OnDestroy {
     if (!this.conectado()) return;
     const pos = (ev.target as HTMLTextAreaElement).selectionStart ?? 0;
     this.rt.publicarCursor(this.documentoId, pos);
+  }
+
+  readonly guardandoVersion = signal(false);
+
+  /**
+   * Persiste el contenido colaborativo como NUEVA VERSIÓN del documento (CU-35):
+   * cierra el ciclo "lo editado en vivo queda en el documento real".
+   */
+  guardarComoNuevaVersion(): void {
+    const texto = this.contenido();
+    if (!texto.trim() || this.guardandoVersion()) return;
+    this.guardandoVersion.set(true);
+    const archivo = new File([texto], 'edicion-colaborativa.txt', { type: 'text/plain' });
+    this.docSvc.nuevaVersion(this.documentoId, archivo, 'Edición colaborativa en vivo (CU-38)').subscribe({
+      next: () => {
+        this.guardandoVersion.set(false);
+        this.aviso('success', 'Contenido guardado como nueva versión del documento.');
+      },
+      error: () => {
+        this.guardandoVersion.set(false);
+        this.aviso('danger', 'No se pudo guardar la nueva versión.');
+      },
+    });
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────

@@ -72,10 +72,22 @@
         (keyup)="onTextareaSelect($event)"
         placeholder="Empieza a escribir… lo que tipees se sincroniza con los demás participantes."
       ></textarea>
-      <small class="text-muted d-block mt-2">
-        Para persistir como nueva versión del documento, usa "Nueva versión" desde el expediente del trámite.
-        Esta sesión solo sincroniza en vivo.
-      </small>
+      <div class="d-flex justify-content-between align-items-center mt-2">
+        <small class="text-muted">
+          La sesión sincroniza en vivo; al entrar recibes el contenido actual de la sesión.
+        </small>
+        <button
+          type="button"
+          class="btn btn-sm btn-primary"
+          (click)="guardarComoNuevaVersion()"
+          [disabled]="soloLectura() || guardandoVersion() || !contenido().trim()"
+        >
+          @if (guardandoVersion()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          Guardar como nueva versión
+        </button>
+      </div>
     </div>
   </div>
 </section>
