@@ -185,7 +185,7 @@
                 <div class="mt-3 pt-3 border-top">
                   <app-dictar-seccion
                     [seccionId]="seccion.infoSeccion.id"
-                    (aplicado)="onDictadoAplicado($event)"
+                    (aplicado)="onDictadoAplicado(seccion, $event)"
                   />
                 </div>
               }

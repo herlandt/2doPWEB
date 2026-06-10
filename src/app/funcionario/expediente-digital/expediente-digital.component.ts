@@ -587,14 +587,104 @@ export class ExpedienteDigitalComponent {
     }
   }
 
-  // CU-39 · dictado por voz aplicado a una sección
-  onDictadoAplicado(resp: DictarFormularioResponse): void {
-    const aplicados = resp.campos.filter((c) => c.valor).length;
+  // CU-39 · dictado por voz: vuelca las sugerencias de la IA en los campos del
+  // formulario de la sección. La IA identifica cada sugerencia por el NOMBRE
+  // TÉCNICO del campo (CampoSugerido.campo === campo.nombre); lo traducimos al
+  // id de CampoSeccion (la clave de valoresEnEdicion) para que "Guardar borrador"
+  // lo persista, y reflejamos el valor en el input al instante.
+  onDictadoAplicado(seccion: any, resp: DictarFormularioResponse): void {
+    const campos: any[] = seccion?.campos ?? [];
+    const porNombre = new Map<string, any>(
+      campos.filter((c) => c?.nombre).map((c) => [String(c.nombre), c]),
+    );
+
+    const patch: Record<string, string> = {};
+    const noCasados: string[] = [];
+    let aplicados = 0;
+
+    for (const sug of resp.campos ?? []) {
+      const crudo = (sug.valor ?? '').trim();
+      if (!crudo) continue; // la IA no extrajo nada para este campo
+      const campo = porNombre.get(sug.campo);
+      if (!campo?.id) {
+        noCasados.push(sug.campo);
+        continue;
+      }
+      const valor = this.normalizarValorDictado(crudo, campo);
+      if (valor === null) {
+        noCasados.push(sug.campo); // no encaja con el tipo (p. ej. opción inválida)
+        continue;
+      }
+      patch[campo.id] = valor;
+      campo.valor = valor; // refleja en el input ([value]="campo.valor")
+      campo.fueDictado = true; // enciende el badge "IA"
+      aplicados++;
+    }
+
+    if (aplicados > 0) {
+      this.valoresEnEdicion.update((curr) => ({ ...curr, ...patch }));
+      // Re-emitimos la signal para que OnPush refresque los [value]="campo.valor".
+      this.expediente.update((e) => (e ? { ...e } : e));
+    }
+
+    const extra = noCasados.length
+      ? ` (${noCasados.length} sin ubicar: ${noCasados.join(', ')})`
+      : '';
     this.exito.set(
       aplicados > 0
-        ? `${aplicados} campo(s) sugeridos por IA listos. Revisa y guarda manualmente.`
-        : 'Dictado registrado. No se mapeó ningún campo automáticamente.',
+        ? `${aplicados} campo(s) rellenado(s) por dictado. Revísalos y pulsa "Guardar borrador".${extra}`
+        : `El dictado no mapeó ningún campo de esta sección.${extra}`,
     );
-    setTimeout(() => this.exito.set(''), 5000);
+    setTimeout(() => this.exito.set(''), 6000);
+  }
+
+  /**
+   * Adapta el valor crudo de la IA al formato que espera cada tipo de campo.
+   * Devuelve null si el valor no es utilizable para ese tipo (se reporta como
+   * "sin ubicar" en vez de meter un valor inválido en el formulario).
+   */
+  private normalizarValorDictado(valor: string, campo: any): string | null {
+    switch (campo?.tipo) {
+      case 'checkbox':
+        return /^(true|s[ií]|1|ok|x)$/i.test(valor) ? 'true' : 'false';
+      case 'select': {
+        const opciones: string[] = campo.opciones ?? [];
+        const match = opciones.find((o) => o.toLowerCase() === valor.toLowerCase());
+        return match ?? null; // si no coincide con una opción válida, no se aplica
+      }
+      case 'fecha':
+        return this.aIsoFecha(valor); // puede devolver null si no parsea
+      default:
+        return valor;
+    }
+  }
+
+  /** Convierte 'dd/MM/yyyy', 'dd/MM' y 'hoy'/'mañana' al ISO 'yyyy-MM-dd' de <input type="date">. */
+  private aIsoFecha(valor: string): string | null {
+    const v = valor.trim().toLowerCase();
+    const hoy = new Date();
+    if (v === 'hoy') return this.fechaIso(hoy);
+    if (v === 'mañana' || v === 'manana') {
+      const m = new Date(hoy);
+      m.setDate(m.getDate() + 1);
+      return this.fechaIso(m);
+    }
+    const m = valor.match(/^(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?$/);
+    if (!m) return null;
+    const dia = +m[1];
+    const mes = +m[2];
+    let anio = m[3] ? +m[3] : hoy.getFullYear();
+    if (anio < 100) anio += 2000;
+    if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return null;
+    return `${anio.toString().padStart(4, '0')}-${mes
+      .toString()
+      .padStart(2, '0')}-${dia.toString().padStart(2, '0')}`;
+  }
+
+  private fechaIso(d: Date): string {
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d
+      .getDate()
+      .toString()
+      .padStart(2, '0')}`;
   }
 }
