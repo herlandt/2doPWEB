@@ -8,14 +8,20 @@
       </p>
     </div>
     <div class="d-flex gap-2">
-      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="cargar()">
-        Actualizar
+      <button
+        class="btn btn-sm btn-outline-secondary"
+        type="button"
+        (click)="cargar()"
+        title="Solo recarga la lista de anomalías ya detectadas (no vuelve a analizar)."
+      >
+        ↻ Refrescar lista
       </button>
       <button
         class="btn btn-sm btn-primary"
         type="button"
         [disabled]="detectando()"
         (click)="detectar()"
+        title="Ejecuta el motor de detección (IA) sobre los trámites AHORA y agrega las nuevas anomalías que encuentre."
       >
         @if (detectando()) {
           <span class="spinner-border spinner-border-sm me-2"></span>
@@ -24,6 +30,9 @@
       </button>
     </div>
   </div>
+  <p class="text-muted small mb-3">
+    <strong>Refrescar lista</strong> solo recarga lo ya detectado; <strong>Detectar ahora</strong> vuelve a analizar los trámites con la IA y puede agregar nuevas anomalías.
+  </p>
 
   @if (error()) {
     <div class="alert alert-danger" role="alert">{{ error() }}</div>
