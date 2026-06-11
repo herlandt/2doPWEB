@@ -111,6 +111,8 @@ export class DiagramaEditorComponent {
     return deps.filter((d) => enLanes(d) || d.id === selId);
   });
   readonly politicas = signal<Politica[]>([]);
+  /** Solo las políticas SIN diagrama — para el selector de "Nuevo diagrama" (1:1). */
+  readonly politicasSinDiagrama = signal<Politica[]>([]);
   readonly nodos = signal<NodoDiagrama[]>([]);
   readonly transiciones = signal<FlujoTransicion[]>([]);
   readonly actividades = signal<Actividad[]>([]);
@@ -347,6 +349,15 @@ export class DiagramaEditorComponent {
       next: (politicas) => this.politicas.set(politicas),
       error: (err) => this.error.set(mensajeAmigable(err)),
     });
+
+    // Para el formulario de "Nuevo diagrama": solo políticas sin diagrama (1:1).
+    // Solo el admin crea diagramas; si el endpoint 403'ea, dejamos lista vacía.
+    if (!this.diagramaId) {
+      this.politicaSvc.listarSinDiagrama().subscribe({
+        next: (politicas) => this.politicasSinDiagrama.set(politicas),
+        error: () => this.politicasSinDiagrama.set([]),
+      });
+    }
 
     this.actSvc.listar().subscribe({
       next: (actividades) => this.actividades.set(actividades),
@@ -1275,6 +1286,18 @@ export class DiagramaEditorComponent {
         }
       },
     });
+  }
+
+  /** Reabre un diagrama publicado/archivado para editarlo (con confirmación). */
+  volverABorrador(): void {
+    if (
+      !confirm(
+        'Volver a borrador reabre el diagrama para editarlo. Si ya tiene trámites en curso, ' +
+          'editarlo (mover/borrar nodos) puede afectarlos. ¿Continuar?',
+      )
+    )
+      return;
+    this.cambiarEstado('borrador');
   }
 
   cambiarEstado(nuevoEstado: string): void {

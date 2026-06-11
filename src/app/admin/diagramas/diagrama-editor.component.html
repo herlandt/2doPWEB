@@ -30,10 +30,13 @@
           <label class="form-label" for="politica">Política (opcional)</label>
           <select #politica id="politica" class="cre-input">
             <option value="" [selected]="!politicaIdPreseleccionada">— Sin política —</option>
-            @for (item of politicas(); track item.id) {
+            @for (item of politicasSinDiagrama(); track item.id) {
               <option [value]="item.id" [selected]="item.id === politicaIdPreseleccionada">{{ item.nombre }}</option>
             }
           </select>
+          <p class="diagram-create-sub" style="margin: 4px 0 0 0">
+            Solo se listan políticas <strong>sin diagrama</strong> (cada política tiene como máximo uno).
+          </p>
         </div>
 
         <div class="form-row">
@@ -118,6 +121,13 @@
             @if (data.estado === 'publicado') {
               <button type="button" class="cre-btn cre-btn-secondary cre-btn-sm" (click)="cambiarEstado('archivado')">
                 Archivar
+              </button>
+            }
+            <!-- Volver a borrador: un diagrama publicado/archivado es read-only; esto
+                 lo reabre para editar. Ojo si ya tiene trámites en curso. -->
+            @if (data.estado !== 'borrador') {
+              <button type="button" class="cre-btn cre-btn-warning cre-btn-sm" (click)="volverABorrador()">
+                ↩ Volver a borrador
               </button>
             }
             <!-- Agregar calle (swimlane) — permitido también en diagramas activos -->

@@ -30,7 +30,9 @@ export class DiagramaIaComponent {
     'Flujo de solicitud de reconexion electrica: el cliente solicita en ATC, TEC hace inspeccion tecnica en paralelo con revision de deuda, LEG aprueba el acuerdo de pago, OPE ejecuta la reconexion.';
 
   constructor() {
-    this.politicaSvc.listar().subscribe({
+    // Solo políticas SIN diagrama (1:1): no se puede generar un 2º diagrama
+    // para una política que ya tiene uno.
+    this.politicaSvc.listarSinDiagrama().subscribe({
       next: (politicas) => this.politicas.set(politicas),
       error: (err) => this.error.set(mensajeAmigable(err)),
     });
