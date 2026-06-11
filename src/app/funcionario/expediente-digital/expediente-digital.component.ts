@@ -580,10 +580,13 @@ export class ExpedienteDigitalComponent {
     this.obligatorioSubir.set((ev.target as HTMLInputElement).checked);
   }
 
-  /** ¿El documento es un Office co-editable (.docx/.xlsx/.pptx…)? */
-  esOfficeEditable(d: { nombreLogico?: string }): boolean {
+  /** ¿El documento es un Office co-editable? Por extensión del nombre O por tipo
+   *  WORD/EXCEL (el nombre lógico puede venir sin extensión). */
+  esOfficeEditable(d: { nombreLogico?: string; tipoDocumento?: string }): boolean {
     const n = (d?.nombreLogico ?? '').toLowerCase();
-    return /\.(docx|xlsx|pptx|doc|xls|ppt|odt|ods|odp)$/.test(n);
+    if (/\.(docx|xlsx|pptx|doc|xls|ppt|odt|ods|odp)$/.test(n)) return true;
+    const t = (d?.tipoDocumento ?? '').toUpperCase();
+    return t === 'WORD' || t === 'EXCEL';
   }
 
   /** Abre el editor colaborativo OnlyOffice en una pestaña nueva. */
