@@ -76,6 +76,17 @@ export class DocumentoArchivoService {
     );
   }
 
+  /** Crea un documento Office EN BLANCO (Word/Excel) en el trámite. */
+  crearEnBlanco(
+    tramiteId: string,
+    body: { tipo: 'docx' | 'xlsx'; nombreLogico: string; nodoId?: string; actividadId?: string },
+  ): Observable<DocumentoArchivoResponse> {
+    return this.http.post<DocumentoArchivoResponse>(
+      `${this.api}/tramites/${tramiteId}/documentos/blank`,
+      body,
+    );
+  }
+
   nuevaVersion(
     documentoId: string,
     archivo: File,

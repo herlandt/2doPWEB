@@ -82,6 +82,12 @@ export class ExpedienteDigitalComponent {
   readonly obligatorioSubir = signal(false);
   readonly subiendoDocumento = signal(false);
 
+  // Crear documento Office en blanco (Word/Excel) para co-editar.
+  readonly mostrarCrearDoc = signal(false);
+  readonly nombreNuevoDoc = signal('');
+  readonly tipoNuevoDoc = signal<'docx' | 'xlsx'>('docx');
+  readonly creandoDoc = signal(false);
+
   readonly tiposDocumento = TIPOS_DOCUMENTO;
 
   // actividadId / nodoId del paso en curso (lo expone /estado en nodoActual).
@@ -583,6 +589,51 @@ export class ExpedienteDigitalComponent {
   /** Abre el editor colaborativo OnlyOffice en una pestaña nueva. */
   abrirOffice(d: { id: string }): void {
     window.open(`/funcionario/documentos/${d.id}/office`, '_blank');
+  }
+
+  setNombreNuevoDoc(ev: Event): void {
+    this.nombreNuevoDoc.set((ev.target as HTMLInputElement).value);
+  }
+
+  /** Crea un documento Office EN BLANCO (Word/Excel) y abre el editor colaborativo. */
+  crearDocumento(): void {
+    const nombre = this.nombreNuevoDoc().trim();
+    if (!nombre) {
+      this.errorDocumentos.set('Ponle un nombre al documento.');
+      setTimeout(() => this.errorDocumentos.set(''), 4000);
+      return;
+    }
+    const nodoId = this.nodoActualId() ?? this.nodoIdSeccionEditable();
+    const actividadId = this.actividadActualId() ?? undefined;
+    if (!actividadId && !nodoId) {
+      this.errorDocumentos.set('No se pudo determinar el nodo actual del trámite.');
+      setTimeout(() => this.errorDocumentos.set(''), 4000);
+      return;
+    }
+    this.creandoDoc.set(true);
+    this.errorDocumentos.set('');
+    this.docSvc
+      .crearEnBlanco(this.tramiteId, {
+        tipo: this.tipoNuevoDoc(),
+        nombreLogico: nombre,
+        nodoId,
+        actividadId,
+      })
+      .subscribe({
+        next: (resp) => {
+          this.creandoDoc.set(false);
+          this.mostrarCrearDoc.set(false);
+          this.nombreNuevoDoc.set('');
+          this.cargarDocumentos();
+          // Abre directo el editor colaborativo del documento recién creado.
+          window.open(`/funcionario/documentos/${resp.documentoArchivoId}/office`, '_blank');
+        },
+        error: () => {
+          this.creandoDoc.set(false);
+          this.errorDocumentos.set('No se pudo crear el documento.');
+          setTimeout(() => this.errorDocumentos.set(''), 5000);
+        },
+      });
   }
 
   subirDocumento(): void {
