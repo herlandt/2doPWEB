@@ -176,10 +176,21 @@ export class ExpedienteDigitalComponent {
     return this.salidasActividad().includes('aprobar') ? 'Aprobar' : 'Completar / Avanzar';
   });
 
+  /** Departamentos del funcionario logueado: solo edita secciones de SUS áreas. */
+  readonly misDepartamentos = signal<string[]>([]);
+
   constructor() {
     this.cargarExpediente();
     this.cargarDocumentos();
     this.cargarEstado();
+    // Carga las áreas del funcionario para no dejar editar formularios de otros
+    // departamentos (en paralelo varias secciones están activas a la vez).
+    if (this.authSvc.isFuncionario()) {
+      this.authSvc.obtenerPerfil().subscribe({
+        next: (u) => this.misDepartamentos.set(u?.departamentosIds ?? []),
+        error: () => this.misDepartamentos.set([]),
+      });
+    }
   }
 
   private cargarEstado(): void {
@@ -204,6 +215,12 @@ export class ExpedienteDigitalComponent {
    * no romper el comportamiento previo basado solo en el estado de la sección.
    */
   esSeccionDelNodoActual(seccion: any): boolean {
+    // Un funcionario NO edita formularios de OTRO departamento, aunque estén
+    // activos (típico en flujos paralelos con varias áreas a la vez).
+    const dep = seccion?.infoSeccion?.departamentoId;
+    const mios = this.misDepartamentos();
+    if (mios.length > 0 && dep && !mios.includes(dep)) return false;
+
     const actual = this.nodoActualId();
     if (!actual) return true;
     return seccion?.infoSeccion?.nodoId === actual;
