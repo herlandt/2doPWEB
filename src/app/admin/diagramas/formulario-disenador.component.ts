@@ -30,6 +30,7 @@ const TIPOS_VISUAL: TipoCampoVisual[] = [
   { value: 'checkbox', label: 'Casilla (sí/no)',   icono: '☑',  descripcion: 'Una casilla marcable',            necesitaOpciones: false, etiquetaDefault: 'Acepto' },
   { value: 'archivo',  label: 'Adjuntar archivo',  icono: '📎', descripcion: 'Subir un documento o imagen',     necesitaOpciones: false, etiquetaDefault: 'Adjuntar archivo' },
   { value: 'calculado', label: 'Calculado',        icono: 'ƒ',  descripcion: 'Derivado de otros campos (fórmula)', necesitaOpciones: false, etiquetaDefault: 'Campo calculado' },
+  { value: 'tabla',    label: 'Tabla (grilla)',    icono: '▦',  descripcion: 'Filas y columnas (string grid)',  necesitaOpciones: true,  etiquetaDefault: 'Tabla' },
 ];
 
 function slugify(input: string): string {
@@ -296,7 +297,10 @@ export class FormularioDisenadorComponent {
       etiqueta: etiquetaBase,
       tipo,
       obligatorio: false,
-      opciones: meta.necesitaOpciones ? ['Opción 1', 'Opción 2'] : undefined,
+      // En 'tabla', `opciones` son las COLUMNAS; en select/radio, las opciones.
+      opciones: meta.necesitaOpciones
+        ? (tipo === 'tabla' ? ['Columna 1', 'Columna 2'] : ['Opción 1', 'Opción 2'])
+        : undefined,
       validacionRegex: undefined,
       // El backend exige fórmula en los calculados; '0' como placeholder editable.
       formula: tipo === 'calculado' ? '0' : undefined,

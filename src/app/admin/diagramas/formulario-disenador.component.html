@@ -206,6 +206,25 @@
                                [value]="'ƒ ' + (c.formula || '…')"
                                title="Solo lectura: se calcula con la fórmula" />
                       }
+                      @case ('tabla') {
+                        <table class="fd-tabla-preview">
+                          <thead>
+                            <tr>
+                              @for (col of c.opciones ?? []; track col) { <th>{{ col }}</th> }
+                              <th class="fd-tabla-preview-act"></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              @for (col of c.opciones ?? []; track col) {
+                                <td><input class="cre-input" disabled /></td>
+                              }
+                              <td></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        <small class="fd-hint">+ Agregar fila (al rellenar)</small>
+                      }
                     }
                   </div>
                 </div>
@@ -246,18 +265,35 @@
 
                 @if (necesitaOpciones()) {
                   <div class="form-row">
-                    <label class="form-label">
-                      Opciones (una por línea) <span class="req">*</span>
-                    </label>
-                    <textarea
-                      class="cre-input"
-                      rows="4"
-                      [value]="opcionesTexto()"
-                      (input)="onOpcionesChange($event)"
-                      placeholder="Opción 1&#10;Opción 2&#10;Opción 3"
-                    ></textarea>
-                    @if (opcionesPreview().length > 0) {
-                      <small class="fd-hint">{{ opcionesPreview().length }} opciones detectadas.</small>
+                    @if (sel.tipo === 'tabla') {
+                      <label class="form-label">
+                        Columnas (una por línea) <span class="req">*</span>
+                        <small class="fd-hint">Cada línea es una columna de la tabla.</small>
+                      </label>
+                      <textarea
+                        class="cre-input"
+                        rows="4"
+                        [value]="opcionesTexto()"
+                        (input)="onOpcionesChange($event)"
+                        placeholder="Producto&#10;Cantidad&#10;Precio"
+                      ></textarea>
+                      @if (opcionesPreview().length > 0) {
+                        <small class="fd-hint">{{ opcionesPreview().length }} columnas detectadas.</small>
+                      }
+                    } @else {
+                      <label class="form-label">
+                        Opciones (una por línea) <span class="req">*</span>
+                      </label>
+                      <textarea
+                        class="cre-input"
+                        rows="4"
+                        [value]="opcionesTexto()"
+                        (input)="onOpcionesChange($event)"
+                        placeholder="Opción 1&#10;Opción 2&#10;Opción 3"
+                      ></textarea>
+                      @if (opcionesPreview().length > 0) {
+                        <small class="fd-hint">{{ opcionesPreview().length }} opciones detectadas.</small>
+                      }
                     }
                   </div>
                 }

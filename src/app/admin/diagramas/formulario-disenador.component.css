@@ -405,3 +405,9 @@
   color: var(--cre-text-muted, #6c757d);
   margin-top: 1px;
 }
+
+/* Preview de campo tipo 'tabla' (string grid) en el diseñador */
+.fd-tabla-preview { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.fd-tabla-preview th, .fd-tabla-preview td { border: 1px solid var(--cre-border, #dee2e6); padding: 2px 4px; }
+.fd-tabla-preview th { background: var(--cre-bg-subtle, #f1f3f5); font-weight: 600; text-align: left; }
+.fd-tabla-preview td .cre-input { height: 1.5rem; padding: 0 4px; }

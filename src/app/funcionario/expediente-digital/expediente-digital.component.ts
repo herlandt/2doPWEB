@@ -271,6 +271,67 @@ export class ExpedienteDigitalComponent {
     this.valoresEnEdicion.update((curr) => ({ ...curr, [campoId]: opcion }));
   }
 
+  // ── Campo tipo 'tabla' (string grid) ──────────────────────────────────
+  // Las COLUMNAS viven en campo.opciones; el VALOR es un JSON string[][]
+  // (filas × celdas) que se guarda en el mismo campo string, sin tocar backend.
+
+  /** Columnas definidas por el admin para la tabla. */
+  tablaColumnas(campo: any): string[] {
+    return (campo?.opciones ?? []).filter((c: string) => c && String(c).trim().length > 0);
+  }
+
+  /** Filas vigentes de la tabla (parsea el JSON; tolera datos viejos/no-JSON). */
+  tablaFilas(campo: any): string[][] {
+    const raw = this.valorActual(campo);
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.map((fila: any) =>
+          Array.isArray(fila) ? fila.map((x: any) => String(x ?? '')) : [],
+        );
+      }
+    } catch {
+      /* valor no-JSON (datos antiguos): se ignora y se empieza vacío */
+    }
+    return [];
+  }
+
+  /** Valor de una celda, normalizando filas más cortas que las columnas. */
+  tablaCelda(fila: string[], colIdx: number): string {
+    return fila[colIdx] ?? '';
+  }
+
+  private guardarTabla(campoId: string, filas: string[][]): void {
+    this.valoresEnEdicion.update((curr) => ({ ...curr, [campoId]: JSON.stringify(filas) }));
+  }
+
+  setTablaCelda(campo: any, filaIdx: number, colIdx: number, ev: Event): void {
+    const valor = (ev.target as HTMLInputElement).value;
+    const cols = this.tablaColumnas(campo).length;
+    const filas = this.tablaFilas(campo);
+    while (filas.length <= filaIdx) filas.push(new Array(cols).fill(''));
+    const fila = [...filas[filaIdx]];
+    while (fila.length < cols) fila.push('');
+    fila[colIdx] = valor;
+    filas[filaIdx] = fila;
+    this.guardarTabla(campo.id, filas);
+  }
+
+  agregarTablaFila(campo: any): void {
+    const cols = this.tablaColumnas(campo).length;
+    const filas = this.tablaFilas(campo);
+    filas.push(new Array(cols).fill(''));
+    this.guardarTabla(campo.id, filas);
+  }
+
+  eliminarTablaFila(campo: any, filaIdx: number): void {
+    const filas = this.tablaFilas(campo);
+    if (filaIdx < 0 || filaIdx >= filas.length) return;
+    filas.splice(filaIdx, 1);
+    this.guardarTabla(campo.id, filas);
+  }
+
   /** Valor vigente de un campo (lo editado, o lo persistido). */
   valorActual(campo: any): string {
     const editado = this.valoresEnEdicion()[campo.id];

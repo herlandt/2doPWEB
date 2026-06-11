@@ -7,7 +7,8 @@ export type TipoCampo =
   | 'checkbox'
   | 'radio'
   | 'archivo'
-  | 'calculado';
+  | 'calculado'
+  | 'tabla';
 
 export interface FormularioPlantilla {
   id: string;
@@ -60,4 +61,7 @@ export const TIPOS_CAMPO: { value: TipoCampo; label: string; necesitaOpciones: b
   { value: 'checkbox', label: 'Casilla (check)', necesitaOpciones: false },
   { value: 'archivo', label: 'Adjunto', necesitaOpciones: false },
   { value: 'calculado', label: 'Calculado (fórmula)', necesitaOpciones: false },
+  // Tabla (string grid): reutiliza `opciones` para las COLUMNAS; el valor se
+  // guarda como JSON string[][] (filas × celdas) en el mismo campo `valor`.
+  { value: 'tabla', label: 'Tabla (grilla)', necesitaOpciones: true },
 ];
