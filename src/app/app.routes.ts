@@ -157,6 +157,12 @@ export const routes: Routes = [
 				loadComponent: () =>
 					import('./funcionario/documento-editor/documento-editor.component').then((m) => m.DocumentoEditorComponent),
 			},
+			// Edición colaborativa de Office (.docx/.xlsx/.pptx) del repo vía OnlyOffice.
+			{
+				path: 'documentos/:id/office',
+				loadComponent: () =>
+					import('./funcionario/onlyoffice-editor/onlyoffice-editor.component').then((m) => m.OnlyofficeEditorComponent),
+			},
 			// P1 §7 — colaboración: el funcionario invitado como editor abre y
 			// edita los diagramas que le compartieron (mismos componentes que admin;
 			// el backend valida creador/colaborador-editor en cada mutación).

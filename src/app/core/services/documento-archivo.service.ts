@@ -67,6 +67,15 @@ export class DocumentoArchivoService {
     return this.http.get<VersionDocumento[]>(`${this.api}/documentos/${documentoId}/versiones`);
   }
 
+  // ── Edición colaborativa Office (OnlyOffice) ─────────────────────────────
+
+  /** Config firmada del editor OnlyOffice para co-editar un .docx/.xlsx/.pptx. */
+  onlyofficeConfig(documentoId: string): Observable<{ serverUrl: string; config: unknown }> {
+    return this.http.get<{ serverUrl: string; config: unknown }>(
+      `${this.api}/documentos/${documentoId}/onlyoffice/config`,
+    );
+  }
+
   nuevaVersion(
     documentoId: string,
     archivo: File,

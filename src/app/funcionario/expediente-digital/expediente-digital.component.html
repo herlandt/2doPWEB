@@ -395,6 +395,17 @@
                       Ver
                     }
                   </button>
+                  <!-- Co-edición en vivo de Office (.docx/.xlsx/.pptx) vía OnlyOffice -->
+                  @if (esOfficeEditable(d)) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-primary"
+                      (click)="abrirOffice(d)"
+                      title="Abrir y co-editar (varios funcionarios a la vez)"
+                    >
+                      Editar
+                    </button>
+                  }
                 </li>
               }
             </ul>

@@ -557,6 +557,17 @@ export class ExpedienteDigitalComponent {
     this.obligatorioSubir.set((ev.target as HTMLInputElement).checked);
   }
 
+  /** ¿El documento es un Office co-editable (.docx/.xlsx/.pptx…)? */
+  esOfficeEditable(d: { nombreLogico?: string }): boolean {
+    const n = (d?.nombreLogico ?? '').toLowerCase();
+    return /\.(docx|xlsx|pptx|doc|xls|ppt|odt|ods|odp)$/.test(n);
+  }
+
+  /** Abre el editor colaborativo OnlyOffice en una pestaña nueva. */
+  abrirOffice(d: { id: string }): void {
+    window.open(`/funcionario/documentos/${d.id}/office`, '_blank');
+  }
+
   subirDocumento(): void {
     const archivo = this.archivoSubir();
     if (!archivo) {
