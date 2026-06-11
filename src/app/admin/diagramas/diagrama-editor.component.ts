@@ -80,9 +80,18 @@ export class DiagramaEditorComponent {
    * poner el lienzo en modo lectura y bloquear las operaciones de edición con un
    * aviso claro, en vez de dejar que el backend rechace con un error crudo.
    */
+  /** Rol del usuario NO-admin sobre este diagrama: 'editor' | 'visualizador' | null. */
+  readonly miRolColaboracion = signal<string | null>(null);
+
   readonly editable = computed(() => {
     const d = this.diagrama();
-    return d == null || d.estado === 'borrador';
+    const enBorrador = d == null || d.estado === 'borrador';
+    if (!enBorrador) return false;
+    // Admin siempre; el colaborador SOLO si su permiso es 'editor'. Un
+    // 'visualizador' tiene acceso de solo lectura aunque el diagrama esté en
+    // borrador (el backend además lo rechaza; esto lo refleja en la UI).
+    if (this.esAdminUsuario()) return true;
+    return this.miRolColaboracion() === 'editor';
   });
 
   /**
@@ -385,6 +394,20 @@ export class DiagramaEditorComponent {
     if (this.diagramaId) {
       this.cargar();
       this.suscribirColaboracionRT(this.diagramaId);
+
+      // Si NO es admin, averigua su permiso sobre ESTE diagrama (editor vs
+      // visualizador) para poner el lienzo en solo-lectura cuando es visualizador.
+      if (!this.auth.isAdmin()) {
+        this.colabSvc.compartidosConmigo().subscribe({
+          next: (lista) => {
+            const mio = lista.find(
+              (c) => c.diagramaId === this.diagramaId && c.estado === 'aceptada',
+            );
+            this.miRolColaboracion.set(mio ? mio.permisos : null);
+          },
+          error: () => this.miRolColaboracion.set(null),
+        });
+      }
     }
   }
 
