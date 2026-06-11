@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DocumentoArchivoService } from '../../core/services/documento-archivo.service';
 import { mensajeAmigable } from '../../core/utils/error-messages';
 
@@ -39,6 +39,7 @@ declare global {
 })
 export class OnlyofficeEditorComponent implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly docSvc = inject(DocumentoArchivoService);
 
   readonly id = this.route.snapshot.params['id'] as string;
@@ -95,7 +96,12 @@ export class OnlyofficeEditorComponent implements OnDestroy {
   }
 
   volver(): void {
-    history.back();
+    // El editor se abre en una pestaña nueva (window.open): cerrarla devuelve al
+    // expediente. Si no se abrió por script (no se puede cerrar), va a la bandeja.
+    window.close();
+    setTimeout(() => {
+      if (!window.closed) this.router.navigate(['/funcionario/bandeja']);
+    }, 150);
   }
 
   ngOnDestroy(): void {
