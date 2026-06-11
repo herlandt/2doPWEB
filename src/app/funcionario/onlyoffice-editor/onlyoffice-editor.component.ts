@@ -22,7 +22,9 @@ declare global {
     <div style="height: 100vh; display: flex; flex-direction: column">
       <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom bg-light">
         <button type="button" class="btn btn-sm btn-outline-secondary" (click)="volver()">← Volver</button>
-        <span class="fw-semibold">Edición colaborativa de documento (OnlyOffice)</span>
+        <span class="fw-semibold">
+          {{ modo === 'view' ? 'Visualización de documento' : 'Edición colaborativa de documento' }} (OnlyOffice)
+        </span>
         @if (cargando()) {
           <span class="text-muted small ms-2">
             <span class="spinner-border spinner-border-sm me-1"></span> Abriendo editor…
@@ -43,12 +45,14 @@ export class OnlyofficeEditorComponent implements OnDestroy {
   private readonly docSvc = inject(DocumentoArchivoService);
 
   readonly id = this.route.snapshot.params['id'] as string;
+  readonly modo: 'edit' | 'view' =
+    this.route.snapshot.queryParamMap.get('mode') === 'view' ? 'view' : 'edit';
   readonly cargando = signal(true);
   readonly error = signal('');
   private editor: { destroyEditor?: () => void } | null = null;
 
   constructor() {
-    this.docSvc.onlyofficeConfig(this.id).subscribe({
+    this.docSvc.onlyofficeConfig(this.id, this.modo).subscribe({
       next: (resp) => this.abrir(resp.serverUrl, resp.config),
       error: (err) => {
         this.cargando.set(false);

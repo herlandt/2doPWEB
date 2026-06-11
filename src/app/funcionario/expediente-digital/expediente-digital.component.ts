@@ -589,9 +589,15 @@ export class ExpedienteDigitalComponent {
     return t === 'WORD' || t === 'EXCEL';
   }
 
-  /** Abre el editor colaborativo OnlyOffice en una pestaña nueva. */
+  /** Abre el editor colaborativo OnlyOffice (edición) en una pestaña nueva. */
   abrirOffice(d: { id: string }): void {
     window.open(`/funcionario/documentos/${d.id}/office`, '_blank');
+  }
+
+  /** Abre el documento Office en OnlyOffice SOLO LECTURA (el visor del navegador
+   *  no abre bien los Office; OnlyOffice sí). */
+  abrirOfficeView(d: { id: string }): void {
+    window.open(`/funcionario/documentos/${d.id}/office?mode=view`, '_blank');
   }
 
   setNombreNuevoDoc(ev: Event): void {

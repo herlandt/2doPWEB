@@ -69,10 +69,13 @@ export class DocumentoArchivoService {
 
   // ── Edición colaborativa Office (OnlyOffice) ─────────────────────────────
 
-  /** Config firmada del editor OnlyOffice para co-editar un .docx/.xlsx/.pptx. */
-  onlyofficeConfig(documentoId: string): Observable<{ serverUrl: string; config: unknown }> {
+  /** Config firmada del editor OnlyOffice. mode 'edit' (co-editar) o 'view' (solo lectura). */
+  onlyofficeConfig(
+    documentoId: string,
+    mode: 'edit' | 'view' = 'edit',
+  ): Observable<{ serverUrl: string; config: unknown }> {
     return this.http.get<{ serverUrl: string; config: unknown }>(
-      `${this.api}/documentos/${documentoId}/onlyoffice/config`,
+      `${this.api}/documentos/${documentoId}/onlyoffice/config?mode=${mode}`,
     );
   }
 

@@ -414,28 +414,38 @@
                       }
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-primary"
-                    [disabled]="previewCargandoId() === d.id"
-                    (click)="verDocumento(d)"
-                    title="Abrir en pestaña nueva"
-                  >
-                    @if (previewCargandoId() === d.id) {
-                      <span class="spinner-border spinner-border-sm"></span>
-                    } @else {
-                      Ver
-                    }
-                  </button>
-                  <!-- Co-edición en vivo de Office (.docx/.xlsx/.pptx) vía OnlyOffice -->
+                  <!-- Office: el visor del navegador no los abre bien → Ver y Editar
+                       van por OnlyOffice (lectura / co-edición). Resto: preview normal. -->
                   @if (esOfficeEditable(d)) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary"
+                      (click)="abrirOfficeView(d)"
+                      title="Ver en OnlyOffice (solo lectura)"
+                    >
+                      Ver
+                    </button>
                     <button
                       type="button"
                       class="btn btn-sm btn-primary"
                       (click)="abrirOffice(d)"
-                      title="Abrir y co-editar (varios funcionarios a la vez)"
+                      title="Co-editar (varios funcionarios a la vez)"
                     >
                       Editar
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary"
+                      [disabled]="previewCargandoId() === d.id"
+                      (click)="verDocumento(d)"
+                      title="Abrir en pestaña nueva"
+                    >
+                      @if (previewCargandoId() === d.id) {
+                        <span class="spinner-border spinner-border-sm"></span>
+                      } @else {
+                        Ver
+                      }
                     </button>
                   }
                 </li>
