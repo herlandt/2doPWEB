@@ -29,10 +29,13 @@ export class TramiteC2Service {
   // Completar el nodo actual y avanzar. Cuando el siguiente nodo es un 'decision'
   // (if), `decision` lleva la rama elegida por el funcionario ('si' | 'no') y el
   // motor enruta por la transición con esa etiqueta.
-  completarNodo(tramiteId: string, decision?: string, notas?: string): Observable<any> {
+  // `nodoId` identifica la rama EXACTA a completar en flujos PARALELOS (donde no
+  // hay un nodo "actual" único). El backend lo usa para no resolver mal la rama.
+  completarNodo(tramiteId: string, decision?: string, notas?: string, nodoId?: string): Observable<any> {
     return this.http.post<any>(`${this.base}/tramites/${tramiteId}/completar-nodo`, {
       decision,
       notas,
+      nodoId,
     });
   }
 

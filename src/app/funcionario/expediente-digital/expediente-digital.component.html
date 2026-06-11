@@ -239,6 +239,19 @@
                       }
                       Guardar borrador
                     </button>
+                    <!-- En PARALELO cada rama se avanza por separado con SU nodoId
+                         (el botón global "Avanzar" no sabría cuál completar). -->
+                    @if (enParalelo()) {
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-primary"
+                        [disabled]="procesando()"
+                        (click)="completarSeccion(seccion)"
+                        title="Completa esta rama del flujo paralelo y avanza el trámite por ella."
+                      >
+                        Avanzar esta sección →
+                      </button>
+                    }
                   </div>
                 }
               }

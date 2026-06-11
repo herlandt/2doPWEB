@@ -32,7 +32,9 @@ export class DocumentoArchivoService {
   ): Observable<DocumentoArchivoResponse> {
     const fd = new FormData();
     fd.append('archivo', archivo);
-    fd.append('actividadId', req.actividadId);
+    // En PARALELO no hay actividad única; se manda solo el nodoId y el backend
+    // resuelve la actividad. (Antes se mandaba el string "undefined".)
+    if (req.actividadId) fd.append('actividadId', req.actividadId);
     if (req.nodoId) fd.append('nodoId', req.nodoId);
     fd.append('tipoDocumento', req.tipoDocumento);
     fd.append('nombreLogico', req.nombreLogico);

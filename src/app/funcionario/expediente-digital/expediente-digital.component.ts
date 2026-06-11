@@ -94,6 +94,35 @@ export class ExpedienteDigitalComponent {
     () => this.tramiteEstado()?.nodoActual?.nodoId ?? null,
   );
 
+  /**
+   * En PARALELO el trámite NO tiene un nodo "actual" único (nodoActual = null):
+   * hay varias ramas activas a la vez. En ese caso cada sección editable se
+   * completa/avanza por separado con SU nodoId.
+   */
+  readonly enParalelo = computed(
+    () => this.mostrarAcciones() && this.nodoActualId() == null,
+  );
+
+  /** nodoId de la primera sección editable (fallback para subir en paralelo). */
+  private nodoIdSeccionEditable(): string | undefined {
+    const secciones = this.expediente()?.secciones ?? [];
+    const ed = secciones.find((s: any) => this.esSeccionEditable(s?.infoSeccion?.estado));
+    return ed?.infoSeccion?.nodoId ?? undefined;
+  }
+
+  /** Completa/avanza UNA sección concreta (rama) en un flujo paralelo. */
+  completarSeccion(seccion: any): void {
+    const nodoId = seccion?.infoSeccion?.nodoId;
+    if (!nodoId) return;
+    if (!confirm('¿Completar esta sección y avanzar el trámite por esta rama?')) return;
+    this.procesando.set(true);
+    this.error.set('');
+    this.tramiteC2Svc.completarNodo(this.tramiteId, undefined, this.justificacion(), nodoId).subscribe({
+      next: () => this.finalizarExitosamente('Sección completada. El trámite avanzó por esta rama.'),
+      error: (err) => this.manejarError(err),
+    });
+  }
+
   // CU-13c — valores en edición por campoId (no persiste hasta "Guardar borrador").
   readonly valoresEnEdicion = signal<Record<string, string>>({});
   readonly guardandoSeccionId = signal<string | null>(null);
@@ -338,6 +367,18 @@ export class ExpedienteDigitalComponent {
       setTimeout(() => this.error.set(''), 4000);
       return;
     }
+    const nombreLogico = `${campo.etiqueta || campo.nombre} — ${archivo.name}`;
+    // Comprobación de duplicado (igual que el panel lateral). Para reemplazar de
+    // verdad (versionar) está el botón "Reemplazar" del propio campo.
+    if (
+      this.documentos().some(
+        (d: any) => (d.nombreLogico ?? '').trim().toLowerCase() === nombreLogico.toLowerCase(),
+      ) &&
+      !confirm(`Ya existe un documento "${nombreLogico}" en el trámite. ¿Subirlo igual?`)
+    ) {
+      input.value = '';
+      return;
+    }
     this.subiendoCampoId.set(campo.id);
     this.docSvc
       .subir(this.tramiteId, archivo, {
@@ -345,7 +386,7 @@ export class ExpedienteDigitalComponent {
         actividadId,
         nodoId,
         tipoDocumento: this.tipoDesdeArchivo(archivo),
-        nombreLogico: `${campo.etiqueta || campo.nombre} — ${archivo.name}`,
+        nombreLogico,
         obligatorio: !!campo.obligatorio,
       })
       .subscribe({
@@ -524,17 +565,53 @@ export class ExpedienteDigitalComponent {
       return;
     }
     const nombreLogico = this.nombreLogicoSubir().trim() || archivo.name;
-    const actividadId = this.actividadActualId();
-    if (!actividadId) {
-      this.errorDocumentos.set('No se pudo determinar la actividad actual del trámite.');
+    const actividadId = this.actividadActualId() ?? undefined;
+    // En PARALELO no hay actividad/nodo único: cae al nodo de la 1ª sección editable.
+    const nodoId = this.nodoActualId() ?? this.nodoIdSeccionEditable();
+    if (!actividadId && !nodoId) {
+      this.errorDocumentos.set('No se pudo determinar el nodo actual del trámite.');
       setTimeout(() => this.errorDocumentos.set(''), 4000);
+      return;
+    }
+
+    // Duplicado: si ya existe un documento con ese nombre, ofrecer reemplazo (nueva versión, CU-35).
+    const existente = this.documentos().find(
+      (d: any) => (d.nombreLogico ?? '').trim().toLowerCase() === nombreLogico.toLowerCase(),
+    );
+    if (existente) {
+      if (
+        !confirm(
+          `Ya existe un documento "${nombreLogico}" en el trámite. ¿Reemplazarlo (se guarda como nueva versión)?`,
+        )
+      ) {
+        return;
+      }
+      this.subiendoDocumento.set(true);
+      this.errorDocumentos.set('');
+      this.docSvc.nuevaVersion(existente.id, archivo, 'Reemplazo desde el expediente').subscribe({
+        next: () => {
+          this.subiendoDocumento.set(false);
+          this.archivoSubir.set(null);
+          this.nombreLogicoSubir.set('');
+          this.obligatorioSubir.set(false);
+          this.tipoDocumentoSubir.set('PDF');
+          this.exito.set('Documento reemplazado (nueva versión).');
+          setTimeout(() => this.exito.set(''), 4000);
+          this.cargarDocumentos();
+        },
+        error: () => {
+          this.subiendoDocumento.set(false);
+          this.errorDocumentos.set('No se pudo reemplazar el documento.');
+          setTimeout(() => this.errorDocumentos.set(''), 5000);
+        },
+      });
       return;
     }
 
     const req: SubirDocumentoRequest = {
       tramiteId: this.tramiteId,
-      actividadId,
-      nodoId: this.nodoActualId() ?? undefined,
+      actividadId: actividadId ?? '',
+      nodoId,
       tipoDocumento: this.tipoDocumentoSubir(),
       nombreLogico,
       obligatorio: this.obligatorioSubir(),
@@ -710,21 +787,25 @@ export class ExpedienteDigitalComponent {
           this.error.set('Responde la pregunta para indicar por dónde continúa el trámite.');
           return;
         }
-        this.tramiteC2Svc.completarNodo(this.tramiteId, rama, this.justificacion()).subscribe({
-          next: () =>
-            this.finalizarExitosamente('Actividad completada. El trámite continuó por la respuesta seleccionada.'),
-          error: (err) => this.manejarError(err),
-        });
+        this.tramiteC2Svc
+          .completarNodo(this.tramiteId, rama, this.justificacion(), this.nodoActualId() ?? undefined)
+          .subscribe({
+            next: () =>
+              this.finalizarExitosamente('Actividad completada. El trámite continuó por la respuesta seleccionada.'),
+            error: (err) => this.manejarError(err),
+          });
         return;
       }
       // Nodo INTERMEDIO o rama en PARALELO (no es cierre): avanzar con completar-nodo,
       // que sí maneja el paralelo y no exige documento de resolución. Solo los nodos
       // de cierre (cuya salida incluye 'aprobar') pasan por decision-final.
       if (!this.salidasActividad().includes('aprobar')) {
-        this.tramiteC2Svc.completarNodo(this.tramiteId, undefined, this.justificacion()).subscribe({
-          next: () => this.finalizarExitosamente('Actividad completada. El trámite avanzó al siguiente paso.'),
-          error: (err) => this.manejarError(err),
-        });
+        this.tramiteC2Svc
+          .completarNodo(this.tramiteId, undefined, this.justificacion(), this.nodoActualId() ?? undefined)
+          .subscribe({
+            next: () => this.finalizarExitosamente('Actividad completada. El trámite avanzó al siguiente paso.'),
+            error: (err) => this.manejarError(err),
+          });
         return;
       }
       // Nodo de CIERRE: aprobar (cierra el trámite y gestiona el documento de resolución).
