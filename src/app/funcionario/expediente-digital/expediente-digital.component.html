@@ -336,16 +336,9 @@
                     }
                   </select>
                 </div>
-                <div class="form-check mb-2">
-                  <input
-                    type="checkbox"
-                    class="form-check-input"
-                    id="obligatorioSubir"
-                    [checked]="obligatorioSubir()"
-                    (change)="setObligatorioSubir($event)"
-                  />
-                  <label class="form-check-label small" for="obligatorioSubir">Obligatorio</label>
-                </div>
+                <!-- "Obligatorio" es propiedad de un REQUISITO de la actividad, no de
+                     un documento que se sube libremente al repositorio. Se quitó. -->
+
                 <button
                   type="button"
                   class="btn btn-sm btn-primary w-100"
