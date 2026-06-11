@@ -84,10 +84,10 @@ export class DashboardMetricasComponent {
   }
 
   getNombreDepartamento(id: string): string {
-    return this.departamentos().get(id) || id;
+    return this.departamentos().get(id) || '—';
   }
 
   getNombreActividad(id: string): string {
-    return this.actividades().get(id) || id;
+    return this.actividades().get(id) || '—';
   }
 }

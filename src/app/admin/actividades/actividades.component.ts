@@ -129,7 +129,7 @@ export class ActividadesComponent {
   }
 
   getNombreDepto(id: string): string {
-    return this.departamentos().find((item) => item.id === id)?.codigo ?? id;
+    return this.departamentos().find((item) => item.id === id)?.codigo ?? '—';
   }
 
   editar(actividad: Actividad): void {
@@ -179,11 +179,11 @@ export class ActividadesComponent {
 
   getNombreFuncionario(id?: string): string {
     if (!id) return '—';
-    return this.funcionarios().find((f) => f.id === id)?.nombre ?? id;
+    return this.funcionarios().find((f) => f.id === id)?.nombre ?? '—';
   }
 
   getNombreDocumento(id: string): string {
-    return this.documentos().find((d) => d.id === id)?.nombre ?? id;
+    return this.documentos().find((d) => d.id === id)?.nombre ?? '—';
   }
 
   /** Alias usado por la tabla de requisitos en la plantilla. */

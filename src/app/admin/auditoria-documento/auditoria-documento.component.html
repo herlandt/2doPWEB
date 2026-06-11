@@ -105,7 +105,7 @@
             <div class="content flex-grow-1">
               <div class="d-flex flex-wrap gap-2 align-items-center">
                 <span class="badge {{ badgeAccion(it.accion) }}">{{ it.accion }}</span>
-                <strong class="small">{{ it.usuarioNombre || it.usuarioId }}</strong>
+                <strong class="small">{{ it.usuarioNombre || '—' }}</strong>
                 @if (it.rol) {
                   <span class="badge bg-light text-muted small">{{ it.rol }}</span>
                 }

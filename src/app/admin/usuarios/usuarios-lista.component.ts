@@ -48,7 +48,7 @@ export class UsuariosListaComponent {
   }
 
   getNombreRol(rolId: string): string {
-    return this.roles().find((rol) => rol.id === rolId)?.nombre ?? rolId;
+    return this.roles().find((rol) => rol.id === rolId)?.nombre ?? '—';
   }
 
   toggleActivo(usuario: Usuario): void {

@@ -19,7 +19,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h1 class="h4 mb-0">Expediente Digital</h1>
-        <span class="text-muted small">Trámite ID: {{ exp.expediente?.tramiteId ?? tramiteId }}</span>
+        <span class="text-muted small">Trámite: {{ tramiteEstado()?.codigo ?? '—' }}</span>
       </div>
       <a [routerLink]="volverUrl()" class="btn btn-sm btn-outline-secondary">
         ← Volver
@@ -47,7 +47,7 @@
               <div class="d-flex justify-content-between align-items-center">
                 <span class="fw-semibold">
                   Sección {{ seccion.infoSeccion?.ordenSeccion }} —
-                  Depto: {{ seccion.departamentoNombre ?? seccion.infoSeccion?.departamentoId ?? '—' }}
+                  Depto: {{ seccion.departamentoNombre ?? '—' }}
                 </span>
                 <span
                   class="badge"
@@ -279,7 +279,7 @@
             <strong>Resumen del Expediente</strong>
           </div>
           <div class="card-body small">
-            <p class="mb-1"><strong>Trámite ID:</strong> {{ exp.expediente?.tramiteId ?? tramiteId }}</p>
+            <p class="mb-1"><strong>Trámite:</strong> {{ tramiteEstado()?.codigo ?? '—' }}</p>
             <p class="mb-1"><strong>Creado:</strong> {{ formatearFecha(exp.expediente?.fechaCreacion) }}</p>
             <p class="mb-1"><strong>Última actualización:</strong> {{ formatearFecha(exp.expediente?.ultimaActualizacion) }}</p>
           </div>
@@ -540,7 +540,7 @@
               <option value="" disabled>-- Seleccione a dónde retroceder --</option>
               @for (s of seccionesAnteriores(); track (s.infoSeccion?.nodoId || $index)) {
                 <option [value]="s.infoSeccion.nodoId">
-                  Sección {{ s.infoSeccion.ordenSeccion }} — {{ s.departamentoNombre ?? s.infoSeccion.departamentoId }}
+                  Sección {{ s.infoSeccion.ordenSeccion }} — {{ s.departamentoNombre ?? '—' }}
                 </option>
               }
             </select>

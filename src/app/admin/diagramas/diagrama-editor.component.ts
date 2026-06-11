@@ -903,7 +903,7 @@ export class DiagramaEditorComponent {
   }
 
   nombreDocumento(documentoId: string): string {
-    return this.documentos().find((d) => d.id === documentoId)?.nombre ?? documentoId;
+    return this.documentos().find((d) => d.id === documentoId)?.nombre ?? '—';
   }
 
   agregarRequisitoNodo(documentoId: string): void {
@@ -1139,17 +1139,17 @@ export class DiagramaEditorComponent {
 
   getNombrePolitica(politicaId?: string): string {
     if (!politicaId) return 'Sin politica';
-    return this.politicas().find((p) => p.id === politicaId)?.nombre ?? politicaId;
+    return this.politicas().find((p) => p.id === politicaId)?.nombre ?? '—';
   }
 
   getNombreActividad(actividadId?: string): string {
     if (!actividadId) return 'Sin actividad';
-    return this.actividades().find((a) => a.id === actividadId)?.nombre ?? actividadId;
+    return this.actividades().find((a) => a.id === actividadId)?.nombre ?? '—';
   }
 
   getNombreDepto(departamentoId?: string): string {
     if (!departamentoId) return 'Sin depto';
-    return this.departamentos().find((d) => d.id === departamentoId)?.codigo ?? departamentoId;
+    return this.departamentos().find((d) => d.id === departamentoId)?.codigo ?? '—';
   }
 
   private showSuccess(message: string): void {

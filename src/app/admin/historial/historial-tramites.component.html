@@ -113,7 +113,7 @@
           @for (t of tramites(); track t.id) {
             <tr>
               <td><strong>{{ t.codigo }}</strong></td>
-              <td class="small">{{ t.politicaNombre ?? t.politicaId ?? '—' }}</td>
+              <td class="small">{{ t.politicaNombre ?? '—' }}</td>
               <td>
                 <span [class]="'badge ' + getEstadoBadgeClass(t.estadoActual)">
                   {{ t.estadoActual }}
@@ -121,7 +121,7 @@
               </td>
               <td class="small">{{ formatearFecha(t.fechaInicio) }}</td>
               <td class="small">{{ formatearFecha(t.fechaCierreReal) }}</td>
-              <td class="small">{{ t.clienteNombre ?? t.clienteId ?? '—' }}</td>
+              <td class="small">{{ t.clienteNombre ?? '—' }}</td>
               <td class="text-center">
                 <a
                   [routerLink]="['/admin/expediente', t.id]"

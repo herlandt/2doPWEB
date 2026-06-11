@@ -15,4 +15,6 @@ export interface AlertaAnomalia {
   falsoPositivo: boolean;
   fechaDeteccion?: string;
   fechaRevision?: string | null;
+  /** Código legible del trámite (TRM-...), resuelto por el backend. */
+  tramiteCodigo?: string | null;
 }

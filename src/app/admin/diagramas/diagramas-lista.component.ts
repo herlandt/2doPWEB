@@ -48,7 +48,7 @@ export class DiagramasListaComponent {
 
   getNombrePolitica(politicaId?: string): string {
     if (!politicaId) return 'Sin politica';
-    return this.politicas().find((politica) => politica.id === politicaId)?.nombre ?? politicaId;
+    return this.politicas().find((politica) => politica.id === politicaId)?.nombre ?? '—';
   }
 
   eliminar(id: string, nombre: string): void {
