@@ -9,11 +9,17 @@ export class ReportesService {
   private readonly base = `${environment.apiUrl}`;
 
   // CU-29: Historial completo de trámites con filtros opcionales
-  getHistorialTramites(estado?: string, fechaDesde?: string, fechaHasta?: string): Observable<any[]> {
+  getHistorialTramites(
+    estado?: string,
+    fechaDesde?: string,
+    fechaHasta?: string,
+    ordenarPor?: string,
+  ): Observable<any[]> {
     let params = new HttpParams();
     if (estado) params = params.set('estado', estado);
     if (fechaDesde) params = params.set('desde', fechaDesde);
     if (fechaHasta) params = params.set('hasta', fechaHasta);
+    if (ordenarPor) params = params.set('ordenarPor', ordenarPor);
     return this.http.get<any[]>(`${this.base}/tramites/historial`, { params });
   }
 

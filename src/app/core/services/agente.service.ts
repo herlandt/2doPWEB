@@ -1,7 +1,9 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { from, Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { IaLocalService } from '../ia-local/ia-local.service';
 
 export interface AgenteAccion {
   label?: string;
@@ -26,6 +28,7 @@ export interface AgenteConsulta {
 @Injectable({ providedIn: 'root' })
 export class AgenteService {
   private readonly http = inject(HttpClient);
+  private readonly iaLocal = inject(IaLocalService);
   private readonly url = `${environment.apiUrl}/agente/consultar`;
 
   /**
@@ -55,6 +58,17 @@ export class AgenteService {
           }
         : consultaOrPayload;
 
-    return this.http.post<AgenteRespuesta>(this.url, payload);
+    return this.http.post<AgenteRespuesta>(this.url, payload).pipe(
+      // Deep learning OFFLINE: si el backend/IA no responde (sin conexión o caído),
+      // el asistente se contesta con el modelo de intención local (on-device). En
+      // errores de autenticación/cliente (4xx) NO degradamos: se propaga el error.
+      catchError((err: HttpErrorResponse) => {
+        const sinServidor = err.status === 0 || err.status >= 500;
+        if (!sinServidor) return throwError(() => err);
+        return from(
+          this.iaLocal.responderOffline(payload.consulta, payload.moduloActivo),
+        ).pipe(catchError(() => throwError(() => err)));
+      }),
+    );
   }
 }

@@ -1,0 +1,12 @@
+{
+  "name": "CRE · Gestión de Trámites",
+  "short_name": "Trámites CRE",
+  "description": "Sistema de Gestión de Trámites — CRE. Asistente con IA disponible sin conexión.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1554c4",
+  "icons": [
+    { "src": "favicon.ico", "sizes": "64x64", "type": "image/x-icon" }
+  ]
+}

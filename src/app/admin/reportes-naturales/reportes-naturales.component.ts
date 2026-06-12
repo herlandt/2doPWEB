@@ -40,6 +40,12 @@ export class ReportesNaturalesComponent {
     'listar todos los tramites recientes',
   ];
 
+  /** Preguntas pendientes que el admin debe responder antes de generar. */
+  readonly faltantes = computed<string[]>(() => this.resultado()?.faltantes ?? []);
+
+  /** Formato detectado por la IA en el dictado (EXCEL / PDF / WORD / PANTALLA). */
+  readonly formatoDetectado = computed<string | null>(() => this.resultado()?.formatoDetectado ?? null);
+
   readonly columnas = computed<string[]>(() => {
     const r = this.resultado();
     if (!r || !r.filasMuestra.length) return [];
@@ -141,8 +147,8 @@ export class ReportesNaturalesComponent {
     return String(valor);
   }
 
-  /** Descarga el reporte como Excel o PDF (lo genera el backend reusando POI/iText). */
-  exportarArchivo(formato: 'xlsx' | 'pdf'): void {
+  /** Descarga el reporte como Excel, PDF o Word (lo genera el backend con POI/iText). */
+  exportarArchivo(formato: 'xlsx' | 'pdf' | 'docx'): void {
     const consulta = this.consulta().trim();
     if (!consulta) return;
     this.svc.exportar(consulta, formato).subscribe({

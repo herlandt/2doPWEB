@@ -135,6 +135,11 @@ export class AgenteFlotanteComponent implements AfterViewChecked {
       });
   }
 
+  protected fuenteLabel(fuente?: string): string {
+    if (!fuente) return '';
+    return fuente === 'local-tflite' ? '⚡ Sin conexión · IA local' : fuente;
+  }
+
   protected ejecutarAccion(accion: AgenteAccion): void {
     if (!accion) return;
     if (accion.tipo === 'navegar' && accion.ruta) {

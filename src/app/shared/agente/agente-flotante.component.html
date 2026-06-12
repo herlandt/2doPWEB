@@ -49,8 +49,8 @@
                 <lucide-icon [img]="icons.arrow" [size]="14"></lucide-icon>
               </button>
             }
-            @if (!m.fromUser && m.fuente) {
-              <span class="agente-msg__fuente">{{ m.fuente }}</span>
+            @if (!m.fromUser && fuenteLabel(m.fuente)) {
+              <span class="agente-msg__fuente">{{ fuenteLabel(m.fuente) }}</span>
             }
           </div>
         }

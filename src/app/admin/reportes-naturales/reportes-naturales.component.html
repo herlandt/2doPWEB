@@ -72,12 +72,30 @@
     <div class="alert alert-danger" role="alert">{{ error() }}</div>
   }
 
+  <!-- Panel de faltantes: la IA pide más información antes de generar -->
+  @if (faltantes().length) {
+    <div class="alert alert-warning border-start border-4 border-warning" role="alert">
+      <strong>Necesito más información para generar el reporte:</strong>
+      <ul class="mb-1 mt-2">
+        @for (f of faltantes(); track f) {
+          <li>{{ f }}</li>
+        }
+      </ul>
+      <small class="text-muted">Amplía tu consulta y vuelve a hacer clic en <em>Generar</em>.</small>
+    </div>
+  }
+
   <!-- Resultado -->
   @if (resultado(); as r) {
     <div class="card border-0 shadow-sm">
       <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <div>
           <span class="badge bg-light text-dark me-2">{{ r.collection }}</span>
+          @if (formatoDetectado()) {
+            <span class="badge bg-info text-dark me-2" title="Formato detectado en la consulta">
+              {{ formatoDetectado() }}
+            </span>
+          }
           <span class="text-muted small">
             {{ r.totalFilas }} fila{{ r.totalFilas === 1 ? '' : 's' }}
             @if (r.filasMuestra.length < r.totalFilas) {
@@ -90,6 +108,8 @@
             (click)="exportarCsv()" [disabled]="!r.filasMuestra.length">CSV</button>
           <button class="btn btn-outline-success" type="button"
             (click)="exportarArchivo('xlsx')" [disabled]="!r.totalFilas">Excel</button>
+          <button class="btn btn-outline-primary" type="button"
+            (click)="exportarArchivo('docx')" [disabled]="!r.totalFilas">Word</button>
           <button class="btn btn-outline-danger" type="button"
             (click)="exportarArchivo('pdf')" [disabled]="!r.totalFilas">PDF</button>
         </div>

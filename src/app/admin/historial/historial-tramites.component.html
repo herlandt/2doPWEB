@@ -2,7 +2,7 @@
 
   <div class="mb-4">
     <h1 class="h4 mb-0">Historial y Auditoría Global</h1>
-    <p class="text-muted small mb-0">Todos los trámites del sistema con filtros y exportación de reportes.</p>
+    <p class="text-muted small mb-0">Todos los trámites del sistema con filtros, integridad documental y exportación.</p>
   </div>
 
   @if (error()) {
@@ -12,46 +12,38 @@
   <!-- Panel de filtros -->
   <div class="card shadow-sm mb-4">
     <div class="card-body">
-      <div class="row g-3 align-items-end">
-
+      <!-- Fila 1: filtros de backend -->
+      <div class="row g-3 align-items-end mb-3">
         <div class="col-md-3">
           <label class="form-label fw-semibold" for="filtro-estado">Estado</label>
-          <select
-            id="filtro-estado"
-            class="form-select"
-            [value]="filtroEstado()"
-            (change)="setFiltroEstado($event)"
-          >
+          <select id="filtro-estado" class="form-select"
+            [value]="filtroEstado()" (change)="setFiltroEstado($event)">
             <option value="">TODOS</option>
             @for (e of estados; track e.valor) {
               <option [value]="e.valor">{{ e.label }}</option>
             }
           </select>
         </div>
-
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label class="form-label fw-semibold" for="filtro-desde">Desde</label>
-          <input
-            id="filtro-desde"
-            type="date"
-            class="form-control"
-            [value]="filtroDesde()"
-            (change)="setFiltroDesde($event)"
-          />
+          <input id="filtro-desde" type="date" class="form-control"
+            [value]="filtroDesde()" (change)="setFiltroDesde($event)" />
         </div>
-
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label class="form-label fw-semibold" for="filtro-hasta">Hasta</label>
-          <input
-            id="filtro-hasta"
-            type="date"
-            class="form-control"
-            [value]="filtroHasta()"
-            (change)="setFiltroHasta($event)"
-          />
+          <input id="filtro-hasta" type="date" class="form-control"
+            [value]="filtroHasta()" (change)="setFiltroHasta($event)" />
         </div>
-
-        <div class="col-md-3 d-flex gap-2">
+        <div class="col-md-3">
+          <label class="form-label fw-semibold" for="filtro-orden">Ordenar por</label>
+          <select id="filtro-orden" class="form-select"
+            [value]="ordenarPor()" (change)="setOrdenarPor($event)">
+            @for (o of opcionesOrden; track o.valor) {
+              <option [value]="o.valor">{{ o.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
           <button type="button" class="btn btn-primary w-100" (click)="buscarHistorial()">
             Buscar
           </button>
@@ -59,7 +51,31 @@
             Limpiar
           </button>
         </div>
+      </div>
 
+      <!-- Fila 2: filtros client-side por nombre -->
+      <div class="row g-3 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label small text-muted" for="filtro-politica">
+            Filtrar por política (nombre)
+          </label>
+          <input id="filtro-politica" type="text" class="form-control form-control-sm"
+            placeholder="Ej: Licencia de construcción"
+            [value]="filtroPolitica()" (input)="setFiltroPolitica($event)" />
+        </div>
+        <div class="col-md-5">
+          <label class="form-label small text-muted" for="filtro-cliente">
+            Filtrar por cliente (nombre)
+          </label>
+          <input id="filtro-cliente" type="text" class="form-control form-control-sm"
+            placeholder="Ej: Juan Pérez"
+            [value]="filtroCliente()" (input)="setFiltroCliente($event)" />
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <span class="small text-muted">
+            {{ tramitesFiltrados().length }} / {{ tramites().length }} registros
+          </span>
+        </div>
       </div>
     </div>
   </div>
@@ -67,23 +83,17 @@
   <!-- Barra de exportación (CU-26) -->
   <div class="d-flex justify-content-between align-items-center mb-3">
     <span class="fw-semibold">
-      Resultados: <strong>{{ tramites().length }}</strong>
+      Mostrando <strong>{{ tramitesFiltrados().length }}</strong> trámite(s)
     </span>
     <div class="d-flex gap-2">
-      <button
-        type="button"
-        class="btn btn-sm btn-outline-danger"
+      <button type="button" class="btn btn-sm btn-outline-danger"
         [disabled]="tramites().length === 0 || descargando()"
-        (click)="exportar('PDF')"
-      >
+        (click)="exportar('PDF')">
         @if (descargando()) { Generando… } @else { Exportar PDF }
       </button>
-      <button
-        type="button"
-        class="btn btn-sm btn-outline-success"
+      <button type="button" class="btn btn-sm btn-outline-success"
         [disabled]="tramites().length === 0 || descargando()"
-        (click)="exportar('EXCEL')"
-      >
+        (click)="exportar('EXCEL')">
         @if (descargando()) { Generando… } @else { Exportar Excel }
       </button>
     </div>
@@ -106,11 +116,12 @@
             <th>Inicio</th>
             <th>Última Actualización</th>
             <th>Cliente</th>
-            <th class="text-center">Detalle</th>
+            <th class="text-center" style="width: 8rem;">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          @for (t of tramites(); track t.id) {
+          @for (t of tramitesFiltrados(); track t.id) {
+            <!-- Fila principal del trámite -->
             <tr>
               <td><strong>{{ t.codigo }}</strong></td>
               <td class="small">{{ t.politicaNombre ?? '—' }}</td>
@@ -123,15 +134,111 @@
               <td class="small">{{ formatearFecha(t.fechaCierreReal) }}</td>
               <td class="small">{{ t.clienteNombre ?? '—' }}</td>
               <td class="text-center">
-                <a
-                  [routerLink]="['/admin/expediente', t.id]"
-                  class="btn btn-sm btn-light"
-                  title="Ver expediente"
-                >
-                  Ver
-                </a>
+                <div class="d-flex gap-1 justify-content-center">
+                  <a [routerLink]="['/admin/expediente', t.id]"
+                    class="btn btn-sm btn-light" title="Ver expediente">
+                    Ver
+                  </a>
+                  <button type="button"
+                    class="btn btn-sm"
+                    [class.btn-outline-info]="tramiteExpandido() !== t.id"
+                    [class.btn-info]="tramiteExpandido() === t.id"
+                    [title]="tramiteExpandido() === t.id ? 'Cerrar integridad' : 'Ver integridad y versiones'"
+                    (click)="toggleDetalle(t.id)">
+                    {{ tramiteExpandido() === t.id ? '▼' : '▶' }}
+                  </button>
+                </div>
               </td>
             </tr>
+
+            <!-- Panel de integridad documental (expandible) -->
+            @if (tramiteExpandido() === t.id) {
+              <tr class="table-light">
+                <td colspan="7" class="px-4 py-3">
+                  @let integ = integridadMap().get(t.id);
+
+                  @if (!integ || integ === 'loading') {
+                    <span class="spinner-border spinner-border-sm me-2 text-info"></span>
+                    <span class="small text-muted">Verificando cadena de integridad y versiones…</span>
+                  } @else if (integ === 'error') {
+                    <span class="text-danger small">
+                      No se pudo cargar la información de integridad. Verifica que el trámite tenga trazabilidad registrada.
+                    </span>
+                  } @else {
+                    <!-- Badge de integridad de la cadena de hashes -->
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                      @if (integ.cadenaIntegra) {
+                        <span class="badge bg-success" style="font-size: 0.85rem;">
+                          ✓ Cadena íntegra
+                        </span>
+                        <span class="small text-muted">
+                          Todos los eslabones de trazabilidad son válidos.
+                        </span>
+                      } @else {
+                        <span class="badge bg-danger" style="font-size: 0.85rem;">
+                          ✗ Cadena alterada
+                        </span>
+                        @if (integ.primerEslabonRoto) {
+                          <span class="small text-danger">
+                            Primer eslabón roto: <code>{{ integ.primerEslabonRoto }}</code>
+                          </span>
+                        }
+                      }
+                      <span class="ms-auto small text-muted">
+                        {{ integ.documentos.length }} documento(s) archivado(s)
+                      </span>
+                    </div>
+
+                    <!-- Documentos y sus versiones -->
+                    @if (integ.documentos.length === 0) {
+                      <p class="text-muted small mb-0">Este trámite no tiene documentos adjuntos.</p>
+                    } @else {
+                      @for (doc of integ.documentos; track doc.documentoId) {
+                        <div class="border rounded p-3 mb-2 bg-white">
+                          <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong class="small">{{ doc.nombreLogico }}</strong>
+                            <div class="d-flex gap-2">
+                              <span class="badge bg-light text-dark">{{ doc.tipoDocumento }}</span>
+                              <span class="badge bg-primary">Versión actual: v{{ doc.versionActual }}</span>
+                            </div>
+                          </div>
+                          <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0">
+                              <thead class="table-light">
+                                <tr>
+                                  <th class="small">Ver.</th>
+                                  <th class="small">Autor</th>
+                                  <th class="small">Fecha</th>
+                                  <th class="small">Tamaño</th>
+                                  <th class="small">Hash (SHA-256)</th>
+                                  <th class="small">Comentario</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                @for (v of doc.versiones; track v.numero) {
+                                  <tr [class.table-primary]="v.numero === doc.versionActual">
+                                    <td class="small fw-semibold">v{{ v.numero }}</td>
+                                    <td class="small">{{ v.autorId }}</td>
+                                    <td class="small">{{ formatearFecha(v.fecha) }}</td>
+                                    <td class="small">{{ formatearBytes(v.tamanoBytes) }}</td>
+                                    <td class="small">
+                                      <code title="{{ v.hashSha256 ?? '—' }}">
+                                        {{ (v.hashSha256 ?? '—').slice(0, 12) }}…
+                                      </code>
+                                    </td>
+                                    <td class="small">{{ v.comentario ?? '—' }}</td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      }
+                    }
+                  }
+                </td>
+              </tr>
+            }
           } @empty {
             <tr>
               <td colspan="7" class="text-center text-muted py-4">

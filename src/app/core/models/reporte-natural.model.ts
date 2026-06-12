@@ -13,4 +13,8 @@ export interface ReporteNaturalResponse {
   formato: string;
   /** Pipeline MongoDB serializado, para auditoría. */
   queryGenerada: string;
+  /** Preguntas que la UI debe hacer antes de lanzar el reporte (vacío = listo). */
+  faltantes?: string[];
+  /** Formato detectado en el dictado ("EXCEL", "PDF", "WORD", "PANTALLA"). */
+  formatoDetectado?: string;
 }
