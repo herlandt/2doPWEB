@@ -11,90 +11,97 @@
 @import '@fontsource-variable/inter/index.css';
 
 /* --------------------------------------------------------------------------
-   Design tokens (light)
+   Design tokens (light) — Paleta "CRE Premium"
+   Indigo profundo + Amber dorado · Superficies cálidas · Tipografía jerarquizada
    -------------------------------------------------------------------------- */
 :root {
-  /* Brand — azul corporativo CRE + acento naranja energía */
-  --cre-brand-50: #eef6ff;
-  --cre-brand-100: #d8eaff;
-  --cre-brand-200: #b3d3ff;
-  --cre-brand-300: #82b6ff;
-  --cre-brand-400: #4d92ff;
-  --cre-brand-500: #1f6feb;
-  --cre-brand-600: #1554c4;
-  --cre-brand-700: #103f96;
-  --cre-brand-800: #0c2f70;
-  --cre-brand-900: #0a2356;
+  /* Brand — Indigo real, más profundo y distintivo que el azul plano anterior */
+  --cre-brand-50: #eef0ff;
+  --cre-brand-100: #e0e3ff;
+  --cre-brand-200: #c7ccfe;
+  --cre-brand-300: #a5acfb;
+  --cre-brand-400: #7c84f5;
+  --cre-brand-500: #4f52e8;
+  --cre-brand-600: #3a3dcf;
+  --cre-brand-700: #2e30a9;
+  --cre-brand-800: #252786;
+  --cre-brand-900: #1a1c6a;
 
-  --cre-energy-50: #fff7ed;
-  --cre-energy-100: #ffedd5;
-  --cre-energy-300: #fdba74;
-  --cre-energy-500: #f97316;
-  --cre-energy-600: #ea580c;
-  --cre-energy-700: #c2410c;
+  /* Energy — Amber/dorado, más cálido y premium que naranja */
+  --cre-energy-50: #fffbeb;
+  --cre-energy-100: #fef3c7;
+  --cre-energy-300: #fcd34d;
+  --cre-energy-500: #f59e0b;
+  --cre-energy-600: #d97706;
+  --cre-energy-700: #b45309;
 
-  /* Semánticos */
+  /* Semánticos — más vividos */
   --cre-success-500: #10b981;
   --cre-success-600: #059669;
   --cre-warning-500: #f59e0b;
-  --cre-danger-500: #ef4444;
-  --cre-danger-600: #dc2626;
-  --cre-info-500: #06b6d4;
+  --cre-danger-500: #f04438;
+  --cre-danger-600: #d92d20;
+  --cre-info-500: #0ea5e9;
 
-  /* Superficie y texto */
-  --cre-bg: #f5f7fb;
+  /* Superficie y texto — tonos cálidos, no fríos */
+  --cre-bg: #f4f4f8;
   --cre-bg-elev: #ffffff;
-  --cre-bg-muted: #eef1f6;
+  --cre-bg-muted: #ebebf0;
   --cre-surface: #ffffff;
-  --cre-surface-2: #f8fafc;
-  --cre-border: #e2e8f0;
-  --cre-border-strong: #cbd5e1;
-  --cre-text: #0f172a;
-  --cre-text-muted: #64748b;
-  --cre-text-subtle: #94a3b8;
+  --cre-surface-2: #f9f9fc;
+  --cre-border: #e3e3eb;
+  --cre-border-strong: #c9c9d6;
+  --cre-text: #18181b;
+  --cre-text-muted: #52525b;
+  --cre-text-subtle: #a1a1aa;
   --cre-text-inverse: #ffffff;
 
-  /* Sombras (capa elevación) */
-  --cre-shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.04);
-  --cre-shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.07), 0 2px 4px -2px rgb(15 23 42 / 0.05);
-  --cre-shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.05);
-  --cre-shadow-glow: 0 0 0 4px rgb(31 111 235 / 0.12);
+  /* Sombras con tinte indigo — dan profundidad y calidez */
+  --cre-shadow-sm: 0 1px 3px 0 rgb(49 46 129 / 0.06);
+  --cre-shadow-md: 0 4px 8px -2px rgb(49 46 129 / 0.10), 0 2px 4px -2px rgb(49 46 129 / 0.06);
+  --cre-shadow-lg: 0 12px 24px -4px rgb(49 46 129 / 0.12), 0 4px 8px -4px rgb(49 46 129 / 0.07);
+  --cre-shadow-glow: 0 0 0 3px rgb(79 82 232 / 0.20), 0 0 0 1px rgb(79 82 232 / 0.40);
 
   /* Radio y espaciado */
   --cre-radius-sm: 6px;
   --cre-radius-md: 10px;
   --cre-radius-lg: 14px;
-  --cre-radius-xl: 20px;
+  --cre-radius-xl: 22px;
 
   /* Layout */
-  --cre-sidebar-w: 248px;
+  --cre-sidebar-w: 252px;
   --cre-sidebar-w-collapsed: 72px;
   --cre-topbar-h: 64px;
+
+  /* Tipografía */
+  --cre-font-display: 'Plus Jakarta Sans', 'Inter Variable', system-ui, sans-serif;
+  --cre-font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
 }
 
 /* Dark mode */
 :root[data-theme='dark'] {
-  --cre-bg: #0b1220;
-  --cre-bg-elev: #111a2e;
-  --cre-bg-muted: #0f1828;
-  --cre-surface: #111a2e;
-  --cre-surface-2: #162238;
-  --cre-border: #1f2a44;
-  --cre-border-strong: #2c3a5a;
-  --cre-text: #e6edf7;
-  --cre-text-muted: #94a3b8;
-  --cre-text-subtle: #64748b;
-  --cre-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
-  --cre-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.4);
-  --cre-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.55), 0 4px 6px -4px rgb(0 0 0 / 0.45);
-  --cre-shadow-glow: 0 0 0 4px rgb(77 146 255 / 0.18);
+  --cre-bg: #0d0d14;
+  --cre-bg-elev: #13131f;
+  --cre-bg-muted: #0f0f1a;
+  --cre-surface: #16162a;
+  --cre-surface-2: #1c1c32;
+  --cre-border: #26263d;
+  --cre-border-strong: #33335a;
+  --cre-text: #ededf5;
+  --cre-text-muted: #8b8ba8;
+  --cre-text-subtle: #5c5c78;
+  --cre-shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.45);
+  --cre-shadow-md: 0 4px 8px -2px rgb(0 0 0 / 0.55), 0 2px 4px -2px rgb(0 0 0 / 0.45);
+  --cre-shadow-lg: 0 12px 24px -4px rgb(0 0 0 / 0.65), 0 4px 8px -4px rgb(0 0 0 / 0.50);
+  --cre-shadow-glow: 0 0 0 3px rgb(79 82 232 / 0.28), 0 0 0 1px rgb(79 82 232 / 0.50);
 }
 
 /* --------------------------------------------------------------------------
    Tailwind v4 theme — expone tokens como utilidades (bg-cre-brand-500, etc.)
    -------------------------------------------------------------------------- */
 @theme {
-  --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
 
   --color-cre-brand-50: var(--cre-brand-50);
   --color-cre-brand-100: var(--cre-brand-100);
@@ -150,10 +157,89 @@ body {
   padding: 0;
   background: var(--cre-bg);
   color: var(--cre-text);
-  font-family: var(--font-sans, 'Inter Variable', system-ui, sans-serif);
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  font-family: var(--cre-font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Textura micro-dot en el fondo — solo visible en light mode */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgb(79 82 232 / 0.055) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+:root[data-theme='dark'] body::before {
+  background-image: radial-gradient(circle, rgb(255 255 255 / 0.025) 1px, transparent 1px);
+}
+
+/* Asegurar que el contenido quede sobre la textura */
+app-root, .app-shell, .cre-card, .modal, .cre-sidebar {
+  position: relative;
+  z-index: 1;
+}
+
+/* Tipografía — jerarquía mejorada */
+h1, h2, h3, h4, h5, h6,
+.cre-heading {
+  font-family: var(--cre-font-display);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  color: var(--cre-text);
+}
+h1 { font-size: 2rem; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.3rem; letter-spacing: -0.02em; }
+h4 { font-size: 1.1rem; letter-spacing: -0.015em; }
+h5, h6 { font-size: 1rem; letter-spacing: -0.01em; }
+
+.cre-page-title {
+  font-family: var(--cre-font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--cre-text);
+}
+.cre-section-title {
+  font-family: var(--cre-font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--cre-text);
+}
+.cre-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cre-text-muted);
+}
+
+/* Tablas — estilo más limpio */
+.table th {
+  font-family: var(--cre-font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cre-text-muted);
+  background: var(--cre-surface-2);
+  border-bottom: 2px solid var(--cre-border);
+  padding: 0.65rem 0.85rem;
+}
+.table td {
+  font-size: 0.875rem;
+  padding: 0.65rem 0.85rem;
+  color: var(--cre-text);
+  border-bottom: 1px solid var(--cre-border);
+  vertical-align: middle;
 }
 
 * {
@@ -164,18 +250,18 @@ body {
    Componentes utilitarios reutilizables
    -------------------------------------------------------------------------- */
 
-/* Surface card */
+/* Surface card — con borde sutil y sombra con tinte */
 .cre-card {
   background: var(--cre-surface);
   border: 1px solid var(--cre-border);
   border-radius: var(--cre-radius-lg);
   box-shadow: var(--cre-shadow-sm);
-  transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease;
+  transition: box-shadow 180ms ease, transform 180ms ease, border-color 180ms ease;
 }
 .cre-card-hover:hover {
   box-shadow: var(--cre-shadow-md);
-  transform: translateY(-1px);
-  border-color: var(--cre-border-strong);
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--cre-brand-400) 35%, var(--cre-border));
 }
 
 /* Botón */
