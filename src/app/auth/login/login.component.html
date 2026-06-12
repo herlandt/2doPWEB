@@ -1,25 +1,57 @@
 <div class="login-page">
-  <div class="login-wrap">
+  <div class="login-card">
 
-    <!-- ── Hero: encabezado oscuro con branding ── -->
-    <div class="login-hero">
-      <div class="login-hero-glow"></div>
-      <div class="login-brand-mark">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
-        </svg>
+    <!-- ── Panel izquierdo: marca (oscuro) ── -->
+    <aside class="login-aside">
+      <div class="aside-grid"></div>
+      <div class="aside-glow aside-glow--1"></div>
+      <div class="aside-glow aside-glow--2"></div>
+
+      <div class="aside-top">
+        <div class="aside-mark">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </div>
+        <span class="aside-kicker">Sistema institucional</span>
       </div>
-      <h1 class="login-title">Gestión de Trámites</h1>
-      <p class="login-subtitle">Sistema institucional de seguimiento</p>
-    </div>
 
-    <!-- ── Cuerpo: formulario ── -->
-    <div class="login-body">
+      <div class="aside-center">
+        <h1 class="aside-title">Gestión<br>de Trámites</h1>
+        <p class="aside-lead">
+          Registra, deriva y da seguimiento a cada trámite desde un solo lugar.
+        </p>
+      </div>
+
+      <ul class="aside-points">
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Seguimiento en tiempo real
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Trazabilidad documental
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Reportes y métricas
+        </li>
+      </ul>
+    </aside>
+
+    <!-- ── Panel derecho: formulario ── -->
+    <section class="login-form-panel">
+      <header class="form-head">
+        <h2 class="form-title">Iniciar sesión</h2>
+        <p class="form-sub">Ingresa con tu cuenta institucional</p>
+      </header>
 
       @if (error()) {
         <div class="login-error" role="alert">
@@ -37,15 +69,22 @@
 
         <div class="login-field">
           <label for="email">Correo electrónico</label>
-          <input
-            id="email"
-            type="email"
-            class="login-input"
-            [class.invalid]="form.controls.email.touched && form.controls.email.invalid"
-            formControlName="email"
-            placeholder="usuario@dominio.bo"
-            autocomplete="email"
-          />
+          <div class="input-wrap">
+            <svg class="input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+            <input
+              id="email"
+              type="email"
+              class="login-input"
+              [class.invalid]="form.controls.email.touched && form.controls.email.invalid"
+              formControlName="email"
+              placeholder="usuario@dominio.bo"
+              autocomplete="email"
+            />
+          </div>
           @if (form.controls.email.touched && form.controls.email.invalid) {
             <span class="login-field-error">Email requerido o inválido</span>
           }
@@ -53,15 +92,22 @@
 
         <div class="login-field">
           <label for="password">Contraseña</label>
-          <input
-            id="password"
-            type="password"
-            class="login-input"
-            [class.invalid]="form.controls.password.touched && form.controls.password.invalid"
-            formControlName="password"
-            placeholder="••••••••"
-            autocomplete="current-password"
-          />
+          <div class="input-wrap">
+            <svg class="input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <input
+              id="password"
+              type="password"
+              class="login-input"
+              [class.invalid]="form.controls.password.touched && form.controls.password.invalid"
+              formControlName="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+            />
+          </div>
           @if (form.controls.password.touched && form.controls.password.invalid) {
             <span class="login-field-error">Mínimo 6 caracteres</span>
           }
@@ -70,28 +116,32 @@
         <button type="submit" class="login-submit" [disabled]="loading()">
           @if (loading()) {
             <span class="login-spinner" aria-hidden="true"></span>
+            Autenticando...
+          } @else {
+            Ingresar
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
           }
-          {{ loading() ? 'Autenticando...' : 'Ingresar' }}
         </button>
 
       </form>
-    </div>
 
-    <!-- ── Acceso rápido ── -->
-    <div class="login-demo">
-      <span class="login-demo-label">Acceso rápido</span>
-      <div class="login-demo-chips">
-        @for (c of cuentasDemo; track c.email) {
-          <button
-            type="button"
-            class="demo-chip demo-chip--{{ c.variant }}"
-            (click)="llenarDemo(c)"
-            [title]="c.email + ' / ' + c.password"
-          >{{ c.label }}</button>
-        }
+      <div class="login-demo">
+        <div class="login-demo-divider"><span>Acceso rápido</span></div>
+        <div class="login-demo-chips">
+          @for (c of cuentasDemo; track c.email) {
+            <button
+              type="button"
+              class="demo-chip demo-chip--{{ c.variant }}"
+              (click)="llenarDemo(c)"
+              [title]="c.email + ' / ' + c.password"
+            >{{ c.label }}</button>
+          }
+        </div>
       </div>
-      <p class="login-demo-hint">Clic para autocompletar · luego pulsa Ingresar</p>
-    </div>
+    </section>
 
   </div>
 </div>
