@@ -720,15 +720,15 @@
                   type="button"
                   class="cre-btn cre-btn-secondary cre-btn-sm"
                   (click)="descartarInspector()"
-                  [disabled]="!inspectorDirty() || guardandoNodo()"
+                  [disabled]="!inspectorDirty() || guardandoNodo() || guardandoRequisitos()"
                 >Descartar</button>
                 <button
                   type="button"
                   class="cre-btn cre-btn-primary cre-btn-sm"
                   (click)="guardarInspector()"
-                  [disabled]="!inspectorDirty() || guardandoNodo()"
+                  [disabled]="!inspectorDirty() || guardandoNodo() || guardandoRequisitos()"
                 >
-                  @if (guardandoNodo()) { Guardando… } @else { Guardar }
+                  @if (guardandoNodo() || guardandoRequisitos()) { Guardando… } @else { Guardar }
                 </button>
               </footer>
             </aside>

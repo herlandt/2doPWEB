@@ -195,6 +195,10 @@ export class DiagramaEditorComponent {
   // actividadId. Disponible aunque el diagrama esté publicado (se edita la
   // actividad, no el diagrama).
   readonly requisitosNodo = signal<RequisitoDocumento[]>([]);
+  // Snapshot de los requisitos tal como están guardados en la Actividad, para
+  // poder detectar cambios pendientes (inspectorDirty) independientemente de
+  // si también cambiaron campos del nodo.
+  private readonly requisitosNodoOriginal = signal<RequisitoDocumento[]>([]);
   readonly guardandoRequisitos = signal(false);
   // Documento elegido en el desplegable "Agregar documento requerido".
   readonly documentoAAgregar = signal('');
@@ -212,18 +216,36 @@ export class DiagramaEditorComponent {
     return this.transiciones().filter((t) => t.nodoOrigenId === sel.id);
   });
 
-  // ¿Hay cambios pendientes en el inspector?
+  // ¿Hay cambios pendientes en el inspector? Incluye tanto los campos del nodo
+  // como los requisitos documentales de la actividad asociada (que se guardan
+  // junto con el nodo al presionar "Guardar"; ver guardarInspector()).
   readonly inspectorDirty = computed(() => {
     const d = this.inspectorDraft();
     const o = this.selectedNodo();
     if (!d || !o) return false;
-    return (
+    const nodoCambio =
       d.nombre !== o.nombre ||
       d.departamentoId !== o.departamentoId ||
       d.actividadId !== o.actividadId ||
-      d.swimlane !== o.swimlane
-    );
+      d.swimlane !== o.swimlane;
+    const requisitosCambiaron =
+      d.tipo === 'actividad' &&
+      !this.requisitosIguales(this.requisitosNodo(), this.requisitosNodoOriginal());
+    return nodoCambio || requisitosCambiaron;
   });
+
+  /** Compara dos listas de requisitos por contenido (ignora el orden). */
+  private requisitosIguales(a: RequisitoDocumento[], b: RequisitoDocumento[]): boolean {
+    if (a.length !== b.length) return false;
+    const clave = (r: RequisitoDocumento) => `${r.documentoId}|${r.proveedor}|${r.obligatorio}`;
+    const setA = new Set(a.map(clave));
+    const setB = new Set(b.map(clave));
+    if (setA.size !== setB.size) return false;
+    for (const k of setA) {
+      if (!setB.has(k)) return false;
+    }
+    return true;
+  }
 
   // ── Agregar calle (swimlane) a un diagrama existente ──────────────────────
   // Las calles del diagrama en edición. Se inicializa al cargar el diagrama y es
@@ -869,11 +891,14 @@ export class DiagramaEditorComponent {
     this.documentoAAgregar.set('');
     if (!nodo || nodo.tipo !== 'actividad' || !nodo.actividadId) {
       this.requisitosNodo.set([]);
+      this.requisitosNodoOriginal.set([]);
       return;
     }
     const act = this.actividades().find((a) => a.id === nodo.actividadId);
     if (act) {
-      this.requisitosNodo.set(this.requisitosDesdeActividad(act));
+      const requisitos = this.requisitosDesdeActividad(act);
+      this.requisitosNodo.set(requisitos);
+      this.requisitosNodoOriginal.set(requisitos);
       return;
     }
     // Actividad no presente en el signal: la pedimos al backend.
@@ -885,10 +910,15 @@ export class DiagramaEditorComponent {
         );
         // Solo aplica si el nodo seleccionado sigue siendo el mismo.
         if (this.selectedNodo()?.actividadId === cargada.id) {
-          this.requisitosNodo.set(this.requisitosDesdeActividad(cargada));
+          const requisitos = this.requisitosDesdeActividad(cargada);
+          this.requisitosNodo.set(requisitos);
+          this.requisitosNodoOriginal.set(requisitos);
         }
       },
-      error: () => this.requisitosNodo.set([]),
+      error: () => {
+        this.requisitosNodo.set([]);
+        this.requisitosNodoOriginal.set([]);
+      },
     });
   }
 
@@ -975,7 +1005,9 @@ export class DiagramaEditorComponent {
         this.actividades.update((lista) =>
           lista.map((a) => (a.id === actualizada.id ? actualizada : a)),
         );
-        this.requisitosNodo.set(this.requisitosDesdeActividad(actualizada));
+        const requisitos = this.requisitosDesdeActividad(actualizada);
+        this.requisitosNodo.set(requisitos);
+        this.requisitosNodoOriginal.set(requisitos);
         this.guardandoRequisitos.set(false);
         this.showSuccess('Requisitos de la actividad guardados');
       },
@@ -1021,7 +1053,9 @@ export class DiagramaEditorComponent {
     this.inspectorDraft.update((d) => (d ? { ...d, actividadId: id } : d));
     // Recargar los requisitos editables para la nueva actividad seleccionada.
     const act = id ? this.actividades().find((a) => a.id === id) : null;
-    this.requisitosNodo.set(act ? this.requisitosDesdeActividad(act) : []);
+    const requisitos = act ? this.requisitosDesdeActividad(act) : [];
+    this.requisitosNodo.set(requisitos);
+    this.requisitosNodoOriginal.set(requisitos);
     this.documentoAAgregar.set('');
   }
 
@@ -1040,6 +1074,24 @@ export class DiagramaEditorComponent {
     }
     if (draft.tipo === 'actividad' && !draft.actividadId) {
       this.setError('Selecciona una actividad para este nodo');
+      return;
+    }
+
+    const o = this.selectedNodo();
+    const nodoCambio =
+      !o ||
+      draft.nombre !== o.nombre ||
+      draft.departamentoId !== o.departamentoId ||
+      draft.actividadId !== o.actividadId ||
+      draft.swimlane !== o.swimlane;
+    const requisitosCambiaron =
+      draft.tipo === 'actividad' &&
+      !this.requisitosIguales(this.requisitosNodo(), this.requisitosNodoOriginal());
+
+    if (!nodoCambio) {
+      // Solo cambiaron los documentos requeridos de la actividad: nada que
+      // actualizar en el nodo, vamos directo a guardar la actividad.
+      if (requisitosCambiaron) this.guardarRequisitosNodo();
       return;
     }
 
@@ -1069,6 +1121,10 @@ export class DiagramaEditorComponent {
               : '',
           );
         }
+        // Los documentos requeridos de la actividad asociada se guardan por
+        // separado (endpoint /api/actividades, no /api/nodos): si también
+        // cambiaron, lo hacemos a continuación del guardado del nodo.
+        if (requisitosCambiaron) this.guardarRequisitosNodo();
       },
       error: (err: unknown) => {
         this.guardandoNodo.set(false);
@@ -1083,6 +1139,9 @@ export class DiagramaEditorComponent {
   descartarInspector(): void {
     const sel = this.selectedNodo();
     this.inspectorDraft.set(sel ? { ...sel } : null);
+    // Revertir también los requisitos documentales editados sin guardar.
+    this.requisitosNodo.set(this.requisitosNodoOriginal().map((r) => ({ ...r })));
+    this.documentoAAgregar.set('');
     this.clearError();
   }
 
